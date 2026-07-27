@@ -1,0 +1,186 @@
+extends Node3D
+## 월드 루트 — 조립(composition)과 페이즈 디스패치만 담당한다.
+##
+## 실제 로직은 자식 매니저들이 가진다:
+##   EnvironmentManager  하늘·조명·안개·후처리
+##   LandmarkManager     지형·도로·건물·방주
+##   PropScatterManager  소품·잔해·파티클
+##   PortalManager       차원의 균열
+##   SpawnManager        플레이어·적·보스 스폰
+##   DayNightManager     낮/밤 전환
+##   WaveManager3D       밤 웨이브 진행
+##
+## 외부(Enemy3D / PetManager / LootManager / 툴)가 current_scene 을 통해
+## 접근하는 API 는 이 클래스에 그대로 유지된다: zone_luck, world_center,
+## hud, _make_enemy, skip_* 등.
+
+# ── 격자/구역 상수 (WorldConfig 가 단일 출처, 여기서는 외부 호환용 별칭) ──
+const TILE := WorldConfig.TILE
+const COLS := WorldConfig.COLS
+const ROWS := WorldConfig.ROWS
+const ARENA_W := WorldConfig.ARENA_W
+const ARENA_H := WorldConfig.ARENA_H
+const ZONE_SAFE := WorldConfig.ZONE_SAFE
+const ZONE_CITY := WorldConfig.ZONE_CITY
+const ZONE_RIFT := WorldConfig.ZONE_RIFT
+const SAFE_RADIUS := WorldConfig.SAFE_RADIUS
+const RIFT_BAND := WorldConfig.RIFT_BAND
+
+# ── 월드가 소유하는 공유 상태 (매니저들이 참조한다) ──
+var player: CharacterBody3D
+var base_core: Node3D
+var hud: CanvasLayer
+var sun: DirectionalLight3D
+var env: WorldEnvironment
+
+var day_timer := 0.0
+var night_timer := 0.0
+var spawn_timer := 0.0
+var game_ended := false
+var occupied_cells := {}
+var _placed_props: Array = []
+var trait_screen: CanvasLayer = null
+
+# ── 매니저 ──
+var environment_manager: EnvironmentManager
+var landmark_manager: LandmarkManager
+var prop_manager: PropScatterManager
+var portal_manager: PortalManager
+var spawn_manager: SpawnManager
+var daynight_manager: WorldSystem
+var wave_manager: WorldSystem
+## 캠페인 — 랜드마크/NPC/웨이브/이벤트의 유일한 생성자 (JSON 이 데이터 소스)
+var campaign_manager: CampaignManager
+
+func _ready() -> void:
+	randomize()
+	_create_managers()
+
+	environment_manager.setup_environment()
+	landmark_manager.build_all()          ## 지형만 (랜드마크는 만들지 않는다)
+	prop_manager.build_scatter_and_detail()
+	landmark_manager.build_base()
+	portal_manager.build_rifts()
+	prop_manager.build_atmosphere()
+	spawn_manager.spawn_player()
+	PetManager.spawn_into_world()
+
+	hud = load("res://scripts3d/HUD3D.gd").new()
+	add_child(hud)
+
+	# ── 캠페인 ──
+	# HUD 이후에 만든다: 진입 배너/토스트를 이벤트가 즉시 쓸 수 있어야 한다.
+	# 랜드마크·NPC·웨이브·BGM·이벤트·퀘스트 잠금이 전부 여기서 나온다.
+	campaign_manager.build()
+
+	GameManager.game_over.connect(_on_game_over)
+
+	day_timer = DemoDirector.day_duration()
+	GameManager.phase_timer = day_timer
+
+	if GameManager.day_count == 1:
+		# 특성 뽑기 화면이 먼저 뜨고, 시작을 누르면 튜토리얼로 넘어간다
+		trait_screen = load("res://scripts3d/TraitScreen.gd").new()
+		add_child(trait_screen)
+		trait_screen.started.connect(_on_trait_screen_done)
+
+## 매니저를 만들어 자식으로 붙이고 월드 참조를 넘긴다.
+func _create_managers() -> void:
+	environment_manager = _attach(EnvironmentManager.new(), "EnvironmentManager")
+	landmark_manager = _attach(LandmarkManager.new(), "LandmarkManager")
+	prop_manager = _attach(PropScatterManager.new(), "PropScatterManager")
+	portal_manager = _attach(PortalManager.new(), "PortalManager")
+	spawn_manager = _attach(SpawnManager.new(), "SpawnManager")
+	daynight_manager = _attach(DayNightManager.new(), "DayNightManager")
+	wave_manager = _attach(WaveManager3D.new(), "WaveManager3D")
+	campaign_manager = _attach(CampaignManager.new(), "CampaignManager")
+
+	# 매니저 간 연결 — 서로를 직접 참조하지 않고 월드를 통해 찾는다
+	daynight_manager.wave = wave_manager
+	daynight_manager.spawner = spawn_manager
+	daynight_manager.environment = environment_manager
+	daynight_manager.portals = portal_manager
+	wave_manager.spawner = spawn_manager
+	wave_manager.daynight = daynight_manager
+
+func _attach(node: WorldSystem, node_name: String) -> WorldSystem:
+	node.name = node_name
+	node.setup(self)
+	add_child(node)
+	return node
+
+func _on_trait_screen_done() -> void:
+	trait_screen = null
+	hud.show_tutorial()
+
+# ── 공개 API (외부 코드가 current_scene 으로 호출한다. 시그니처 유지 필수) ──
+func world_center() -> Vector3:
+	return WorldConfig.world_center()
+
+func zone_of(pos: Vector3) -> int:
+	return WorldConfig.zone_of(pos)
+
+## 구역별 드랍 운(luck) 보정 — Enemy3D 가 호출한다.
+func zone_luck(pos: Vector3) -> float:
+	return WorldConfig.zone_luck(pos)
+
+func _make_enemy(etype: String, pos: Vector3) -> Node:
+	return spawn_manager.make_enemy(etype, pos)
+
+func _spawn_enemy() -> void:
+	spawn_manager.spawn_enemy()
+
+func _start_night_phase() -> void:
+	daynight_manager.start_night_phase()
+
+func _end_night_phase() -> void:
+	daynight_manager.end_night_phase()
+
+func skip_day() -> bool:
+	return daynight_manager.skip_day()
+
+func skip_rest() -> void:
+	wave_manager.skip_rest()
+
+func skip_night() -> bool:
+	return wave_manager.skip_night()
+
+# ── 입력 / 루프 ──
+func _unhandled_input(event: InputEvent) -> void:
+	if game_ended or GameManager.game_won:
+		return
+	if not (event is InputEventKey and event.pressed and not event.echo):
+		return
+	match event.keycode:
+		KEY_N:
+			skip_rest()
+		KEY_K:
+			skip_night()
+		KEY_J:
+			skip_day()
+		KEY_P:
+			var t: String = PetManager.cycle()
+			if t != "":
+				var info: Dictionary = PetManager.get_info(t)
+				hud.show_toast("동행: %s" % String(info.get("name", t)), Color(1, 0.9, 0.5))
+
+func _process(delta: float) -> void:
+	if game_ended:
+		return
+	if trait_screen != null and is_instance_valid(trait_screen):
+		return
+	if GameManager.phase == GameManager.Phase.DAY:
+		daynight_manager.process_day(delta)
+	else:
+		wave_manager.process_night(delta)
+
+func _on_game_over(reason: String) -> void:
+	if game_ended:
+		return
+	game_ended = true
+	if is_instance_valid(player):
+		player.set_physics_process(false)
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if is_instance_valid(e):
+			e.set_physics_process(false)
+	hud.show_game_over(reason)

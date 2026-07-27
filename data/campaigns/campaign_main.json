@@ -1,0 +1,1342 @@
+{
+  "version": 2,
+  "schema": 2,
+  "name": "메인 캠페인",
+  "author": "AI Asset Factory",
+  "modified": "2026-07-27T08:31:37",
+  "id": "main",
+  "description": "복합 랜드마크 4곳(병원·경찰서·학교·발전소) + 단독 3곳",
+  "arena": {
+	"w": 80.0,
+	"h": 80.0
+  },
+  "start": "convenience",
+  "nodes": [
+	{
+	  "id": "convenience",
+	  "order": 0,
+	  "pos": {
+		"x": 40.0,
+		"z": 14.0
+	  },
+	  "zone": 1,
+	  "locked_until": "",
+	  "events": [],
+	  "name": "24시 편의점",
+	  "danger": 1,
+	  "level": 3,
+	  "radius": 6.0,
+	  "bgm": "explore",
+	  "waves": [
+		{
+		  "index": 1,
+		  "composition": {
+			"hound": 2
+		  },
+		  "delay": 0.0,
+		  "hp_mult": 1.09,
+		  "boss": ""
+		}
+	  ],
+	  "quest": {
+		"id": "q_convenience",
+		"title": "24시 편의점 조사",
+		"objective": "clear",
+		"target": 1,
+		"essence": 25,
+		"rarity": "E",
+		"next": ""
+	  }
+	},
+	{
+	  "id": "hospital",
+	  "order": 1,
+	  "pos": {
+		"x": 60.0,
+		"z": 21.0
+	  },
+	  "zone": 1,
+	  "name": "성모 종합병원",
+	  "locked_until": "q_convenience",
+	  "events": [],
+	  "stages": [
+		{
+		  "id": "gate",
+		  "area_id": "hospital",
+		  "name": "성모 종합병원 — 정문",
+		  "subtitle": "구급차가 문을 막고 서 있다",
+		  "desc": "구급차 두 대가 정문을 가로막은 채 멈춰 있다. 문은 안쪽에서 잠겼다.\n환자 이송용 침상이 주차장까지 밀려나와 있고, 링거대가 아직 서 있다.",
+		  "offset": {
+			"x": -6.5,
+			"z": -6.5
+		  },
+		  "pos": {
+			"x": 53.5,
+			"z": 14.5
+		  },
+		  "zone": 1,
+		  "radius": 7.0,
+		  "danger": 1,
+		  "level": 2,
+		  "bgm": "explore",
+		  "locked_until": "",
+		  "events": [
+			{
+			  "trigger": "on_first_visit",
+			  "action": "banner",
+			  "value": {
+				"text": "성모 종합병원 — 마지막 진료는 끝나지 않았다"
+			  },
+			  "once": true
+			},
+			{
+			  "trigger": "on_clear",
+			  "action": "unlock",
+			  "value": {
+				"target": "hospital_ward"
+			  },
+			  "once": true
+			}
+		  ],
+		  "waves": [
+			{
+			  "index": 1,
+			  "composition": {
+				"hound": 3
+			  },
+			  "delay": 0.0,
+			  "hp_mult": 1.0,
+			  "boss": ""
+			}
+		  ],
+		  "npcs": [
+			{
+			  "id": "nurse_yoon",
+			  "name": "간호사 윤",
+			  "role": "생존자",
+			  "dialogue": "안쪽에 아직 사람이 있어요. 3층 병동… 제발 확인해 주세요.",
+			  "reward": "heal",
+			  "state": "quest",
+			  "dialogue_completed": "정문은… 이제 괜찮은 거죠?"
+			}
+		  ],
+		  "story": [
+			"접수대 위 진료 순번표가 137번에서 멈춰 있다.",
+            "누군가 유리문 안쪽에 손자국을 남겼다."
+		  ],
+		  "ambient": {
+			"hound": 2
+		  },
+		  "quest": {
+			"id": "q_hospital",
+			"title": "정문을 열어라",
+			"objective": "clear",
+			"target": 1,
+			"essence": 25,
+			"rarity": "E",
+			"next": "q_hospital_ward"
+		  },
+		  "items": 1,
+		  "luck": 12.0,
+		  "guaranteed": "E"
+		},
+		{
+		  "id": "ward",
+		  "area_id": "hospital_ward",
+		  "name": "3층 병동",
+		  "subtitle": "침상 커튼이 전부 닫혀 있다",
+		  "desc": "복도 양쪽으로 병실이 늘어서 있다. 커튼은 전부 안쪽에서 닫혔다.\n간호사 스테이션의 모니터가 아직 심전도를 그리고 있다 — 환자는 없는데.",
+		  "offset": {
+			"x": 6.5,
+			"z": -6.5
+		  },
+		  "pos": {
+			"x": 66.5,
+			"z": 14.5
+		  },
+		  "zone": 1,
+		  "radius": 5.5,
+		  "danger": 3,
+		  "level": 8,
+		  "bgm": "tense",
+		  "locked_until": "q_hospital",
+		  "events": [
+			{
+			  "trigger": "on_first_visit",
+			  "action": "dialogue",
+			  "value": {
+				"text": "심전도 모니터가 아직 신호를 그린다"
+			  },
+			  "once": true
+			},
+			{
+			  "trigger": "on_wave_start",
+			  "action": "stinger",
+			  "value": {
+				"sound": "night_start"
+			  },
+			  "once": false
+			},
+			{
+			  "trigger": "on_clear",
+			  "action": "unlock",
+			  "value": {
+				"target": "hospital_icu"
+			  },
+			  "once": true
+			},
+			{
+			  "trigger": "on_clear",
+			  "action": "reward",
+			  "value": {
+				"essence": 60
+			  },
+			  "once": true
+			}
+		  ],
+		  "stinger": "night_start",
+		  "waves": [
+			{
+			  "index": 1,
+			  "composition": {
+				"hound": 3,
+				"stalker": 1
+			  },
+			  "delay": 0.0,
+			  "hp_mult": 1.15,
+			  "boss": ""
+			},
+			{
+			  "index": 2,
+			  "composition": {
+				"ravager": 2,
+				"stalker": 2
+			  },
+			  "delay": 10.0,
+			  "hp_mult": 1.3,
+			  "boss": "destroyer"
+			}
+		  ],
+		  "npcs": [
+			{
+			  "id": "doc_seo",
+			  "name": "서 과장",
+			  "role": "정보원",
+			  "dialogue": "지하로 내려가지 마. 거기서 처음 올라왔어.",
+			  "reward": "item",
+			  "state": "idle"
+			}
+		  ],
+		  "story": [
+			"병상 차트에 같은 문장이 반복해 적혀 있다.",
+            "\"환자가 스스로 일어났다.\""
+		  ],
+		  "boss": "destroyer",
+		  "boss_hp_mult": 1.4,
+		  "quest": {
+			"id": "q_hospital_ward",
+			"title": "병동을 정리하라",
+			"objective": "clear",
+			"target": 1,
+			"essence": 75,
+			"rarity": "C",
+			"next": "q_hospital_icu"
+		  },
+		  "items": 3,
+		  "luck": 36.0,
+		  "guaranteed": "C"
+		},
+		{
+		  "id": "icu",
+		  "area_id": "hospital_icu",
+		  "name": "중환자실",
+		  "subtitle": "인공호흡기가 아직 돌아간다",
+		  "desc": "음압 병실 문이 전부 열려 있다. 인공호흡기 여섯 대가 여전히 돌아간다.\n침대는 전부 비었다.",
+		  "offset": {
+			"x": 13.0,
+			"z": 4.7
+		  },
+		  "pos": {
+			"x": 73.0,
+			"z": 25.7
+		  },
+		  "zone": 2,
+		  "radius": 5.5,
+		  "danger": 4,
+		  "level": 12,
+		  "bgm": "tense",
+		  "locked_until": "q_hospital_ward",
+		  "events": [
+			{
+			  "trigger": "on_first_visit",
+			  "action": "dialogue",
+			  "value": {
+				"text": "인공호흡기 여섯 대가 아직 돌아간다"
+			  },
+			  "once": true
+			},
+			{
+			  "trigger": "on_clear",
+			  "action": "banner",
+			  "value": {
+				"text": "서 과장이 말한 그 아래로 가는 길이 열렸다"
+			  },
+			  "once": true,
+			  "conditions": [
+				{
+				  "kind": "quest_completed",
+				  "value": "q_hospital_ward"
+				}
+			  ]
+			},
+			{
+			  "trigger": "on_clear",
+			  "action": "reward",
+			  "value": {
+				"essence": 100
+			  },
+			  "once": true
+			}
+		  ],
+		  "waves": [
+			{
+			  "index": 1,
+			  "composition": {
+				"stalker": 2,
+				"ravager": 2
+			  },
+			  "delay": 0.0,
+			  "hp_mult": 1.25,
+			  "boss": ""
+			},
+			{
+			  "index": 2,
+			  "composition": {
+				"screecher": 2,
+				"ravager": 1
+			  },
+			  "delay": 10.0,
+			  "hp_mult": 1.4,
+			  "boss": ""
+			}
+		  ],
+		  "npcs": [
+			{
+			  "id": "patient_no",
+			  "name": "노 환자",
+			  "role": "부상자",
+			  "dialogue": "…나는 여기 있어야 해요. 아직 순번이 안 됐어요.",
+			  "reward": "essence",
+			  "state": "quest",
+			  "dialogue_completed": "고마워요. 이제… 갈 수 있겠네요."
+			}
+		  ],
+		  "story": [
+			"환자 명단에 이름이 하나씩 지워져 있다.",
+            "마지막 줄만 남았다."
+		  ],
+		  "quest": {
+			"id": "q_hospital_icu",
+			"title": "중환자실을 수색하라",
+			"objective": "clear",
+			"target": 1,
+			"essence": 110,
+			"rarity": "B",
+			"next": "q_hospital_morgue"
+		  },
+		  "items": 4,
+		  "luck": 48.0,
+		  "guaranteed": "B"
+		},
+		{
+		  "id": "morgue",
+		  "area_id": "hospital_morgue",
+		  "name": "지하 영안실",
+		  "subtitle": "냉동고 문이 안에서 열렸다",
+		  "desc": "영안실 냉동고 문이 전부 안쪽에서 밀려 열려 있다.\n바닥의 균열에서 붉은 빛이 새어 나온다 — 이 병원이 처음 뚫린 자리다.",
+		  "offset": {
+			"x": 0.0,
+			"z": 4.7
+		  },
+		  "pos": {
+			"x": 60.0,
+			"z": 25.7
+		  },
+		  "zone": 1,
+		  "radius": 5.5,
+		  "danger": 5,
+		  "level": 16,
+		  "bgm": "boss",
+		  "locked_until": "q_hospital_icu",
+		  "events": [
+			{
+			  "trigger": "on_first_visit",
+			  "action": "banner",
+			  "value": {
+				"text": "여기서 처음 열렸다"
+			  },
+			  "once": true
+			},
+			{
+			  "trigger": "on_first_visit",
+			  "action": "bgm",
+			  "value": {
+				"track": "boss"
+			  },
+			  "once": false
+			},
+			{
+			  "trigger": "on_boss_defeat",
+			  "action": "seal",
+			  "value": {},
+			  "once": true
+			},
+			{
+			  "trigger": "on_boss_defeat",
+			  "action": "reward",
+			  "value": {
+				"essence": 200,
+				"rarity": "S"
+			  },
+			  "once": true
+			}
+		  ],
+		  "stinger": "ultimate",
+		  "waves": [
+			{
+			  "index": 1,
+			  "composition": {
+				"ravager": 2,
+				"screecher": 1
+			  },
+			  "delay": 0.0,
+			  "hp_mult": 1.3,
+			  "boss": ""
+			},
+			{
+			  "index": 2,
+			  "composition": {
+				"juggernaut": 2,
+				"ravager": 2
+			  },
+			  "delay": 10.0,
+			  "hp_mult": 1.5,
+			  "boss": ""
+			},
+			{
+			  "index": 3,
+			  "composition": {
+				"screecher": 2
+			  },
+			  "delay": 10.0,
+			  "hp_mult": 1.7,
+			  "boss": "overlord"
+			}
+		  ],
+		  "story": [
+			"냉동고 명찰이 전부 지워져 있다.",
+            "한 칸만 이름이 남아 있다 — 간호사 윤."
+		  ],
+		  "boss": "overlord",
+		  "boss_hp_mult": 1.8,
+		  "quest": {
+			"id": "q_hospital_morgue",
+			"title": "영안실의 것을 처치하라",
+			"objective": "boss",
+			"target": 1,
+			"essence": 200,
+			"rarity": "S",
+			"next": ""
+		  },
+		  "items": 5,
+		  "luck": 60.0,
+		  "guaranteed": "S"
+		}
+	  ]
+	},
+	{
+	  "id": "police",
+	  "order": 2,
+	  "pos": {
+		"x": 20.0,
+		"z": 21.0
+	  },
+	  "zone": 1,
+	  "name": "중앙 경찰서",
+	  "locked_until": "q_hospital_morgue",
+	  "events": [],
+	  "stages": [
+		{
+		  "id": "gate",
+		  "area_id": "police",
+		  "name": "중앙 경찰서 — 정문",
+		  "subtitle": "바리케이드가 안쪽을 향해 있다",
+		  "desc": "모래주머니가 건물 안쪽을 향해 쌓여 있다. 막으려던 것이 밖이 아니었다.",
+		  "offset": {
+			"x": -6.5,
+			"z": -4.0
+		  },
+		  "pos": {
+			"x": 13.5,
+			"z": 17.0
+		  },
+		  "zone": 1,
+		  "radius": 7.0,
+		  "danger": 1,
+		  "level": 3,
+		  "bgm": "explore",
+		  "locked_until": "",
+		  "events": [
+			{
+			  "trigger": "on_clear",
+			  "action": "unlock",
+			  "value": {
+				"target": "police_armory"
+			  },
+			  "once": true
+			}
+		  ],
+		  "waves": [
+			{
+			  "index": 1,
+			  "composition": {
+				"hound": 3
+			  },
+			  "delay": 0.0,
+			  "hp_mult": 1.0,
+			  "boss": ""
+			}
+		  ],
+		  "npcs": [
+			{
+			  "id": "sgt_han",
+			  "name": "한 경사",
+			  "role": "정보원",
+			  "dialogue": "무기고 열쇠는 안쪽이야. 근데 그놈들이 먼저 들어갔지.",
+			  "reward": "item",
+			  "state": "idle"
+			}
+		  ],
+		  "story": [
+            "순찰차 무전기에서 잡음만 나온다."
+		  ],
+		  "ambient": {
+			"hound": 2
+		  },
+		  "quest": {
+			"id": "q_police",
+			"title": "정문을 확보하라",
+			"objective": "clear",
+			"target": 1,
+			"essence": 30,
+			"rarity": "E",
+			"next": "q_police_armory"
+		  },
+		  "items": 1,
+		  "luck": 12.0,
+		  "guaranteed": "E"
+		},
+		{
+		  "id": "armory",
+		  "area_id": "police_armory",
+		  "name": "지하 무기고",
+		  "subtitle": "철문이 반쯤 녹아 있다",
+		  "desc": "철문이 열에 녹아 휘어 있다. 안쪽 선반은 절반이 비었다.",
+		  "offset": {
+			"x": 6.5,
+			"z": -4.0
+		  },
+		  "pos": {
+			"x": 26.5,
+			"z": 17.0
+		  },
+		  "zone": 1,
+		  "radius": 5.5,
+		  "danger": 3,
+		  "level": 9,
+		  "bgm": "tense",
+		  "locked_until": "q_police",
+		  "events": [
+			{
+			  "trigger": "on_clear",
+			  "action": "unlock",
+			  "value": {
+				"target": "police_holding"
+			  },
+			  "once": true
+			},
+			{
+			  "trigger": "on_clear",
+			  "action": "reward",
+			  "value": {
+				"essence": 60
+			  },
+			  "once": true
+			}
+		  ],
+		  "stinger": "night_start",
+		  "waves": [
+			{
+			  "index": 1,
+			  "composition": {
+				"hound": 2,
+				"ravager": 2
+			  },
+			  "delay": 0.0,
+			  "hp_mult": 1.2,
+			  "boss": ""
+			},
+			{
+			  "index": 2,
+			  "composition": {
+				"ravager": 2,
+				"destroyer": 1
+			  },
+			  "delay": 10.0,
+			  "hp_mult": 1.35,
+			  "boss": "destroyer"
+			}
+		  ],
+		  "npcs": [
+			{
+			  "id": "armorer_bae",
+			  "name": "무기계 배",
+			  "role": "상인",
+			  "dialogue": "쓸 만한 건 다 가져갔어. 남은 건… 네가 알아서 골라.",
+			  "reward": "essence",
+			  "state": "idle"
+			}
+		  ],
+		  "story": [
+            "장비 대장에 마지막 서명이 반쯤 그어져 있다."
+		  ],
+		  "boss": "destroyer",
+		  "boss_hp_mult": 1.45,
+		  "quest": {
+			"id": "q_police_armory",
+			"title": "무기고를 되찾아라",
+			"objective": "clear",
+			"target": 1,
+			"essence": 80,
+			"rarity": "C",
+			"next": "q_police_holding"
+		  },
+		  "items": 3,
+		  "luck": 36.0,
+		  "guaranteed": "C"
+		},
+		{
+		  "id": "holding",
+		  "area_id": "police_holding",
+		  "name": "유치장",
+		  "subtitle": "문이 전부 열려 있다",
+		  "desc": "유치장 문이 전부 열려 있다. 안쪽에서 열렸다.",
+		  "offset": {
+			"x": 0.0,
+			"z": 7.3
+		  },
+		  "pos": {
+			"x": 20.0,
+			"z": 28.3
+		  },
+		  "zone": 1,
+		  "radius": 5.5,
+		  "danger": 5,
+		  "level": 17,
+		  "bgm": "boss",
+		  "locked_until": "q_police_armory",
+		  "events": [
+			{
+			  "trigger": "on_boss_defeat",
+			  "action": "seal",
+			  "value": {},
+			  "once": true
+			},
+			{
+			  "trigger": "on_boss_defeat",
+			  "action": "reward",
+			  "value": {
+				"essence": 200,
+				"rarity": "S"
+			  },
+			  "once": true
+			}
+		  ],
+		  "stinger": "ultimate",
+		  "waves": [
+			{
+			  "index": 1,
+			  "composition": {
+				"ravager": 3
+			  },
+			  "delay": 0.0,
+			  "hp_mult": 1.35,
+			  "boss": ""
+			},
+			{
+			  "index": 2,
+			  "composition": {
+				"juggernaut": 2,
+				"screecher": 1
+			  },
+			  "delay": 10.0,
+			  "hp_mult": 1.5,
+			  "boss": ""
+			},
+			{
+			  "index": 3,
+			  "composition": {
+				"ravager": 2
+			  },
+			  "delay": 10.0,
+			  "hp_mult": 1.7,
+			  "boss": "overlord"
+			}
+		  ],
+		  "story": [
+            "마지막 감방 벽에 손톱으로 긁은 날짜가 있다."
+		  ],
+		  "boss": "overlord",
+		  "boss_hp_mult": 1.85,
+		  "quest": {
+			"id": "q_police_holding",
+			"title": "유치장의 것을 처치하라",
+			"objective": "boss",
+			"target": 1,
+			"essence": 200,
+			"rarity": "S",
+			"next": ""
+		  },
+		  "items": 5,
+		  "luck": 60.0,
+		  "guaranteed": "S"
+		}
+	  ]
+	},
+	{
+	  "id": "school",
+	  "order": 3,
+	  "pos": {
+		"x": 18.0,
+		"z": 61.0
+	  },
+	  "zone": 1,
+	  "name": "제3고등학교",
+	  "locked_until": "q_police_holding",
+	  "events": [],
+	  "stages": [
+		{
+		  "id": "gate",
+		  "area_id": "school",
+		  "name": "제3고등학교 — 운동장",
+		  "subtitle": "헬기 착륙 표시가 급하게 그려졌다",
+		  "desc": "운동장 한가운데 흰 페인트로 큰 원이 그려져 있다. 헬기는 오지 않았다.",
+		  "offset": {
+			"x": -6.5,
+			"z": -4.0
+		  },
+		  "pos": {
+			"x": 11.5,
+			"z": 57.0
+		  },
+		  "zone": 1,
+		  "radius": 7.0,
+		  "danger": 1,
+		  "level": 4,
+		  "bgm": "explore",
+		  "locked_until": "",
+		  "events": [
+			{
+			  "trigger": "on_clear",
+			  "action": "unlock",
+			  "value": {
+				"target": "school_hall"
+			  },
+			  "once": true
+			}
+		  ],
+		  "waves": [
+			{
+			  "index": 1,
+			  "composition": {
+				"hound": 3
+			  },
+			  "delay": 0.0,
+			  "hp_mult": 1.0,
+			  "boss": ""
+			}
+		  ],
+		  "npcs": [
+			{
+			  "id": "teacher_ma",
+			  "name": "마 선생",
+			  "role": "생존자",
+			  "dialogue": "아이들은 체육관으로 대피시켰어요. 아직… 거기 있을 거예요.",
+			  "reward": "heal",
+			  "state": "idle"
+			}
+		  ],
+		  "story": [
+            "조회대 마이크가 켜진 채 방치돼 있다."
+		  ],
+		  "ambient": {
+			"hound": 2
+		  },
+		  "quest": {
+			"id": "q_school",
+			"title": "운동장을 정리하라",
+			"objective": "clear",
+			"target": 1,
+			"essence": 30,
+			"rarity": "E",
+			"next": "q_school_hall"
+		  },
+		  "items": 1,
+		  "luck": 12.0,
+		  "guaranteed": "E"
+		},
+		{
+		  "id": "hall",
+		  "area_id": "school_hall",
+		  "name": "본관 복도",
+		  "subtitle": "칠판의 날짜가 멈춰 있다",
+		  "desc": "교실마다 책상이 문 쪽으로 밀려 있다. 안에서 막으려 한 흔적이다.",
+		  "offset": {
+			"x": 6.5,
+			"z": -4.0
+		  },
+		  "pos": {
+			"x": 24.5,
+			"z": 57.0
+		  },
+		  "zone": 1,
+		  "radius": 5.5,
+		  "danger": 3,
+		  "level": 10,
+		  "bgm": "tense",
+		  "locked_until": "q_school",
+		  "events": [
+			{
+			  "trigger": "on_clear",
+			  "action": "unlock",
+			  "value": {
+				"target": "school_gym"
+			  },
+			  "once": true
+			},
+			{
+			  "trigger": "on_clear",
+			  "action": "reward",
+			  "value": {
+				"essence": 60
+			  },
+			  "once": true
+			}
+		  ],
+		  "stinger": "night_start",
+		  "waves": [
+			{
+			  "index": 1,
+			  "composition": {
+				"hound": 3,
+				"stalker": 1
+			  },
+			  "delay": 0.0,
+			  "hp_mult": 1.2,
+			  "boss": ""
+			},
+			{
+			  "index": 2,
+			  "composition": {
+				"stalker": 2,
+				"ravager": 2
+			  },
+			  "delay": 10.0,
+			  "hp_mult": 1.35,
+			  "boss": "destroyer"
+			}
+		  ],
+		  "story": [
+            "사물함 하나에 급식 메뉴표가 붙어 있다."
+		  ],
+		  "boss": "destroyer",
+		  "boss_hp_mult": 1.5,
+		  "quest": {
+			"id": "q_school_hall",
+			"title": "본관을 통과하라",
+			"objective": "clear",
+			"target": 1,
+			"essence": 80,
+			"rarity": "C",
+			"next": "q_school_gym"
+		  },
+		  "items": 3,
+		  "luck": 36.0,
+		  "guaranteed": "C"
+		},
+		{
+		  "id": "gym",
+		  "area_id": "school_gym",
+		  "name": "체육관",
+		  "subtitle": "매트가 문 앞에 쌓여 있다",
+		  "desc": "체육관 문 안쪽에 매트가 쌓여 있다. 오래 버텼다는 뜻이다.",
+		  "offset": {
+			"x": 0.0,
+			"z": 7.3
+		  },
+		  "pos": {
+			"x": 18.0,
+			"z": 68.3
+		  },
+		  "zone": 1,
+		  "radius": 5.5,
+		  "danger": 5,
+		  "level": 18,
+		  "bgm": "boss",
+		  "locked_until": "q_school_hall",
+		  "events": [
+			{
+			  "trigger": "on_boss_defeat",
+			  "action": "seal",
+			  "value": {},
+			  "once": true
+			},
+			{
+			  "trigger": "on_boss_defeat",
+			  "action": "reward",
+			  "value": {
+				"essence": 200,
+				"rarity": "S"
+			  },
+			  "once": true
+			}
+		  ],
+		  "stinger": "ultimate",
+		  "waves": [
+			{
+			  "index": 1,
+			  "composition": {
+				"stalker": 3
+			  },
+			  "delay": 0.0,
+			  "hp_mult": 1.35,
+			  "boss": ""
+			},
+			{
+			  "index": 2,
+			  "composition": {
+				"ravager": 2,
+				"juggernaut": 1
+			  },
+			  "delay": 10.0,
+			  "hp_mult": 1.5,
+			  "boss": ""
+			},
+			{
+			  "index": 3,
+			  "composition": {
+				"screecher": 2
+			  },
+			  "delay": 10.0,
+			  "hp_mult": 1.7,
+			  "boss": "overlord"
+			}
+		  ],
+		  "story": [
+            "구석에 이름표가 적힌 가방들이 가지런히 놓여 있다."
+		  ],
+		  "boss": "overlord",
+		  "boss_hp_mult": 1.9,
+		  "quest": {
+			"id": "q_school_gym",
+			"title": "체육관의 것을 처치하라",
+			"objective": "boss",
+			"target": 1,
+			"essence": 200,
+			"rarity": "S",
+			"next": ""
+		  },
+		  "items": 5,
+		  "luck": 60.0,
+		  "guaranteed": "S"
+		}
+	  ]
+	},
+	{
+	  "id": "subway",
+	  "order": 4,
+	  "pos": {
+		"x": 40.0,
+		"z": 66.0
+	  },
+	  "zone": 1,
+	  "locked_until": "q_school_gym",
+	  "events": [],
+	  "name": "지하철 환승역",
+	  "danger": 3,
+	  "level": 11,
+	  "radius": 6.0,
+	  "bgm": "tense",
+	  "waves": [
+		{
+		  "index": 1,
+		  "composition": {
+			"hound": 4,
+			"stalker": 2
+		  },
+		  "delay": 0.0,
+		  "hp_mult": 1.33,
+		  "boss": ""
+		}
+	  ],
+	  "quest": {
+		"id": "q_subway",
+		"title": "지하철 환승역 조사",
+		"objective": "clear",
+		"target": 1,
+		"essence": 75,
+		"rarity": "C",
+		"next": ""
+	  }
+	},
+	{
+	  "id": "power",
+	  "order": 5,
+	  "pos": {
+		"x": 62.0,
+		"z": 61.0
+	  },
+	  "zone": 1,
+	  "name": "제2발전소",
+	  "locked_until": "q_subway",
+	  "events": [],
+	  "stages": [
+		{
+		  "id": "gate",
+		  "area_id": "power",
+		  "name": "제2발전소 — 검문소",
+		  "subtitle": "차단기가 내려간 채다",
+		  "desc": "검문소 차단기가 내려가 있고, 경비실 모니터는 아직 켜져 있다.",
+		  "offset": {
+			"x": -6.5,
+			"z": -4.0
+		  },
+		  "pos": {
+			"x": 55.5,
+			"z": 57.0
+		  },
+		  "zone": 1,
+		  "radius": 7.0,
+		  "danger": 2,
+		  "level": 6,
+		  "bgm": "explore",
+		  "locked_until": "",
+		  "events": [
+			{
+			  "trigger": "on_clear",
+			  "action": "unlock",
+			  "value": {
+				"target": "power_turbine"
+			  },
+			  "once": true
+			}
+		  ],
+		  "waves": [
+			{
+			  "index": 1,
+			  "composition": {
+				"hound": 3,
+				"stalker": 1
+			  },
+			  "delay": 0.0,
+			  "hp_mult": 1.05,
+			  "boss": ""
+			}
+		  ],
+		  "npcs": [
+			{
+			  "id": "eng_choi",
+			  "name": "최 기사",
+			  "role": "정보원",
+			  "dialogue": "노심이 아직 돌아가고 있어. 그게 저놈들을 부르는 거야.",
+			  "reward": "item",
+			  "state": "idle"
+			}
+		  ],
+		  "story": [
+            "출입 기록 마지막 줄에 퇴근 시각이 비어 있다."
+		  ],
+		  "ambient": {
+			"stalker": 1,
+			"hound": 1
+		  },
+		  "quest": {
+			"id": "q_power",
+			"title": "검문소를 확보하라",
+			"objective": "clear",
+			"target": 1,
+			"essence": 40,
+			"rarity": "D",
+			"next": "q_power_turbine"
+		  },
+		  "items": 2,
+		  "luck": 24.0,
+		  "guaranteed": "D"
+		},
+		{
+		  "id": "turbine",
+		  "area_id": "power_turbine",
+		  "name": "터빈실",
+		  "subtitle": "아직 돌고 있다",
+		  "desc": "거대한 터빈이 여전히 회전한다. 소리 때문에 발소리가 들리지 않는다.",
+		  "offset": {
+			"x": 6.5,
+			"z": -4.0
+		  },
+		  "pos": {
+			"x": 68.5,
+			"z": 57.0
+		  },
+		  "zone": 1,
+		  "radius": 5.5,
+		  "danger": 4,
+		  "level": 12,
+		  "bgm": "tense",
+		  "locked_until": "q_power",
+		  "events": [
+			{
+			  "trigger": "on_clear",
+			  "action": "unlock",
+			  "value": {
+				"target": "power_core"
+			  },
+			  "once": true
+			},
+			{
+			  "trigger": "on_clear",
+			  "action": "reward",
+			  "value": {
+				"essence": 80
+			  },
+			  "once": true
+			}
+		  ],
+		  "stinger": "night_start",
+		  "waves": [
+			{
+			  "index": 1,
+			  "composition": {
+				"ravager": 2,
+				"screecher": 1
+			  },
+			  "delay": 0.0,
+			  "hp_mult": 1.25,
+			  "boss": ""
+			},
+			{
+			  "index": 2,
+			  "composition": {
+				"juggernaut": 2,
+				"ravager": 1
+			  },
+			  "delay": 10.0,
+			  "hp_mult": 1.4,
+			  "boss": "destroyer"
+			}
+		  ],
+		  "npcs": [
+			{
+			  "id": "op_jung",
+			  "name": "정 반장",
+			  "role": "상인",
+			  "dialogue": "부품은 얼마든지 있어. 여길 살아 나갈 수만 있다면.",
+			  "reward": "essence",
+			  "state": "idle"
+			}
+		  ],
+		  "story": [
+            "계기판 바늘이 전부 최대치에 붙어 있다."
+		  ],
+		  "boss": "destroyer",
+		  "boss_hp_mult": 1.6,
+		  "quest": {
+			"id": "q_power_turbine",
+			"title": "터빈실을 멈춰라",
+			"objective": "clear",
+			"target": 1,
+			"essence": 100,
+			"rarity": "B",
+			"next": "q_power_core"
+		  },
+		  "items": 4,
+		  "luck": 48.0,
+		  "guaranteed": "B"
+		},
+		{
+		  "id": "core",
+		  "area_id": "power_core",
+		  "name": "노심 격납고",
+		  "subtitle": "빛이 아래에서 올라온다",
+		  "desc": "격납고 바닥이 뚫려 있다. 균열이 노심을 삼켰다.",
+		  "offset": {
+			"x": 0.0,
+			"z": 7.3
+		  },
+		  "pos": {
+			"x": 62.0,
+			"z": 68.3
+		  },
+		  "zone": 1,
+		  "radius": 5.5,
+		  "danger": 5,
+		  "level": 20,
+		  "bgm": "boss",
+		  "locked_until": "q_power_turbine",
+		  "events": [
+			{
+			  "trigger": "on_boss_defeat",
+			  "action": "seal",
+			  "value": {},
+			  "once": true
+			},
+			{
+			  "trigger": "on_boss_defeat",
+			  "action": "reward",
+			  "value": {
+				"essence": 250,
+				"rarity": "S"
+			  },
+			  "once": true
+			}
+		  ],
+		  "stinger": "ultimate",
+		  "waves": [
+			{
+			  "index": 1,
+			  "composition": {
+				"screecher": 2,
+				"ravager": 2
+			  },
+			  "delay": 0.0,
+			  "hp_mult": 1.4,
+			  "boss": ""
+			},
+			{
+			  "index": 2,
+			  "composition": {
+				"juggernaut": 3
+			  },
+			  "delay": 10.0,
+			  "hp_mult": 1.55,
+			  "boss": ""
+			},
+			{
+			  "index": 3,
+			  "composition": {
+				"ravager": 2,
+				"screecher": 2
+			  },
+			  "delay": 10.0,
+			  "hp_mult": 1.8,
+			  "boss": "overlord"
+			}
+		  ],
+		  "story": [
+			"방사선 경고등이 붉게 깜빡인다.",
+            "그 빛이 균열의 색과 같다."
+		  ],
+		  "boss": "overlord",
+		  "boss_hp_mult": 2.0,
+		  "quest": {
+			"id": "q_power_core",
+			"title": "노심의 것을 처치하라",
+			"objective": "boss",
+			"target": 1,
+			"essence": 250,
+			"rarity": "S",
+			"next": ""
+		  },
+		  "items": 5,
+		  "luck": 60.0,
+		  "guaranteed": "S"
+		}
+	  ]
+	},
+	{
+	  "id": "rift_core",
+	  "order": 6,
+	  "pos": {
+		"x": 72.0,
+		"z": 40.0
+	  },
+	  "zone": 2,
+	  "locked_until": "q_power_core",
+	  "events": [],
+	  "name": "균열의 심장부",
+	  "danger": 5,
+	  "level": 22,
+	  "radius": 8.0,
+	  "bgm": "boss",
+	  "waves": [
+		{
+		  "index": 1,
+		  "composition": {
+			"ravager": 3,
+			"juggernaut": 2
+		  },
+		  "delay": 0.0,
+		  "hp_mult": 1.66,
+		  "boss": ""
+		}
+	  ],
+	  "quest": {
+		"id": "q_rift_core",
+		"title": "균열의 심장부 조사",
+		"objective": "clear",
+		"target": 1,
+		"essence": 125,
+		"rarity": "S",
+		"next": ""
+	  }
+	}
+  ],
+  "routes": [
+	{
+	  "from": "convenience",
+	  "to": "hospital",
+	  "kind": "main",
+	  "locked_until": "q_convenience"
+	},
+	{
+	  "from": "hospital",
+	  "to": "police",
+	  "kind": "main",
+	  "locked_until": "q_hospital_morgue"
+	},
+	{
+	  "from": "police",
+	  "to": "school",
+	  "kind": "main",
+	  "locked_until": "q_police_holding"
+	},
+	{
+	  "from": "school",
+	  "to": "subway",
+	  "kind": "main",
+	  "locked_until": "q_school_gym"
+	},
+	{
+	  "from": "subway",
+	  "to": "power",
+	  "kind": "main",
+	  "locked_until": "q_subway"
+	},
+	{
+	  "from": "power",
+	  "to": "rift_core",
+	  "kind": "main",
+	  "locked_until": "q_power_core"
+	}
+  ],
+  "events": []
+}

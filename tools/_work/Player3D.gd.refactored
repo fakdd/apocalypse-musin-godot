@@ -1,0 +1,301 @@
+extends CharacterBody3D
+
+const DASH_SPEED := 26.0
+const DASH_DURATION := 0.16
+const DASH_COOLDOWN := 0.9
+const ATTACK_COOLDOWN := 0.34
+const ATTACK_RANGE := 4.2
+const ATTACK_HALF_ANGLE := 1.0
+const RANGED_COOLDOWN := 2.6
+const RANGED_RANGE := 16.0
+const PARRY_COOLDOWN := 4.0
+const PARRY_WINDOW := 0.25
+const ULT_RADIUS := 10.0
+const GRAVITY := 24.0
+const JUMP_SPEED := 9.0
+
+signal died
+signal hp_changed
+signal ult_changed
+
+var max_hp := 100.0
+var hp := 100.0
+var ult_gauge := 0.0
+var ult_max := 100.0
+
+var facing_angle := 0.0
+var dash_dir := Vector3.ZERO
+var dash_timer := 0.0
+var dash_cd := 0.0
+var atk_cd := 0.0
+var ranged_cd := 0.0
+var parry_cd := 0.0
+var parry_timer := 0.0
+var invuln_timer := 0.0
+var attack_anim_timer := 0.0
+
+var step_timer := 0.0
+const STEP_INTERVAL := 0.34
+const TURN_SPEED := 12.0      ## 모델 회전 보간 속도 (자연스러운 몸 돌리기)
+const ACCEL := 22.0           ## 가감속 (즉시 정지/출발 방지)
+
+## PlayerStats 연동 (특성/아이템이 실시간 반영됨)
+var move_speed := 7.0
+var slash_damage := 1.0
+
+var model_yaw := 0.0
+var model: Node3D
+var skel: Skeleton3D
+var spine_bones: Array[int] = []
+var lean_pitch := 0.0        ## 가감속에 따른 앞뒤 기울기
+var lean_roll := 0.0         ## 방향 전환에 따른 좌우 기울기
+var prev_velocity := Vector3.ZERO
+var land_squash := 0.0
+var was_on_floor := true
+var hit_anim_timer := 0.0
+var jump_buffer := 0.0
+var combo_step := 0
+var combo_timer := 0.0
+const COMBO_WINDOW := 0.85
+var base_scale := Vector3.ONE
+var weapon_attach: BoneAttachment3D = null
+var weapon_mesh: MeshInstance3D = null   ## hero.tscn 에 구워진 원본 스케일 (덮어쓰면 캐릭터가 사라진다)
+var anim: AnimationPlayer
+var cam_rig: Node3D
+var camera: Camera3D
+var mesh_instances: Array = []
+
+var shake_time := 0.0
+var shake_mag := 0.0
+
+## ── 행동 모듈 ──
+var movement: PlayerMovement
+var combat: PlayerCombat
+var animation: PlayerAnimation
+
+
+## 행동 모듈을 자식 노드로 붙인다. 상태는 이 클래스가 소유하고,
+## 모듈은 owner_player 를 통해 읽고 쓴다.
+func _create_modules() -> void:
+	movement = PlayerMovement.new()
+	movement.name = "PlayerMovement"
+	movement.setup(self)
+	add_child(movement)
+
+	combat = PlayerCombat.new()
+	combat.name = "PlayerCombat"
+	combat.setup(self)
+	add_child(combat)
+
+	animation = PlayerAnimation.new()
+	animation.name = "PlayerAnimation"
+	animation.setup(self)
+	add_child(animation)
+
+func _ready() -> void:
+	add_to_group("player")
+	_create_modules()
+	collision_layer = 2
+	collision_mask = 1
+	# 낮은 잔해에 걸리지 않게 계단 오르기를 허용한다
+	floor_max_angle = deg_to_rad(60.0)
+	floor_snap_length = 0.5
+	safe_margin = 0.02
+
+	max_hp = PlayerStats.get_final_max_hp()
+	hp = max_hp
+	PlayerStats.stats_changed.connect(_refresh_stats)
+	_refresh_stats()
+
+	var shape := CollisionShape3D.new()
+	var caps := CapsuleShape3D.new()
+	caps.radius = 0.45
+	caps.height = 1.6
+	shape.shape = caps
+	shape.position.y = 0.8
+	add_child(shape)
+
+	var packed: PackedScene = load("res://assets3d/chars/hero.tscn")
+	model = packed.instantiate()
+	add_child(model)
+	anim = animation._find_anim_player(model)
+	animation._collect_meshes(model)
+	base_scale = model.scale
+	skel = model.find_child("Skeleton3D", true, false)
+	if skel:
+		for bone_name in ["mixamorig_Spine", "mixamorig_Spine1", "mixamorig_Spine2"]:
+			var bi := skel.find_bone(bone_name)
+			if bi >= 0:
+				spine_bones.append(bi)
+	animation._play_anim("idle")
+	animation._setup_weapon_attach()
+	PlayerStats.item_equipped.connect(func(_i, _s): animation._refresh_weapon_visual())
+	animation._refresh_weapon_visual()
+
+	cam_rig = Node3D.new()
+	add_child(cam_rig)
+	camera = Camera3D.new()
+	camera.position = Vector3(0, 8.5, 7.0)
+	camera.rotation_degrees = Vector3(-50, 0, 0)
+	camera.fov = 62
+	cam_rig.add_child(camera)
+	camera.make_current()
+
+## 특성이 뽑히거나 아이템을 장착할 때 호출되어 실시간 반영된다.
+func _refresh_stats() -> void:
+	move_speed = PlayerStats.get_final_speed()
+	slash_damage = PlayerStats.get_slash_damage()
+	var new_max := PlayerStats.get_final_max_hp()
+	if new_max != max_hp:
+		var ratio: float = (hp / max_hp) if max_hp > 0.0 else 1.0
+		max_hp = new_max
+		hp = clampf(max_hp * ratio, 1.0, max_hp)
+		hp_changed.emit()
+
+func _physics_process(delta: float) -> void:
+	if hp <= 0:
+		return
+
+	if atk_cd > 0: atk_cd -= delta
+	if dash_cd > 0: dash_cd -= delta
+	if ranged_cd > 0: ranged_cd -= delta
+	if parry_cd > 0: parry_cd -= delta
+	if invuln_timer > 0: invuln_timer -= delta
+	if parry_timer > 0: parry_timer -= delta
+	if attack_anim_timer > 0: attack_anim_timer -= delta
+	if combo_timer > 0:
+		combo_timer -= delta
+		if combo_timer <= 0:
+			combo_step = 0
+
+	movement._aim_at_mouse()
+
+	if Input.is_key_pressed(KEY_SHIFT) and dash_cd <= 0 and dash_timer <= 0:
+		movement._start_dash()
+
+	var target_h := Vector3.ZERO
+	var input_dir := Vector3.ZERO
+	if dash_timer > 0:
+		dash_timer -= delta
+		target_h = dash_dir * DASH_SPEED
+	else:
+		if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP): input_dir.z -= 1
+		if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN): input_dir.z += 1
+		if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT): input_dir.x -= 1
+		if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT): input_dir.x += 1
+		if input_dir.length() > 0:
+			input_dir = input_dir.normalized()
+			target_h = input_dir * move_speed
+
+	# 가감속 보간 — 즉시 정지/출발하지 않아 움직임이 자연스러워진다
+	var accel := ACCEL if dash_timer <= 0 else ACCEL * 4.0
+	velocity.x = move_toward(velocity.x, target_h.x, accel * delta)
+	velocity.z = move_toward(velocity.z, target_h.z, accel * delta)
+	if jump_buffer > 0.0:
+		jump_buffer -= delta
+
+	if not is_on_floor():
+		velocity.y -= GRAVITY * delta
+	else:
+		if jump_buffer > 0.0:
+			velocity.y = JUMP_SPEED
+			jump_buffer = 0.0
+			SoundManager.play("dash", -14.0)
+		else:
+			velocity.y = 0.0
+
+	move_and_slide()
+
+	var planar := Vector2(velocity.x, velocity.z).length()
+	var moving := planar > 0.4
+
+	# 이동 중에는 진행 방향을 바라보고, 공격/정지 시에는 마우스를 바라본다
+	var desired_yaw := facing_angle
+	if moving and dash_timer <= 0 and attack_anim_timer <= 0:
+		desired_yaw = atan2(velocity.x, velocity.z)
+	elif dash_timer > 0:
+		desired_yaw = atan2(dash_dir.x, dash_dir.z)
+	model_yaw = lerp_angle(model_yaw, desired_yaw, clampf(TURN_SPEED * delta, 0.0, 1.0))
+	if model:
+		model.rotation.y = model_yaw
+
+	if hit_anim_timer > 0:
+		hit_anim_timer -= delta
+	elif attack_anim_timer <= 0:
+		if dash_timer > 0:
+			animation._play_anim("sprint")
+		elif moving:
+			# 조준 방향과 이동 방향이 반대면 뒷걸음 클립을 쓴다
+			var move_dir := Vector3(velocity.x, 0, velocity.z).normalized()
+			var aim := facing_dir()
+			if anim and anim.has_animation("walk_back") and move_dir.dot(aim) < -0.35:
+				animation._play_anim("walk_back")
+			else:
+				animation._play_anim("walk")
+		elif GameManager.phase == GameManager.Phase.NIGHT and anim and anim.has_animation("idle_combat"):
+			animation._play_anim("idle_combat")
+		else:
+			animation._play_anim("idle")
+		# 실제 속도에 맞춰 애니메이션 재생 속도를 맞춰 미끄러짐을 줄인다
+		if anim and moving and dash_timer <= 0:
+			anim.speed_scale = clampf(planar / 7.0, 0.6, 2.2)
+		elif anim:
+			anim.speed_scale = 1.0
+
+	if moving:
+		step_timer -= delta * clampf(planar / 7.0, 0.5, 2.5)
+		if step_timer <= 0:
+			step_timer = STEP_INTERVAL
+			SoundManager.play("footstep", -10.0)
+
+	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and atk_cd <= 0:
+		combat._slash()
+	if Input.is_key_pressed(KEY_Q) and ult_gauge >= ult_max:
+		combat._ultimate()
+	if Input.is_key_pressed(KEY_E) and ranged_cd <= 0 and GameManager.phase == GameManager.Phase.NIGHT:
+		combat._ranged_wave()
+	if Input.is_key_pressed(KEY_F) and parry_cd <= 0:
+		combat._start_parry()
+
+	animation._update_procedural_motion(delta, planar)
+
+	cam_rig.global_position = global_position
+	if shake_time > 0:
+		shake_time -= delta
+		camera.h_offset = randf_range(-shake_mag, shake_mag)
+		camera.v_offset = randf_range(-shake_mag, shake_mag)
+	else:
+		camera.h_offset = 0.0
+		camera.v_offset = 0.0
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_SPACE:
+		jump_buffer = 0.16
+
+func facing_dir() -> Vector3:
+	return Vector3(sin(facing_angle), 0, cos(facing_angle))
+
+func shake(mag: float, dur: float) -> void:
+	shake_mag = max(shake_mag, mag)
+	shake_time = max(shake_time, dur)
+
+func take_damage(amount: float) -> void:
+	if invuln_timer > 0 or hp <= 0:
+		return
+	if parry_timer > 0:
+		combat._parry_success()
+		return
+	hp -= amount
+	hp_changed.emit()
+	invuln_timer = 0.35
+	shake(0.14, 0.15)
+	SoundManager.play("player_hurt")
+	animation._flash()
+	if hp > 0 and anim and anim.has_animation("hit"):
+		hit_anim_timer = 0.32
+		anim.speed_scale = 1.6
+		anim.play("hit")
+	if hp <= 0:
+		hp = 0
+		animation._play_anim("die")
+		died.emit()

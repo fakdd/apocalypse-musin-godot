@@ -1,0 +1,21 @@
+world_children=3888
+groups: rifts=6 altars=1 atmosphere=1 base_core=1
+street_lights=28 campfires=10 pets=1
+placed_props=353 occupied_cells=129
+API: zone_luck=true world_center=true hud=true
+zone center=0 mid=1 edge=2
+zone_luck center=0 edge=260
+player pos=(40.0, 0.0, 46.0) hp=100 speed=7.00
+consts TILE=2.0 COLS=40 ARENA_W=80 SAFE=15.0 RIFT=11.0
+skip_day=true
+phase=1 night_state=0 waves=1
+mob hound       hp=8.0 spd=3.8 r=0.70 fly=false siege=false pat=melee anim=Walk
+mob stalker     hp=5.0 spd=7.2 r=0.60 fly=true siege=false pat=charge anim=Fast_Flying
+mob ravager     hp=12.0 spd=4.6 r=0.75 fly=false siege=false pat=melee anim=Walk
+mob screecher   hp=9.0 spd=4.2 r=0.70 fly=true siege=false pat=ranged anim=Fast_Flying
+mob destroyer   hp=42.0 spd=2.2 r=1.10 fly=false siege=true pat=melee anim=Walk
+mob juggernaut  hp=26.0 spd=3.0 r=0.90 fly=false siege=true pat=charge anim=Walk
+mob overlord    hp=320.0 spd=3.0 r=2.00 fly=true siege=false pat=boss anim=Fast_Flying
+enemies_alive=8
+skip_night=false
+seals=0/5

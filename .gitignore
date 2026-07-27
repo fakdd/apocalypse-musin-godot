@@ -1,0 +1,22 @@
+# ── Godot ──
+# 임포트 캐시. 전부 재생성되며 400MB가 넘는다.
+.godot/
+*.translation
+
+# ── 대용량 에셋 (로컬 보관) ──
+# 개별 파일이 100MB를 넘어(최대 207MB) GitHub가 LFS 없이는 거부한다.
+# 나중에 Git LFS를 붙여 추적으로 되돌릴 수 있다.
+#   git lfs install
+#   git lfs track "*.obj" "*.fbx" "*.blend"
+#   git rm -r --cached . && git add .
+/assets3d/
+/assets_src/
+
+# ── 빌드 산출물 ──
+/build/
+export_presets.cfg
+
+# ── OS ──
+Thumbs.db
+desktop.ini
+.DS_Store

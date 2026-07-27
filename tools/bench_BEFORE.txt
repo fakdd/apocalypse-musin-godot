@@ -1,0 +1,16 @@
+== BEFORE ==
+fps_avg=45.1
+frame_ms_median=18.08
+frame_ms_p95=22.55
+draw_calls=22933
+primitives=8131962
+render_objects=28251
+nodes=8685
+objects=14705
+mem_static_mb=221.9
+video_mem_mb=987.4
+enemies=44
+world_children=3770
+multimesh_nodes=2
+shared_mats=3
+pool={ "damage_pooled": 0, "damage_created": 0, "damage_reused": 0, "proj_pooled": 0, "proj_created": 12, "proj_reused": 0 }

@@ -1,0 +1,16 @@
+== AFTER ==
+fps_avg=61.9
+frame_ms_median=13.29
+frame_ms_p95=15.33
+draw_calls=2552
+primitives=7896535
+render_objects=3287
+nodes=2633
+objects=6483
+mem_static_mb=167.1
+video_mem_mb=972.2
+enemies=44
+world_children=757
+multimesh_nodes=25
+shared_mats=3
+pool={ "damage_pooled": 0, "damage_created": 0, "damage_reused": 0, "proj_pooled": 0, "proj_created": 10, "proj_reused": 0 }

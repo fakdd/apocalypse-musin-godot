@@ -1,0 +1,1252 @@
+extends Node3D
+
+const TILE := 2.0
+
+const DAY_SKY_TOP := Color(0.32, 0.09, 0.09)
+const DAY_SKY_HORIZON := Color(0.58, 0.30, 0.22)
+const NIGHT_SKY_TOP := Color(0.05, 0.01, 0.04)
+const NIGHT_SKY_HORIZON := Color(0.30, 0.04, 0.13)
+const DAY_FOG := 0.022
+const NIGHT_FOG := 0.038
+const COLS := 40
+const ROWS := 40
+const ARENA_W := COLS * TILE
+const ARENA_H := ROWS * TILE
+
+var player: CharacterBody3D
+var base_core: Node3D
+var hud: CanvasLayer
+var sun: DirectionalLight3D
+var env: WorldEnvironment
+
+var day_timer := 0.0
+var night_timer := 0.0
+var spawn_timer := 0.0
+var game_ended := false
+var occupied_cells := {}
+## 배치된 소품의 (위치, 반경) 목록 — 겹침 방지에 사용
+var _placed_props: Array = []
+var trait_screen: CanvasLayer = null
+
+const ENEMY_SCRIPT := preload("res://scripts3d/Enemy3D.gd")
+const PLAYER_SCRIPT := preload("res://scripts3d/Player3D.gd")
+
+func _ready() -> void:
+	randomize()
+	_setup_environment()
+	_build_ground()
+	_build_city()
+	_build_skyline()
+	_build_sidewalks()
+	_build_boundary()
+	_build_scatter()
+	_build_street_detail()
+	_build_corruption()
+	_build_base_and_spots()
+	_build_rifts()
+	_build_pickups()
+	_build_atmosphere()
+	_spawn_player()
+	PetManager.spawn_into_world()
+
+	hud = load("res://scripts3d/HUD3D.gd").new()
+	add_child(hud)
+
+	GameManager.game_over.connect(_on_game_over)
+
+	day_timer = GameManager.DAY_DURATION
+	GameManager.phase_timer = day_timer
+
+	if GameManager.day_count == 1:
+		# 특성 뽑기 화면이 먼저 뜨고, 시작을 누르면 튜토리얼로 넘어간다
+		trait_screen = load("res://scripts3d/TraitScreen.gd").new()
+		add_child(trait_screen)
+		trait_screen.started.connect(_on_trait_screen_done)
+
+func _on_trait_screen_done() -> void:
+	trait_screen = null
+	hud.show_tutorial()
+
+## ── 3구역 구성 ──
+##  0 = 안전지대(방주)  1 = 폐허 도시(일반 파밍)  2 = 차원의 균열 구역(보스/고등급)
+const ZONE_SAFE := 0
+const ZONE_CITY := 1
+const ZONE_RIFT := 2
+const SAFE_RADIUS := 15.0     ## 이 안에서는 몬스터가 스폰되지 않는다
+const RIFT_BAND := 11.0       ## 맵 가장자리로부터 이 거리 안쪽이 균열 구역
+
+func world_center() -> Vector3:
+	return Vector3(ARENA_W * 0.5, 0, ARENA_H * 0.5)
+
+func zone_of(pos: Vector3) -> int:
+	var c := world_center()
+	if pos.distance_to(c) <= SAFE_RADIUS:
+		return ZONE_SAFE
+	var edge_dist: float = minf(minf(pos.x, ARENA_W - pos.x), minf(pos.z, ARENA_H - pos.z))
+	if edge_dist <= RIFT_BAND:
+		return ZONE_RIFT
+	return ZONE_CITY
+
+## 플레이 영역 안에서는 절대 고층을 세우지 않는다 (시야 차단 방지).
+## 고층 아파트/빌딩은 _build_skyline() 이 맵 바깥 링에 따로 세운다.
+func _is_skyline_cell(_x: int, _z: int) -> bool:
+	return false
+
+## 맵 바깥에 고층 스카이라인을 세운다 — 배경 역할만 하고 플레이에 개입하지 않는다.
+func _build_skyline() -> void:
+	var wall_kinds = [
+		"res://assets3d/models/wall-a-window.glb",
+		"res://assets3d/models/wall-b-window.glb",
+	]
+	var roofs = [
+		"res://assets3d/models/wall-a-roof.glb",
+		"res://assets3d/models/wall-b-roof.glb",
+	]
+	var mod := TILE
+	var mod_scale := Vector3(mod * 1.004, mod * 1.004, mod * 1.004)
+
+	# 맵 경계 바깥으로 3겹의 타워 링
+	for ring in range(3):
+		var pad: float = 6.0 + ring * 9.0
+		var step: float = 7.0 + ring * 2.0
+		var x := -pad
+		while x <= ARENA_W + pad:
+			for side in [-pad, ARENA_H + pad]:
+				if randf() < 0.28:
+					x += step
+					continue
+				_place_tower(Vector3(x, 0, side), wall_kinds, roofs, mod, mod_scale, ring)
+			x += step
+		var z := -pad
+		while z <= ARENA_H + pad:
+			for side in [-pad, ARENA_W + pad]:
+				if randf() < 0.28:
+					z += step
+					continue
+				_place_tower(Vector3(side, 0, z), wall_kinds, roofs, mod, mod_scale, ring)
+			z += step
+
+func _place_tower(pos: Vector3, wall_kinds: Array, roofs: Array,
+		mod: float, mod_scale: Vector3, ring: int) -> void:
+	var floors: int = 5 + randi() % (8 + ring * 4)
+	var w: int = 1 + randi() % 2
+	var d: int = 1 + randi() % 2
+	var kind: String = wall_kinds[randi() % wall_kinds.size()]
+	var roof: String = roofs[randi() % roofs.size()]
+	var facing := float(randi() % 4) * PI * 0.5
+	var tint: float = randf_range(0.35, 0.62)   # 원경이라 어둡게
+
+	for ox in range(w):
+		for oz in range(d):
+			var base_pos := pos + Vector3(ox * mod, 0, oz * mod)
+			for f in range(floors):
+				var n := _add_model_v(kind, base_pos + Vector3(0, f * mod, 0), facing, mod_scale)
+				_tint_node(n, tint)
+			var rn := _add_model_v(roof, base_pos + Vector3(0, floors * mod, 0), facing, mod_scale)
+			_tint_node(rn, tint)
+
+func _setup_environment() -> void:
+	env = WorldEnvironment.new()
+	var e := Environment.new()
+	e.background_mode = Environment.BG_SKY
+	var sky := Sky.new()
+	var mat := ProceduralSkyMaterial.new()
+	mat.sky_top_color = DAY_SKY_TOP
+	mat.sky_horizon_color = DAY_SKY_HORIZON
+	mat.ground_bottom_color = Color(0.08, 0.04, 0.04)
+	mat.ground_horizon_color = Color(0.22, 0.16, 0.15)
+	mat.sun_angle_max = 24.0
+	sky.sky_material = mat
+	e.sky = sky
+
+	e.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+	e.ambient_light_energy = 0.42
+	e.ambient_light_sky_contribution = 0.75
+
+	# ── SSAO: 구석에 짙은 그림자를 넣어 입체감을 만든다 (가장 중요) ──
+	e.ssao_enabled = true
+	e.ssao_radius = 1.6
+	e.ssao_intensity = 3.4
+	e.ssao_power = 2.0
+	e.ssao_detail = 0.6
+	e.ssao_light_affect = 0.15
+
+	# ── SSIL: 간접광 (붉은 지면이 벽에 반사되어 분위기가 살아난다) ──
+	e.ssil_enabled = true
+	e.ssil_radius = 3.0
+	e.ssil_intensity = 0.9
+
+	# ── 부피 안개: 스산한 밤 분위기의 핵심 ──
+	e.volumetric_fog_enabled = true
+	e.volumetric_fog_density = 0.016
+	e.volumetric_fog_albedo = Color(0.38, 0.30, 0.30)
+	e.volumetric_fog_emission = Color(0.09, 0.05, 0.05)
+	e.volumetric_fog_emission_energy = 0.5
+	e.volumetric_fog_length = 90.0
+	e.volumetric_fog_gi_inject = 0.6
+
+	# 거리 안개 (원경을 뭉개 깊이감)
+	e.fog_enabled = true
+	e.fog_density = DAY_FOG
+	e.fog_light_color = Color(0.36, 0.27, 0.26)
+	e.fog_sky_affect = 0.4
+
+	# ── 글로우: 균열/스킬/가로등 빛이 번진다 ──
+	e.glow_enabled = true
+	e.glow_intensity = 1.0
+	e.glow_bloom = 0.28
+	e.glow_strength = 1.15
+	e.glow_blend_mode = Environment.GLOW_BLEND_MODE_SOFTLIGHT
+	e.glow_hdr_threshold = 0.92
+
+	# ── SDFGI: 실시간 전역조명 (가로등/불빛이 벽에 자연스럽게 반사) ──
+	e.sdfgi_enabled = true
+	e.sdfgi_use_occlusion = true
+	e.sdfgi_bounce_feedback = 0.2
+	e.sdfgi_cascades = 4
+	e.sdfgi_min_cell_size = 0.25
+	e.sdfgi_energy = 0.55
+
+	# ── SSR: 젖은 아스팔트/금속 반사 ──
+	e.ssr_enabled = true
+	e.ssr_max_steps = 32
+	e.ssr_fade_in = 0.15
+	e.ssr_fade_out = 2.5
+
+	# 톤매핑 — 어둡고 묵직한 대비
+	e.tonemap_mode = Environment.TONE_MAPPER_ACES
+	e.tonemap_exposure = 1.05
+	e.tonemap_white = 6.0
+
+	# 색보정 (채도를 살짝 낮추고 대비를 올려 실사 느낌)
+	e.adjustment_enabled = true
+	e.adjustment_brightness = 1.02
+	e.adjustment_contrast = 1.14
+	e.adjustment_saturation = 0.80
+
+	env.environment = e
+	add_child(env)
+
+	sun = DirectionalLight3D.new()
+	sun.rotation_degrees = Vector3(-42, -38, 0)
+	sun.light_color = Color(1.0, 0.62, 0.45)
+	sun.light_energy = 1.15
+	sun.light_angular_distance = 1.2
+	sun.shadow_enabled = true
+	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
+	sun.directional_shadow_max_distance = 260.0
+	sun.directional_shadow_blend_splits = true
+	sun.shadow_bias = 0.02
+	sun.shadow_normal_bias = 1.1
+	add_child(sun)
+
+## PBR 텍스처 세트로 재질을 만든다 (알베도 + 노멀 + 거칠기 + AO)
+func _make_pbr_material(albedo_path: String, normal_path: String, rough_path: String,
+		ao_path: String, uv_scale: Vector3, tint: Color) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = tint
+	m.uv1_scale = uv_scale
+
+	var alb := load(albedo_path)
+	if alb:
+		m.albedo_texture = alb
+	var nrm := load(normal_path)
+	if nrm:
+		m.normal_enabled = true
+		m.normal_texture = nrm
+		m.normal_scale = 1.6
+	var rgh := load(rough_path)
+	if rgh:
+		m.roughness_texture = rgh
+	else:
+		m.roughness = 0.9
+	var ao := load(ao_path)
+	if ao:
+		m.ao_enabled = true
+		m.ao_texture = ao
+		m.ao_light_affect = 0.7
+	return m
+
+func _add_model(path: String, pos: Vector3, rot_y: float = 0.0, scale_f: float = 1.0) -> Node3D:
+	return _add_model_v(path, pos, rot_y, Vector3(scale_f, scale_f, scale_f))
+
+func _add_model_v(path: String, pos: Vector3, rot_y: float, scale_v: Vector3) -> Node3D:
+	var packed: PackedScene = load(path)
+	if packed == null:
+		return null
+	var inst: Node3D = packed.instantiate()
+	inst.position = pos
+	inst.rotation.y = rot_y
+	inst.scale = scale_v
+	add_child(inst)
+	return inst
+
+## 모델의 모든 메시에 밝기 배율을 적용해 같은 건물 모델이 반복되는 느낌을 줄인다.
+func _tint_node(node: Node, factor: float) -> void:
+	if node == null or is_equal_approx(factor, 1.0):
+		return
+	var stack: Array = [node]
+	while stack.size() > 0:
+		var cur = stack.pop_back()
+		if cur is MeshInstance3D:
+			var base_mat: Material = cur.get_active_material(0)
+			if base_mat is StandardMaterial3D:
+				var dup: StandardMaterial3D = base_mat.duplicate()
+				dup.albedo_color = Color(
+					clampf(dup.albedo_color.r * factor, 0.0, 1.0),
+					clampf(dup.albedo_color.g * factor, 0.0, 1.0),
+					clampf(dup.albedo_color.b * factor, 0.0, 1.0),
+					dup.albedo_color.a)
+				cur.material_override = dup
+		for c in cur.get_children():
+			stack.append(c)
+
+func _add_static_obstacle(path: String, pos: Vector3, rot_y: float, size: Vector3, scale_f: float = 1.0) -> void:
+	var body := StaticBody3D.new()
+	body.position = pos
+	body.collision_layer = 1
+	body.collision_mask = 0
+	add_child(body)
+
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = size
+	shape.shape = box
+	shape.position.y = size.y * 0.5
+	body.add_child(shape)
+
+	var packed: PackedScene = load(path)
+	if packed:
+		var inst: Node3D = packed.instantiate()
+		inst.rotation.y = rot_y
+		inst.scale = Vector3(scale_f, scale_f, scale_f)
+		body.add_child(inst)
+
+func _build_ground() -> void:
+	var ground := StaticBody3D.new()
+	ground.collision_layer = 1
+	ground.collision_mask = 0
+	add_child(ground)
+
+	var col := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(ARENA_W + 20, 1.0, ARENA_H + 20)
+	col.shape = box
+	col.position = Vector3(ARENA_W * 0.5, -0.5, ARENA_H * 0.5)
+	ground.add_child(col)
+
+	var plane := MeshInstance3D.new()
+	var pm := PlaneMesh.new()
+	pm.size = Vector2(ARENA_W + 30, ARENA_H + 30)
+	# 노멀맵이 제대로 먹도록 면을 잘게 나눈다
+	pm.subdivide_width = 24
+	pm.subdivide_depth = 24
+	plane.mesh = pm
+	plane.material_override = _make_pbr_material(
+		"res://assets3d/textures/asphalt_albedo.jpg",
+		"res://assets3d/textures/asphalt_normal.jpg",
+		"res://assets3d/textures/asphalt_rough.jpg",
+		"res://assets3d/textures/asphalt_ao.jpg",
+		Vector3(26, 26, 1), Color(0.56, 0.54, 0.53))
+	var gm: StandardMaterial3D = plane.material_override
+	gm.metallic = 0.12
+	gm.metallic_specular = 0.35
+	plane.position = Vector3(ARENA_W * 0.5, -0.02, ARENA_H * 0.5)
+	add_child(plane)
+
+	for x in range(COLS):
+		for z in range(ROWS):
+			if not _is_road(x, z):
+				continue
+			var pos := Vector3(x * TILE + TILE * 0.5, 0.0, z * TILE + TILE * 0.5)
+			var path := "res://assets3d/models/road-asphalt-straight.glb"
+			var rot := 0.0 if _is_horizontal_road(z) else PI * 0.5
+			if randf() < 0.18:
+				path = "res://assets3d/models/road-asphalt-damaged.glb"
+				rot = float(randi() % 4) * PI * 0.5
+			# 도로 모델은 1(X) x 2(Z) 이므로 X만 2배로 늘려 TILE(2x2)을 꽉 채운다
+			_add_model_v(path, pos, rot, Vector3(TILE, 1.0, 1.0))
+
+## 도로에 인접한 빈 칸에 보도블록을 깔아 도시 골격을 또렷하게 만든다.
+## (건물은 이 다음에 세워지므로 겹치는 칸은 건물이 덮는다)
+func _build_sidewalks() -> void:
+	for x in range(COLS):
+		for z in range(ROWS):
+			if _is_road(x, z) or occupied_cells.has(Vector2i(x, z)):
+				continue
+			# 중앙 대로변에만 보도를 깐다 (모든 도로에 깔면 지면을 다 덮어버린다)
+			if not _adjacent_to_main_road(x, z):
+				continue
+			# 일부는 비워둬 부서진 보도처럼 보이게 한다
+			if randf() < 0.34:
+				continue
+			var ppos := Vector3(x * TILE + TILE * 0.5, 0.005, z * TILE + TILE * 0.5)
+			var pav := _add_model_v("res://assets3d/models/road-asphalt-pavement.glb", ppos,
+				float(randi() % 4) * PI * 0.5, Vector3(TILE, 1.0, 1.0))
+			# 밝은 콘크리트를 어둡게 눌러 도로/건물과 구분되되 튀지 않게
+			_tint_node(pav, randf_range(0.45, 0.62))
+
+func _adjacent_to_main_road(x: int, z: int) -> bool:
+	var cx := int(COLS / 2)
+	var cz := int(ROWS / 2)
+	return absi(x - cx) == 1 or absi(z - cz) == 1
+
+func _is_horizontal_road(z: int) -> bool:
+	if z == int(ROWS / 2):
+		return true
+	return z >= 3 and z <= ROWS - 4 and (z - 3) % 7 == 0
+
+func _is_vertical_road(x: int) -> bool:
+	if x == int(COLS / 2):
+		return true
+	return x >= 3 and x <= COLS - 4 and (x - 3) % 7 == 0
+
+func _is_road(x: int, z: int) -> bool:
+	return _is_horizontal_road(z) or _is_vertical_road(x)
+
+func _in_base_zone(x: int, z: int) -> bool:
+	var cx := int(COLS / 2)
+	var cz := int(ROWS / 2)
+	return absi(x - cx) <= 4 and absi(z - cz) <= 4
+
+func _build_city() -> void:
+	# 낮은 건물은 Meshy 로 만든 폐허 블록(wartorn_block)을 우선 사용한다.
+	var wartorn = load("res://assets3d/buildings/wartorn_block.obj")
+
+	# 큐브형 모듈만 사용한다 (wall-*-flat 은 두께 0 인 평면이라 건물 블록으로 못 쓴다)
+	var wall_kinds = [
+		"res://assets3d/models/wall-a-window.glb",
+		"res://assets3d/models/wall-b-window.glb",
+	]
+	var roofs = [
+		"res://assets3d/models/wall-a-roof.glb",
+		"res://assets3d/models/wall-b-roof.glb",
+	]
+
+	var block_seeds = []
+	for bx in range(1, COLS - 1):
+		for bz in range(1, ROWS - 1):
+			if _is_road(bx, bz) or _in_base_zone(bx, bz):
+				continue
+			block_seeds.append(Vector2i(bx, bz))
+	block_seeds.shuffle()
+
+	var used := occupied_cells
+	var buildings := 0
+	for seed_cell in block_seeds:
+		if buildings >= 22:
+			break
+		var w := 2 + randi() % 2
+		var d := 2 + randi() % 2
+		var ok := true
+		for ox in range(w):
+			for oz in range(d):
+				var c := Vector2i(seed_cell.x + ox, seed_cell.y + oz)
+				if used.has(c) or _is_road(c.x, c.y) or _in_base_zone(c.x, c.y) \
+					or c.x < 1 or c.x >= COLS - 1 or c.y < 1 or c.y >= ROWS - 1:
+					ok = false
+					break
+			if not ok:
+				break
+		if not ok:
+			continue
+
+		# 시야를 가리지 않도록 플레이 구역은 1층 폐허로만 짓는다.
+		# 고층 빌딩은 맵 외곽(스카이라인)에만 세워 배경 역할만 하게 한다.
+		var skyline := _is_skyline_cell(seed_cell.x, seed_cell.y)
+		var floors: int = (3 + randi() % 4) if skyline else 1
+		var kind: String = wall_kinds[randi() % wall_kinds.size()]
+		var roof: String = roofs[randi() % roofs.size()]
+		# 건물 전체가 하나의 방향을 공유해야 벽면이 이어져 보인다.
+		var facing := float(randi() % 4) * PI * 0.5
+
+		# 모듈 원본은 1x1x1 이므로 TILE(2.0) 만큼 확대해야 칸을 꽉 채워 서로 붙는다.
+		# 플레이 구역 폐허는 층 높이를 낮춰(0.62배) 카메라 시야를 막지 않게 한다.
+		var h_mult: float = 1.0 if skyline else 0.62
+		var floor_h: float = TILE * h_mult
+		var mod_scale := Vector3(TILE * 1.002, floor_h * 1.002, TILE * 1.002)
+		# 건물마다 미묘하게 다른 색조 (같은 모델이 반복되는 느낌을 줄인다)
+		var tint_shift: float = randf_range(0.78, 1.15)
+		var roof_h: float = floor_h * 0.5
+
+		for ox in range(w):
+			for oz in range(d):
+				var c := Vector2i(seed_cell.x + ox, seed_cell.y + oz)
+				used[c] = true
+				var base_pos := Vector3(c.x * TILE + TILE * 0.5, 0, c.y * TILE + TILE * 0.5)
+				for f in range(floors):
+					var mnode := _add_model_v(kind, base_pos + Vector3(0, f * floor_h, 0), facing, mod_scale)
+					_tint_node(mnode, tint_shift)
+				var rnode := _add_model_v(roof, base_pos + Vector3(0, floors * floor_h, 0), facing, mod_scale)
+				_tint_node(rnode, tint_shift)
+
+		# 낮은 폐허에는 부서진 벽체를 얹어 폐허 느낌을 살린다
+		if not skyline:
+			var broken = ["res://assets3d/models/wall-broken-type-a.glb", "res://assets3d/models/wall-broken-type-b.glb"]
+			for k in range(1 + randi() % 3):
+				var bx: int = seed_cell.x + randi() % w
+				var bz: int = seed_cell.y + randi() % d
+				_add_model(broken[randi() % 2],
+					Vector3(bx * TILE + TILE * 0.5, floors * floor_h + roof_h * 0.4, bz * TILE + TILE * 0.5),
+					float(randi() % 4) * PI * 0.5, 1.4)
+
+		var body := StaticBody3D.new()
+		body.collision_layer = 1
+		body.collision_mask = 0
+		body.position = Vector3(
+			(seed_cell.x + w * 0.5) * TILE,
+			0,
+			(seed_cell.y + d * 0.5) * TILE
+		)
+		add_child(body)
+		var shape := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		box.size = Vector3(w * TILE, floors * floor_h + roof_h, d * TILE)
+		shape.shape = box
+		shape.position.y = box.size.y * 0.5
+		body.add_child(shape)
+		buildings += 1
+
+func _build_boundary() -> void:
+	var wall_h := 4.0
+	var thickness := 2.0
+	var defs = [
+		[Vector3(ARENA_W * 0.5, 0, -thickness * 0.5), Vector3(ARENA_W + thickness * 2, wall_h, thickness)],
+		[Vector3(ARENA_W * 0.5, 0, ARENA_H + thickness * 0.5), Vector3(ARENA_W + thickness * 2, wall_h, thickness)],
+		[Vector3(-thickness * 0.5, 0, ARENA_H * 0.5), Vector3(thickness, wall_h, ARENA_H + thickness * 2)],
+		[Vector3(ARENA_W + thickness * 0.5, 0, ARENA_H * 0.5), Vector3(thickness, wall_h, ARENA_H + thickness * 2)],
+	]
+	for d in defs:
+		var body := StaticBody3D.new()
+		body.position = d[0]
+		body.collision_layer = 1
+		body.collision_mask = 0
+		add_child(body)
+		var shape := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		box.size = d[1]
+		shape.shape = box
+		shape.position.y = wall_h * 0.5
+		body.add_child(shape)
+
+	var models = ["res://assets3d/models/wall-broken-type-a.glb", "res://assets3d/models/wall-broken-type-b.glb"]
+	for x in range(COLS):
+		_add_model(models[randi() % 2], Vector3(x * TILE + TILE * 0.5, 0, -0.6), 0.0, 1.6)
+		_add_model(models[randi() % 2], Vector3(x * TILE + TILE * 0.5, 0, ARENA_H + 0.6), PI, 1.6)
+	for z in range(ROWS):
+		_add_model(models[randi() % 2], Vector3(-0.6, 0, z * TILE + TILE * 0.5), PI * 0.5, 1.6)
+		_add_model(models[randi() % 2], Vector3(ARENA_W + 0.6, 0, z * TILE + TILE * 0.5), -PI * 0.5, 1.6)
+
+func _build_scatter() -> void:
+	var center := world_center()
+	var props = [
+		"res://assets3d/models/truck-grey.glb",
+		"res://assets3d/models/truck-green-cargo.glb",
+		"res://assets3d/models/detail-dumpster-closed.glb",
+		"res://assets3d/models/scaffolding-structure.glb",
+	]
+	var placed := 0
+	var attempts := 0
+	while placed < 30 and attempts < 900:
+		attempts += 1
+		var pos := Vector3(randf_range(4, ARENA_W - 4), 0, randf_range(4, ARENA_H - 4))
+		if pos.distance_to(center) < 12.0:
+			continue
+		# 큰 소품은 반경 3.2 를 차지한다
+		if not _claim_spot(pos, 3.2):
+			continue
+		# 트럭류만 실제 장애물로 두고, 나머지는 통과 가능하게 (걸림 방지)
+		var chosen: String = props[randi() % props.size()]
+		if "truck" in chosen:
+			_add_static_obstacle(chosen, pos, randf() * TAU, Vector3(2.4, 2.0, 2.4), 1.5)
+		else:
+			_add_model(chosen, pos, randf() * TAU, 1.5)
+		placed += 1
+
+	var small = [
+		"res://assets3d/models/barrel.glb",
+		"res://assets3d/models/box-large.glb",
+		"res://assets3d/models/rock-a.glb",
+		"res://assets3d/models/rock-b.glb",
+		"res://assets3d/models/detail-barrier-type-a.glb",
+		"res://assets3d/models/detail-barrier-strong-damaged.glb",
+		"res://assets3d/models/pallet.glb",
+	]
+	for i in range(85):
+		var pos := _free_spot(center, 6.0, 1.5)
+		if pos == Vector3.INF:
+			continue
+		_add_model(small[randi() % small.size()], pos, randf() * TAU, randf_range(1.0, 1.6))
+
+	var trees = ["res://assets3d/models/tree-large.glb", "res://assets3d/models/tree-pine-large.glb", "res://assets3d/models/tree-shrub.glb"]
+	for i in range(45):
+		var pos := _free_spot(center, 10.0, 2.2)
+		if pos == Vector3.INF:
+			continue
+		_add_model(trees[randi() % trees.size()], pos, randf() * TAU, randf_range(1.4, 2.2))
+
+	for i in range(40):
+		var pos := _free_spot(center, 7.0, 2.0)
+		if pos == Vector3.INF:
+			continue
+		_add_model("res://assets3d/models/detail-light-single.glb", pos, randf() * TAU, 1.8)
+		var light := OmniLight3D.new()
+		light.position = pos + Vector3(0, 4.4, 0)
+		light.light_color = Color(1.0, 0.72, 0.4)
+		light.light_energy = 0.0
+		light.omni_range = 13.0
+		light.add_to_group("street_lights")
+		add_child(light)
+
+func _build_corruption() -> void:
+	var center := world_center()
+	# 이계의 결정체 — 건물 사이 그늘진 곳에 낮게 군집
+	var clusters := 40
+	for c_i in range(clusters):
+		var gx := randi() % COLS
+		var gz := randi() % ROWS
+		if _is_road(gx, gz):
+			continue
+		var origin := Vector3(gx * TILE + TILE * 0.5, 0, gz * TILE + TILE * 0.5)
+		if origin.distance_to(center) < 9.0:
+			continue
+		for i in range(randi() % 4 + 3):
+			var shard := MeshInstance3D.new()
+			var pm := PrismMesh.new()
+			var h := randf_range(0.3, 0.9)
+			pm.size = Vector3(randf_range(0.12, 0.3), h, randf_range(0.12, 0.3))
+			shard.mesh = pm
+			var m := StandardMaterial3D.new()
+			var c := Color(0.30, 0.05, 0.09).lerp(Color(0.22, 0.04, 0.16), randf())
+			m.albedo_color = c
+			m.emission_enabled = true
+			m.emission = Color(0.45, 0.06, 0.10)
+			m.emission_energy_multiplier = randf_range(0.10, 0.28)
+			m.roughness = 0.5
+			shard.material_override = m
+			var a := randf() * TAU
+			var r := randf_range(0.2, 1.1)
+			shard.position = origin + Vector3(cos(a) * r, h * 0.35, sin(a) * r)
+			shard.rotation = Vector3(randf_range(-0.25, 0.25), randf() * TAU, randf_range(-0.25, 0.25))
+			add_child(shard)
+
+	# 검붉은 이끼 얼룩
+	for i in range(90):
+		var gx := randi() % COLS
+		var gz := randi() % ROWS
+		var pos := Vector3(gx * TILE + randf_range(-0.9, 0.9) + TILE * 0.5, 0, gz * TILE + randf_range(-0.9, 0.9) + TILE * 0.5)
+		if pos.distance_to(center) < 7.0:
+			continue
+		var moss := MeshInstance3D.new()
+		var cyl := CylinderMesh.new()
+		var r := randf_range(0.7, 1.8)
+		cyl.top_radius = r
+		cyl.bottom_radius = r
+		cyl.height = 0.04
+		moss.mesh = cyl
+		var mm := StandardMaterial3D.new()
+		mm.albedo_color = Color(0.2, 0.03, 0.07, 0.75)
+		mm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mm.roughness = 1.0
+		moss.material_override = mm
+		moss.position = pos + Vector3(0, 0.02, 0)
+		add_child(moss)
+
+## 대기 파티클 (먼지/재/낙엽) + 폐허의 연기 기둥과 모닥불
+func _build_atmosphere() -> void:
+	var atmo = load("res://scripts3d/Atmosphere3D.gd").new()
+	add_child(atmo)
+
+	var center := world_center()
+	var AtmoScript = load("res://scripts3d/Atmosphere3D.gd")
+
+	# 연기 기둥 — 무너진 건물에서 피어오른다
+	for i in range(14):
+		var pos := _open_spot(center, 14.0)
+		if pos == Vector3.INF:
+			continue
+		var smoke: GPUParticles3D = AtmoScript.make_smoke(7.0)
+		smoke.position = pos + Vector3(0, 0.4, 0)
+		add_child(smoke)
+
+	# 모닥불 + 불티 (생존자 흔적)
+	for i in range(10):
+		var pos := _open_spot(center, 10.0)
+		if pos == Vector3.INF:
+			continue
+		_add_model("res://assets3d/models/campfire-pit.glb", pos, randf() * TAU, 1.6)
+		var em: GPUParticles3D = AtmoScript.make_embers()
+		em.position = pos + Vector3(0, 0.5, 0)
+		add_child(em)
+		var fl := OmniLight3D.new()
+		fl.position = pos + Vector3(0, 1.0, 0)
+		fl.light_color = Color(1.0, 0.5, 0.18)
+		fl.light_energy = 2.6
+		fl.omni_range = 9.0
+		fl.add_to_group("campfires")
+		add_child(fl)
+
+## 거리 디테일 — 신호등·벤치·전선·천막·버려진 차량 군집
+func _build_street_detail() -> void:
+	var center := world_center()
+
+	# 교차로 근처 신호등
+	for i in range(18):
+		var pos := _road_free(center, 12.0, 2.2)
+		if pos == Vector3.INF:
+			continue
+		_add_model("res://assets3d/models/detail-light-traffic.glb", pos, float(randi() % 4) * PI * 0.5, 1.7)
+
+	# 이중 가로등 (밤에 점등)
+	for i in range(16):
+		var pos := _road_free(center, 10.0, 2.2)
+		if pos == Vector3.INF:
+			continue
+		_add_model("res://assets3d/models/detail-light-double.glb", pos, float(randi() % 4) * PI * 0.5, 1.7)
+		var light := OmniLight3D.new()
+		light.position = pos + Vector3(0, 4.6, 0)
+		light.light_color = Color(1.0, 0.74, 0.42)
+		light.light_energy = 0.0
+		light.omni_range = 12.0
+		light.add_to_group("street_lights")
+		add_child(light)
+
+	# 벤치 / 천막 / 전선
+	var props = [
+		"res://assets3d/models/detail-bench.glb",
+		"res://assets3d/models/detail-awning-small.glb",
+		"res://assets3d/models/detail-cables-type-a.glb",
+		"res://assets3d/models/detail-cables-type-b.glb",
+		"res://assets3d/models/wall-fence.glb",
+		"res://assets3d/models/detail-beam.glb",
+	]
+	for i in range(40):
+		var pos := _free_spot(center, 8.0, 1.6)
+		if pos == Vector3.INF:
+			continue
+		_add_model(props[randi() % props.size()], pos, randf() * TAU, randf_range(1.2, 1.8))
+
+	# 버려진 차량 군집 (도로 위에 2~4대씩)
+	var cars = [
+		"res://assets3d/models/truck-grey.glb",
+		"res://assets3d/models/truck-green-cargo.glb",
+	]
+	# 차량은 무작위로 뿌리면 서로 파묻힌다. 도로 방향을 따라 일정 간격으로 줄지어 세운다.
+	for c in range(10):
+		var anchor := _road_free(center, 14.0, 4.5)
+		if anchor == Vector3.INF:
+			continue
+		# 이 지점이 가로/세로 도로인지 판단해 그 방향으로 정렬
+		var gx: int = int(anchor.x / TILE)
+		var gz: int = int(anchor.z / TILE)
+		var along := Vector3(1, 0, 0) if _is_horizontal_road(gz) else Vector3(0, 0, 1)
+		var yaw := 0.0 if _is_horizontal_road(gz) else PI * 0.5
+
+		var n := 2 + randi() % 3
+		for k in range(n):
+			# 차 길이(약 4)보다 넓은 간격으로 배치해 절대 겹치지 않게
+			var pos := anchor + along * (k * 4.6) + Vector3(randf_range(-0.3, 0.3), 0, randf_range(-0.3, 0.3))
+			if not _claim_spot(pos, 2.3):
+				continue
+			_add_static_obstacle(cars[randi() % cars.size()], pos,
+				yaw + randf_range(-0.18, 0.18), Vector3(2.4, 1.8, 2.4), 1.5)
+
+	# 잡동사니 (통/상자/양동이/침구)
+	var junk = [
+		"res://assets3d/models/barrel-open.glb",
+		"res://assets3d/models/box-open.glb",
+		"res://assets3d/models/bucket.glb",
+		"res://assets3d/models/bedroll.glb",
+		"res://assets3d/models/rock-c.glb",
+		"res://assets3d/models/patch-grass.glb",
+	]
+	for i in range(200):
+		var pos := _free_spot(center, 5.0, 0.85)
+		if pos == Vector3.INF:
+			continue
+		_add_model(junk[randi() % junk.size()], pos, randf() * TAU, randf_range(0.8, 1.7))
+
+	# 바닥을 덮는 잔해 — 벽돌/파이프/철근/판자 (AAA 처럼 빈 바닥을 없앤다)
+	var rubble = [
+		"res://assets3d/models/detail-bricks-type-a.glb",
+		"res://assets3d/models/planks.glb",
+		"res://assets3d/models/detail-beam.glb",
+		"res://assets3d/models/rock-a.glb",
+		"res://assets3d/models/rock-b.glb",
+		"res://assets3d/models/rock-c.glb",
+	]
+	for i in range(320):
+		var gx := randi() % COLS
+		var gz := randi() % ROWS
+		var pos := Vector3(gx * TILE + randf_range(-0.9, 0.9) + TILE * 0.5, 0,
+			gz * TILE + randf_range(-0.9, 0.9) + TILE * 0.5)
+		if pos.distance_to(center) < 9.0 or occupied_cells.has(Vector2i(gx, gz)):
+			continue
+		var n := _add_model(rubble[randi() % rubble.size()], pos, randf() * TAU, randf_range(0.5, 1.2))
+		_tint_node(n, randf_range(0.55, 0.95))
+
+	# 핏자국 / 그을음 자국 (바닥 데칼 대용 평면)
+	for i in range(34):
+		var gx := randi() % COLS
+		var gz := randi() % ROWS
+		var pos := Vector3(gx * TILE + randf_range(-0.8, 0.8) + TILE * 0.5, 0.012,
+			gz * TILE + randf_range(-0.8, 0.8) + TILE * 0.5)
+		if pos.distance_to(center) < 8.0:
+			continue
+		var stain := MeshInstance3D.new()
+		var cyl := CylinderMesh.new()
+		var r := randf_range(0.5, 1.6)
+		cyl.top_radius = r
+		cyl.bottom_radius = r
+		cyl.height = 0.02
+		cyl.radial_segments = 10
+		stain.mesh = cyl
+		var sm := StandardMaterial3D.new()
+		var blood := randf() < 0.45
+		sm.albedo_color = Color(0.24, 0.02, 0.03, 0.8) if blood else Color(0.06, 0.05, 0.05, 0.75)
+		sm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		sm.roughness = 0.65 if blood else 1.0
+		stain.material_override = sm
+		stain.position = pos
+		add_child(stain)
+
+## 도로 위의 겹치지 않는 자리
+func _road_free(center: Vector3, min_center_dist: float, radius: float) -> Vector3:
+	for i in range(30):
+		var pos := _road_spot(center, min_center_dist)
+		if pos == Vector3.INF:
+			continue
+		if _claim_spot(pos, radius):
+			return pos
+	return Vector3.INF
+
+## 도로 위의 빈 자리
+func _road_spot(center: Vector3, min_center_dist: float) -> Vector3:
+	for attempt in range(40):
+		var gx := 2 + randi() % (COLS - 4)
+		var gz := 2 + randi() % (ROWS - 4)
+		if not _is_road(gx, gz):
+			continue
+		var pos := Vector3(gx * TILE + TILE * 0.5 + randf_range(-0.6, 0.6), 0,
+			gz * TILE + TILE * 0.5 + randf_range(-0.6, 0.6))
+		if pos.distance_to(center) < min_center_dist:
+			continue
+		return pos
+	return Vector3.INF
+
+## 이미 놓인 소품과 겹치지 않는지 검사하고, 통과하면 등록한다.
+func _claim_spot(pos: Vector3, radius: float) -> bool:
+	for entry in _placed_props:
+		var other_pos: Vector3 = entry[0]
+		var other_r: float = entry[1]
+		if pos.distance_to(other_pos) < (radius + other_r):
+			return false
+	_placed_props.append([pos, radius])
+	return true
+
+## 겹치지 않는 자리를 찾아준다 (실패하면 Vector3.INF)
+func _free_spot(center: Vector3, min_center_dist: float, radius: float, tries: int = 30) -> Vector3:
+	for i in range(tries):
+		var pos := _open_spot(center, min_center_dist)
+		if pos == Vector3.INF:
+			continue
+		if _claim_spot(pos, radius):
+			return pos
+	return Vector3.INF
+
+func _open_spot(center: Vector3, min_center_dist: float) -> Vector3:
+	for attempt in range(40):
+		var gx := 1 + randi() % (COLS - 2)
+		var gz := 1 + randi() % (ROWS - 2)
+		if _is_road(gx, gz) or occupied_cells.has(Vector2i(gx, gz)):
+			continue
+		var pos := Vector3(gx * TILE + randf_range(-0.5, 0.5) + TILE * 0.5, 0, gz * TILE + randf_range(-0.5, 0.5) + TILE * 0.5)
+		if pos.distance_to(center) < min_center_dist:
+			continue
+		return pos
+	return Vector3.INF
+
+func _build_base_and_spots() -> void:
+	var center := world_center()
+	base_core = load("res://scripts3d/BaseCore3D.gd").new()
+	base_core.position = center
+	add_child(base_core)
+
+	# 마도 제단 (특성 재주사) — 방주 앞쪽
+	var altar = load("res://scripts3d/Altar3D.gd").new()
+	altar.position = center + Vector3(0, 0, 9.5)
+	add_child(altar)
+
+	# 안전지대 경계 표시 + 따뜻한 조명 (분위기: 상대적으로 안락함)
+	var border := MeshInstance3D.new()
+	var torus := TorusMesh.new()
+	torus.inner_radius = SAFE_RADIUS - 0.35
+	torus.outer_radius = SAFE_RADIUS
+	border.mesh = torus
+	var bm := StandardMaterial3D.new()
+	bm.albedo_color = Color(1.0, 0.78, 0.45, 0.35)
+	bm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	bm.emission_enabled = true
+	bm.emission = Color(1.0, 0.72, 0.4)
+	bm.emission_energy_multiplier = 2.0
+	bm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	border.material_override = bm
+	border.position = center + Vector3(0, 0.08, 0)
+	add_child(border)
+
+	# 안전지대 횃불 (항상 켜짐)
+	for i in range(8):
+		var a := TAU * i / 8.0
+		var tpos := center + Vector3(cos(a) * (SAFE_RADIUS - 1.5), 0, sin(a) * (SAFE_RADIUS - 1.5))
+		_add_model("res://assets3d/models/detail-light-single.glb", tpos, -a, 1.7)
+		var tl := OmniLight3D.new()
+		tl.position = tpos + Vector3(0, 4.2, 0)
+		tl.light_color = Color(1.0, 0.7, 0.38)
+		tl.light_energy = 2.6
+		tl.omni_range = 12.0
+		add_child(tl)
+
+## 차원의 균열 — 개수와 위치가 매번 무작위로 결정된다.
+func _build_rifts() -> void:
+	var center := world_center()
+	var count := 4 + randi() % 4          # 4~7개
+	var placed := 0
+	var attempts := 0
+	var made: Array[Vector3] = []
+
+	while placed < count and attempts < 400:
+		attempts += 1
+		var pos := Vector3(
+			randf_range(4.0, ARENA_W - 4.0), 0,
+			randf_range(4.0, ARENA_H - 4.0)
+		)
+		# 균열 구역(맵 외곽 밴드) 안에만 생성한다
+		if zone_of(pos) != ZONE_RIFT:
+			continue
+		var too_close := false
+		for other in made:
+			if pos.distance_to(other) < 16.0:
+				too_close = true
+				break
+		if too_close:
+			continue
+		var rift = load("res://scripts3d/Rift3D.gd").new()
+		rift.position = pos
+		add_child(rift)
+		made.append(pos)
+		placed += 1
+
+## 구역별 드랍 운(luck) 보정 — 균열 구역이 훨씬 후하다.
+func zone_luck(pos: Vector3) -> float:
+	match zone_of(pos):
+		ZONE_RIFT:
+			return 260.0
+		ZONE_CITY:
+			return 40.0
+		_:
+			return 0.0
+
+## 낮 페이즈 — 생존자/필드 아이템은 제거했다.
+## 아이템은 몬스터 처치로만 얻는다.
+func _build_pickups() -> void:
+	pass
+
+func _spawn_player() -> void:
+	var p := CharacterBody3D.new()
+	p.set_script(PLAYER_SCRIPT)
+	p.position = world_center() + Vector3(0, 0, 6.0)
+	add_child(p)
+	player = p
+	player.died.connect(func(): GameManager.game_over.emit("player"))
+
+func _unhandled_input(event: InputEvent) -> void:
+	if game_ended or GameManager.game_won:
+		return
+	if not (event is InputEventKey and event.pressed and not event.echo):
+		return
+	match event.keycode:
+		KEY_N:
+			skip_rest()
+		KEY_K:
+			skip_night()
+		KEY_J:
+			skip_day()
+		KEY_P:
+			var t: String = PetManager.cycle()
+			if t != "":
+				var info: Dictionary = PetManager.get_info(t)
+				hud.show_toast("동행: %s" % String(info.get("name", t)), Color(1, 0.9, 0.5))
+
+func _process(delta: float) -> void:
+	if game_ended:
+		return
+	if trait_screen != null and is_instance_valid(trait_screen):
+		return
+	if GameManager.phase == GameManager.Phase.DAY:
+		_process_day(delta)
+	else:
+		_process_night(delta)
+
+func _process_day(delta: float) -> void:
+	if hud.is_tutorial_active():
+		return
+	day_timer -= delta
+	GameManager.phase_timer = day_timer
+	if day_timer <= 0:
+		_start_night_phase()
+		return
+	_handle_interactions()
+
+func _handle_interactions() -> void:
+	# 아이템 획득은 ItemDrop 이 자체 처리한다. 낮에 따로 상호작용할 것은 없다.
+	pass
+
+func _process_night(delta: float) -> void:
+	night_timer -= delta
+	GameManager.phase_timer = night_timer
+
+	match GameManager.night_state:
+		GameManager.NightState.WAVE:
+			spawn_timer -= delta
+			var interval: float = maxf(0.35, 1.15 - GameManager.wave * 0.06)
+			if spawn_timer <= 0.0:
+				spawn_timer = interval
+				var count: int = 1 + int(GameManager.wave / 2)
+				for i in range(count):
+					_spawn_enemy()
+			# 웨이브 종료: 시간이 다 되면 정비 시간으로
+			if night_timer <= 0.0:
+				_end_wave()
+
+		GameManager.NightState.REST:
+			if night_timer <= 0.0:
+				_begin_wave()
+
+		GameManager.NightState.DONE:
+			if night_timer <= 0.0:
+				_end_night_phase()
+
+## 웨이브 시작
+func _begin_wave() -> void:
+	GameManager.set_night_state(GameManager.NightState.WAVE)
+	night_timer = GameManager.WAVE_DURATION
+	GameManager.phase_timer = night_timer
+	spawn_timer = 0.4
+	hud.show_banner("WAVE %d / %d" % [GameManager.wave_index + 1, GameManager.waves_tonight])
+	SoundManager.play("night_start", -6.0)
+
+## 웨이브 종료 -> 정비 시간 또는 밤 종료
+func _end_wave() -> void:
+	# 남은 적을 정리해 정비 시간을 확보한다
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if is_instance_valid(e) and not e.is_in_group("boss"):
+			e.take_damage(99999)
+
+	GameManager.wave_index += 1
+	if GameManager.wave_index >= GameManager.waves_tonight:
+		GameManager.set_night_state(GameManager.NightState.DONE)
+		night_timer = 3.0
+		hud.show_banner("모든 웨이브 격퇴")
+		return
+
+	GameManager.set_night_state(GameManager.NightState.REST)
+	night_timer = GameManager.REST_DURATION
+	GameManager.phase_timer = night_timer
+	hud.show_banner("정비 시간 — N 으로 다음 웨이브 즉시 시작")
+
+## 낮을 즉시 끝내고 밤으로 (편의 기능)
+func skip_day() -> bool:
+	if GameManager.phase != GameManager.Phase.DAY:
+		return false
+	if hud.is_tutorial_active():
+		return false
+	day_timer = 0.05
+	hud.show_toast("낮을 건너뛴다 — 밤이 온다", Color(0.8, 0.7, 1.0))
+	return true
+
+## 정비 시간을 건너뛰고 바로 다음 웨이브로 (편의 기능)
+func skip_rest() -> void:
+	if GameManager.phase == GameManager.Phase.NIGHT and GameManager.night_state == GameManager.NightState.REST:
+		night_timer = 0.05
+
+## 밤 전체를 건너뛴다 — 방주 HP를 대가로 지불한다 (편의 기능)
+func skip_night() -> bool:
+	if GameManager.phase != GameManager.Phase.NIGHT:
+		return false
+	var remaining: int = GameManager.waves_tonight - GameManager.wave_index
+	if remaining <= 0:
+		return false
+	if get_tree().get_nodes_in_group("boss").size() > 0:
+		hud.show_toast("보스가 남아 있어 밤을 넘길 수 없다", Color(1, 0.6, 0.5))
+		return false
+
+	var cost: float = 18.0 * remaining
+	if GameManager.base_hp <= cost:
+		hud.show_toast("방주 HP가 부족하다 (필요 %d)" % int(cost + 1), Color(1, 0.6, 0.5))
+		return false
+
+	GameManager.base_hp -= cost
+	GameManager.base_hp_changed.emit()
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if is_instance_valid(e):
+			e.take_damage(99999)
+	GameManager.wave_index = GameManager.waves_tonight
+	GameManager.set_night_state(GameManager.NightState.DONE)
+	night_timer = 2.0
+	hud.show_banner("밤을 버텨냈다 — 방주 HP %d 소모" % int(cost))
+	return true
+
+func _spawn_enemy() -> void:
+	var rifts := get_tree().get_nodes_in_group("rifts")
+	var pos := Vector3.ZERO
+	if rifts.size() > 0:
+		var rift = rifts[randi() % rifts.size()]
+		pos = rift.global_position + Vector3(randf_range(-1.6, 1.6), 0, randf_range(-1.6, 1.6))
+		if zone_of(pos) == ZONE_SAFE:
+			return    # 안전지대에는 절대 스폰하지 않는다
+		rift.spawn_burst()
+	else:
+		var m := 3.0
+		pos = Vector3(randf_range(m, ARENA_W - m), 0, m)
+
+	_make_enemy(_roll_enemy_type(), pos)
+
+func _roll_enemy_type() -> String:
+	var w := GameManager.wave
+	var pool := ["hound", "hound"]
+	if w >= 2:
+		pool.append("stalker")
+	if w >= 3:
+		pool.append_array(["ravager", "destroyer"])
+	if w >= 4:
+		pool.append_array(["juggernaut", "screecher"])
+	if w >= 6:
+		pool.append_array(["destroyer", "juggernaut"])
+	return pool[randi() % pool.size()]
+
+func _make_enemy(etype: String, pos: Vector3) -> Node:
+	var e := CharacterBody3D.new()
+	e.set_script(ENEMY_SCRIPT)
+	add_child(e)
+	e.position = pos
+	e.setup(etype, GameManager.wave)
+	return e
+
+## 최후의 외계 군주
+func _spawn_final_boss() -> void:
+	var pos := world_center() + Vector3(0, 0, -26.0)
+	var b = _make_enemy("warlord", pos)
+	if b:
+		b.tree_exited.connect(_on_final_boss_gone)
+
+func _on_final_boss_gone() -> void:
+	if GameManager.game_won:
+		return
+	# 최종 보스가 사라졌다 = 격파
+	GameManager.game_won = true
+	GameManager.victory.emit()
+	hud.show_victory()
+
+func _spawn_boss() -> void:
+	# 보스는 균열 구역(외곽)에서 등장한다
+	var pos := world_center() + Vector3(0, 0, -ARENA_H * 0.38)
+	var rifts := get_tree().get_nodes_in_group("rifts")
+	if rifts.size() > 0:
+		pos = rifts[randi() % rifts.size()].global_position
+	_make_enemy("overlord", pos)
+	hud.show_banner("⚠ 차원의 환수 강림")
+	SoundManager.play("ultimate")
+
+func _start_night_phase() -> void:
+	GameManager.start_night()
+	SoundManager.play("night_start", -6.0)
+	_tween_time_of_day(true)
+
+	# 최종전 조건: 봉인을 모두 모으면 최후의 군주가 강림한다
+	if GameManager.seals_done >= GameManager.SEALS_NEEDED and not GameManager.final_boss_spawned:
+		GameManager.final_boss_spawned = true
+		GameManager.set_night_state(GameManager.NightState.WAVE)
+		night_timer = 999.0
+		GameManager.phase_timer = night_timer
+		spawn_timer = 1.2
+		hud.show_banner("최후의 외계 군주가 강림한다")
+		_spawn_final_boss()
+		return
+
+	if GameManager.wave % 5 == 0:
+		hud.show_banner("🌙 %d일차 밤 — 차원의 환수 강림" % GameManager.day_count)
+		_spawn_boss()
+	_begin_wave()
+
+func _end_night_phase() -> void:
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if is_instance_valid(e):
+			e.queue_free()
+	# 밤을 버텨내면 균열 하나를 봉인한다 (최종 목표 진행)
+	if not GameManager.game_won and GameManager.seals_done < GameManager.SEALS_NEEDED:
+		GameManager.add_seal()
+		var rifts := get_tree().get_nodes_in_group("rifts")
+		if rifts.size() > 0:
+			var r = rifts[randi() % rifts.size()]
+			if is_instance_valid(r):
+				r.seal()
+		hud.show_banner("차원의 균열 봉인  %d / %d" % [GameManager.seals_done, GameManager.SEALS_NEEDED])
+
+	GameManager.start_day()
+	day_timer = GameManager.DAY_DURATION
+	GameManager.phase_timer = day_timer
+	hud.show_banner("☀ %d일차 아침이 밝았다" % GameManager.day_count)
+	SoundManager.play("day_start")
+	_tween_time_of_day(false)
+	if is_instance_valid(player):
+		player.hp = player.max_hp
+		player.hp_changed.emit()
+		player.global_position = world_center() + Vector3(0, 0, 6.0)
+
+func _tween_time_of_day(to_night: bool) -> void:
+	var e: Environment = env.environment
+	var sky_mat: ProceduralSkyMaterial = e.sky.sky_material
+	var tw := create_tween()
+	tw.set_parallel(true)
+	if to_night:
+		tw.tween_property(sun, "light_energy", 0.1, 2.0)
+		tw.tween_property(sun, "light_color", Color(0.85, 0.3, 0.45), 2.0)
+		tw.tween_property(sky_mat, "sky_top_color", NIGHT_SKY_TOP, 2.0)
+		tw.tween_property(sky_mat, "sky_horizon_color", NIGHT_SKY_HORIZON, 2.0)
+		tw.tween_property(e, "fog_light_color", Color(0.13, 0.11, 0.17), 2.0)
+		tw.tween_property(e, "fog_density", NIGHT_FOG, 2.0)
+		tw.tween_property(e, "ambient_light_energy", 0.16, 2.0)
+		tw.tween_property(e, "volumetric_fog_density", 0.034, 2.0)
+		tw.tween_property(e, "volumetric_fog_albedo", Color(0.22, 0.18, 0.24), 2.0)
+		tw.tween_property(e, "volumetric_fog_emission", Color(0.10, 0.01, 0.05), 2.0)
+	else:
+		tw.tween_property(sun, "light_energy", 1.0, 2.0)
+		tw.tween_property(sun, "light_color", Color(1.0, 0.72, 0.55), 2.0)
+		tw.tween_property(sky_mat, "sky_top_color", DAY_SKY_TOP, 2.0)
+		tw.tween_property(sky_mat, "sky_horizon_color", DAY_SKY_HORIZON, 2.0)
+		tw.tween_property(e, "fog_light_color", Color(0.36, 0.27, 0.26), 2.0)
+		tw.tween_property(e, "fog_density", DAY_FOG, 2.0)
+		tw.tween_property(e, "ambient_light_energy", 0.42, 2.0)
+		tw.tween_property(e, "volumetric_fog_density", 0.016, 2.0)
+		tw.tween_property(e, "volumetric_fog_albedo", Color(0.38, 0.30, 0.30), 2.0)
+		tw.tween_property(e, "volumetric_fog_emission", Color(0.16, 0.03, 0.03), 2.0)
+
+	for light in get_tree().get_nodes_in_group("street_lights"):
+		if is_instance_valid(light):
+			tw.tween_property(light, "light_energy", 3.5 if to_night else 0.0, 2.0)
+
+	for rift in get_tree().get_nodes_in_group("rifts"):
+		if is_instance_valid(rift):
+			rift.set_active(to_night)
+
+func _on_game_over(reason: String) -> void:
+	if game_ended:
+		return
+	game_ended = true
+	if is_instance_valid(player):
+		player.set_physics_process(false)
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if is_instance_valid(e):
+			e.set_physics_process(false)
+	hud.show_game_over(reason)
+

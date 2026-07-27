@@ -1,0 +1,212 @@
+extends CharacterBody3D
+## EnemyController — 적 1기의 상태(HP/타이머/타입)와 공개 API(take_damage/stun/setup)를 보유하고,
+## 실제 행동은 하위 모듈에 위임한다.
+##   EnemyBrain     — 목표 선정 · 패턴 발동 판단
+##   EnemyMovement  — 물리 이동 (경직/돌진/추적) · 접촉 피해
+##   EnemyAttack    — 공격 실행 (근접/기탄/돌진 예고)
+##   EnemyAnimation — 모델 · 애니메이션 · HP바 · 피격/사망 연출
+## 타입 데이터와 튜닝 상수는 EnemyConfig 로 옮겼다.
+
+# 하위 호환 별칭 — 외부/툴 코드가 Enemy3D 의 상수를 참조해도 깨지지 않게 유지
+const GRAVITY := EnemyConfig.GRAVITY
+const TYPES := EnemyConfig.TYPES
+
+var enemy_type := "grunt"
+var hp := 1.0
+var max_hp := 1.0
+var speed := 3.0
+var contact_damage := 8.0
+var hit_radius := 0.6
+var is_flying := false
+var hover_height := 0.0
+var is_siege := false
+var pattern := "melee"
+var shoot_cd := 0.0
+var charge_cd := 0.0
+var charge_windup := 0.0
+var charge_dash := 0.0
+var charge_dir := Vector3.ZERO
+var telegraph: MeshInstance3D = null
+
+var hit_cd := 0.0
+var stun_timer := 0.0
+var attack_anim_timer := 0.0
+var dead := false
+
+var model: Node3D
+var anim: AnimationPlayer
+var mesh_instances: Array = []
+var flash_mat: StandardMaterial3D
+var hp_bar_bg: Sprite3D
+var hp_bar_fill: Sprite3D
+
+var anim_idle := "Idle"
+var anim_move := "Walk"
+var anim_attack := "Punch"
+var anim_hit := "HitReact"
+var anim_death := "Death"
+
+# 행동 모듈
+var brain: EnemyBrain
+var movement: EnemyMovement
+var attack: EnemyAttack
+var animation: EnemyAnimation
+
+## 보스 계열인지 (overlord / warlord)
+func is_boss_type(t: String = "") -> bool:
+	var check: String = t if t != "" else enemy_type
+	return check == "overlord" or check == "warlord"
+
+func _ready() -> void:
+	add_to_group("enemies")
+	collision_layer = 4
+	collision_mask = 1
+
+	_create_modules()
+
+	flash_mat = StandardMaterial3D.new()
+	flash_mat.albedo_color = Color(4, 4, 4)
+	flash_mat.emission_enabled = true
+	flash_mat.emission = Color(1, 1, 1)
+	flash_mat.emission_energy_multiplier = 4.0
+
+func _create_modules() -> void:
+	brain = EnemyBrain.new()
+	brain.name = "EnemyBrain"
+	movement = EnemyMovement.new()
+	movement.name = "EnemyMovement"
+	attack = EnemyAttack.new()
+	attack.name = "EnemyAttack"
+	animation = EnemyAnimation.new()
+	animation.name = "EnemyAnimation"
+	for m in [brain, movement, attack, animation]:
+		m.setup(self)
+		add_child(m)
+
+func setup(type: String, wave: int) -> void:
+	if not TYPES.has(type):
+		type = "hound"
+	enemy_type = type
+	var cfg: Dictionary = TYPES[type]
+	is_siege = bool(cfg.get("siege", false))
+	pattern = String(cfg.get("pattern", "melee"))
+
+	max_hp = float(cfg["hp"]) + float(cfg["hp_per_wave"]) * maxf(0.0, wave - 1)
+	hp = max_hp
+	speed = float(cfg["speed"])
+	hit_radius = float(cfg["radius"])
+	contact_damage = float(cfg["damage"])
+	is_flying = bool(cfg["flying"])
+
+	if type == "overlord" or type == "warlord":
+		add_to_group("boss")
+	if type == "warlord":
+		add_to_group("final_boss")
+
+	var shape := CollisionShape3D.new()
+	var caps := CapsuleShape3D.new()
+	caps.radius = clampf(hit_radius * 0.65, 0.3, 1.3)
+	caps.height = maxf(caps.radius * 2.2, hit_radius * 2.2)
+	shape.shape = caps
+	shape.position.y = caps.height * 0.5
+	add_child(shape)
+
+	if is_flying:
+		hover_height = 1.5 if not is_boss_type(type) else 2.4
+
+	var packed: PackedScene = load(cfg["model"])
+	if packed:
+		model = packed.instantiate()
+		var s := float(cfg["scale"])
+		model.scale = Vector3(s, s, s)
+		model.position.y = hover_height
+		add_child(model)
+		anim = animation._find_anim_player(model)
+		animation._collect_meshes(model)
+		var tint: Color = cfg["tint"]
+		if tint != Color(1, 1, 1):
+			animation._apply_tint(tint)
+		if bool(cfg.get("eyes", false)):
+			animation._add_glowing_eyes()
+		var aura: Color = cfg.get("aura", Color(0, 0, 0, 0))
+		if aura.a > 0.0:
+			animation._add_aura(aura)
+
+	animation._resolve_anim_names()
+	animation._play(anim_move)
+	animation._build_hp_bar()
+
+func _physics_process(delta: float) -> void:
+	if dead:
+		return
+	movement.physics_step(delta)
+
+## ── 공개 API — 외부(플레이어 공격/스킬)가 호출한다 ──
+
+func take_damage(amount: float, knockback: Vector3 = Vector3.ZERO) -> bool:
+	if dead:
+		return false
+	hp -= amount
+	if not is_boss_type():
+		global_position += knockback * EnemyConfig.KNOCKBACK_SCALE
+	animation._do_flash()
+	if hp_bar_fill and is_instance_valid(hp_bar_fill):
+		hp_bar_fill.scale.x = clampf(hp / max_hp, 0.0, 1.0)
+	if amount < 50.0:
+		animation._spawn_damage_number(amount)
+	if hp <= 0:
+		dead = true
+		_die()
+		return true
+	return false
+
+func stun(duration: float) -> void:
+	if is_boss_type():
+		duration *= EnemyConfig.BOSS_STUN_MULT
+	stun_timer = maxf(stun_timer, duration)
+	animation._play(anim_hit, true)
+
+## ── 사망 처리 — 보상 지급과 시체 정리 ──
+
+func _die() -> void:
+	set_physics_process(false)
+	var col := get_node_or_null("CollisionShape3D")
+	if col:
+		col.queue_free()
+	if hp_bar_bg: hp_bar_bg.visible = false
+	if hp_bar_fill: hp_bar_fill.visible = false
+	GameManager.kill_count += 1
+	SoundManager.play("kill", -3.0, 0.1)
+	animation._play(anim_death, true)
+	animation._spawn_death_burst()
+
+	# 마석(정수) — 강화 재화
+	var tier_bonus := 0
+	if is_boss_type():
+		tier_bonus = 25
+	elif is_siege:
+		tier_bonus = 3
+	CraftManager.add_essence(CraftManager.roll_essence_drop(tier_bonus))
+
+	# 파밍: 보스는 확정 고등급, 일반 몹은 확률 드랍
+	# 구역 보정 — 균열 구역에서 죽인 몹이 훨씬 좋은 것을 떨어뜨린다
+	var zone_bonus := 0.0
+	var w = get_tree().current_scene
+	if w and w.has_method("zone_luck"):
+		zone_bonus = w.zone_luck(global_position)
+
+	if is_boss_type():
+		# 보스는 확정 드랍 + 매우 높은 운
+		LootManager.spawn_drop(global_position, 1.0,
+			RarityEnums.roll_rarity(TraitManager.get_drop_pct() + zone_bonus + 700.0))
+	elif is_siege:
+		LootManager.spawn_drop(global_position, 0.75, -1, zone_bonus)
+	else:
+		LootManager.spawn_drop(global_position, 0.42, -1, zone_bonus)
+
+	var tw := create_tween()
+	var linger := 0.9 if is_boss_type() else 0.55
+	tw.tween_interval(linger)
+	if model:
+		tw.tween_property(model, "scale", Vector3(0.01, 0.01, 0.01), 0.25)
+	tw.tween_callback(queue_free)

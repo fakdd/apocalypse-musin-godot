@@ -1,0 +1,639 @@
+extends CharacterBody3D
+
+const GRAVITY := 24.0
+
+var enemy_type := "grunt"
+var hp := 1.0
+var max_hp := 1.0
+var speed := 3.0
+var contact_damage := 8.0
+var hit_radius := 0.6
+var is_flying := false
+var hover_height := 0.0
+var is_siege := false
+var pattern := "melee"
+var shoot_cd := 0.0
+var charge_cd := 0.0
+var charge_windup := 0.0
+var charge_dash := 0.0
+var charge_dir := Vector3.ZERO
+var telegraph: MeshInstance3D = null
+
+var hit_cd := 0.0
+var stun_timer := 0.0
+var attack_anim_timer := 0.0
+var dead := false
+
+var model: Node3D
+var anim: AnimationPlayer
+var mesh_instances: Array = []
+var flash_mat: StandardMaterial3D
+var hp_bar_bg: Sprite3D
+var hp_bar_fill: Sprite3D
+
+var anim_idle := "Idle"
+var anim_move := "Walk"
+var anim_attack := "Punch"
+var anim_hit := "HitReact"
+var anim_death := "Death"
+
+# 소설 설정 대응:
+#  hound/stalker/ravager = 차원의 사냥개 (떼로 덤비는 포식자, 붉은 눈)
+#  destroyer/juggernaut  = 차원의 파괴자 (방벽·건물 파괴 우선)
+#  overlord              = 차원 환수 보스 (외계 군주, 차원 마력 오라)
+const TYPES := {
+	"hound": {
+		"model": "res://assets3d/monsters/skeletonzombie.tscn",
+		"scale": 1.0, "hp": 8.0, "hp_per_wave": 1.4, "speed": 3.8,
+		"radius": 0.7, "damage": 8.0, "flying": false,
+		"tint": Color(1, 1, 1), "eyes": true, "siege": false, "aura": Color(0, 0, 0, 0),
+		"pattern": "melee",
+	},
+	"stalker": {
+		"model": "res://assets3d/monsters/mob_fast.gltf",
+		"scale": 0.42, "hp": 5.0, "hp_per_wave": 0.9, "speed": 7.2,
+		"radius": 0.6, "damage": 6.0, "flying": true,
+		"tint": Color(0.45, 0.12, 0.3), "eyes": true, "siege": false, "aura": Color(0.8, 0.2, 0.9, 1),
+		"pattern": "charge",
+	},
+	"ravager": {
+		"model": "res://assets3d/monsters/mutant.tscn",
+		"scale": 1.05, "hp": 12.0, "hp_per_wave": 2.0, "speed": 4.6,
+		"radius": 0.75, "damage": 10.0, "flying": false,
+		"tint": Color(1, 1, 1), "eyes": true, "siege": false, "aura": Color(0, 0, 0, 0),
+		"pattern": "melee",
+	},
+	"screecher": {
+		"model": "res://assets3d/monsters/mob_flyer.gltf",
+		"scale": 0.5, "hp": 9.0, "hp_per_wave": 1.5, "speed": 4.2,
+		"radius": 0.7, "damage": 9.0, "flying": true,
+		"tint": Color(0.5, 0.14, 0.34), "eyes": true, "siege": false, "aura": Color(0.9, 0.2, 0.5, 1),
+		"pattern": "ranged",
+	},
+	"destroyer": {
+		"model": "res://assets3d/monsters/mutant.tscn",
+		"scale": 1.6, "hp": 42.0, "hp_per_wave": 6.0, "speed": 2.2,
+		"radius": 1.1, "damage": 18.0, "flying": false,
+		"tint": Color(0.75, 0.78, 0.95), "eyes": true, "siege": true, "aura": Color(0, 0, 0, 0),
+		"pattern": "melee",
+	},
+	"juggernaut": {
+		"model": "res://assets3d/monsters/pumpkinhulk.tscn",
+		"scale": 1.25, "hp": 26.0, "hp_per_wave": 4.0, "speed": 3.0,
+		"radius": 0.9, "damage": 14.0, "flying": false,
+		"tint": Color(1, 1, 1), "eyes": true, "siege": true, "aura": Color(0, 0, 0, 0),
+		"pattern": "charge",
+	},
+	"overlord": {
+		"model": "res://assets3d/monsters/mob_boss.gltf",
+		"scale": 1.2, "hp": 320.0, "hp_per_wave": 60.0, "speed": 3.0,
+		"radius": 2.0, "damage": 26.0, "flying": true,
+		"tint": Color(0.35, 0.08, 0.22), "eyes": true, "siege": false, "aura": Color(0.85, 0.1, 0.35, 1),
+		"pattern": "boss",
+	},
+	"warlord": {
+		"model": "res://assets3d/monsters/mob_boss.gltf",
+		"scale": 1.9, "hp": 1400.0, "hp_per_wave": 0.0, "speed": 3.4,
+		"radius": 3.0, "damage": 42.0, "flying": true,
+		"tint": Color(0.9, 0.12, 0.18), "eyes": true, "siege": false, "aura": Color(1.0, 0.1, 0.15, 1),
+		"pattern": "boss",
+	},
+}
+
+## 보스 계열인지 (overlord / warlord)
+func is_boss_type(t: String = "") -> bool:
+	var check: String = t if t != "" else enemy_type
+	return check == "overlord" or check == "warlord"
+
+func _ready() -> void:
+	add_to_group("enemies")
+	collision_layer = 4
+	collision_mask = 1
+
+	flash_mat = StandardMaterial3D.new()
+	flash_mat.albedo_color = Color(4, 4, 4)
+	flash_mat.emission_enabled = true
+	flash_mat.emission = Color(1, 1, 1)
+	flash_mat.emission_energy_multiplier = 4.0
+
+func setup(type: String, wave: int) -> void:
+	if not TYPES.has(type):
+		type = "hound"
+	enemy_type = type
+	var cfg: Dictionary = TYPES[type]
+	is_siege = bool(cfg.get("siege", false))
+	pattern = String(cfg.get("pattern", "melee"))
+
+	max_hp = float(cfg["hp"]) + float(cfg["hp_per_wave"]) * maxf(0.0, wave - 1)
+	hp = max_hp
+	speed = float(cfg["speed"])
+	hit_radius = float(cfg["radius"])
+	contact_damage = float(cfg["damage"])
+	is_flying = bool(cfg["flying"])
+
+	if type == "overlord" or type == "warlord":
+		add_to_group("boss")
+	if type == "warlord":
+		add_to_group("final_boss")
+
+	var shape := CollisionShape3D.new()
+	var caps := CapsuleShape3D.new()
+	caps.radius = clampf(hit_radius * 0.65, 0.3, 1.3)
+	caps.height = maxf(caps.radius * 2.2, hit_radius * 2.2)
+	shape.shape = caps
+	shape.position.y = caps.height * 0.5
+	add_child(shape)
+
+	if is_flying:
+		hover_height = 1.5 if not is_boss_type(type) else 2.4
+
+	var packed: PackedScene = load(cfg["model"])
+	if packed:
+		model = packed.instantiate()
+		var s := float(cfg["scale"])
+		model.scale = Vector3(s, s, s)
+		model.position.y = hover_height
+		add_child(model)
+		anim = _find_anim_player(model)
+		_collect_meshes(model)
+		var tint: Color = cfg["tint"]
+		if tint != Color(1, 1, 1):
+			_apply_tint(tint)
+		if bool(cfg.get("eyes", false)):
+			_add_glowing_eyes()
+		var aura: Color = cfg.get("aura", Color(0, 0, 0, 0))
+		if aura.a > 0.0:
+			_add_aura(aura)
+
+	_resolve_anim_names()
+	_play(anim_move)
+	_build_hp_bar()
+
+func _add_glowing_eyes() -> void:
+	var eye_y: float = hover_height + hit_radius * 1.7
+	var spread: float = clampf(hit_radius * 0.32, 0.09, 0.32)
+	var r: float = clampf(hit_radius * 0.13, 0.05, 0.2)
+	for side in [-1.0, 1.0]:
+		var eye := MeshInstance3D.new()
+		var sph := SphereMesh.new()
+		sph.radius = r
+		sph.height = r * 2.0
+		eye.mesh = sph
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(1.0, 0.15, 0.1)
+		m.emission_enabled = true
+		m.emission = Color(1.0, 0.1, 0.06)
+		m.emission_energy_multiplier = 9.0
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		eye.material_override = m
+		eye.position = Vector3(side * spread, eye_y, hit_radius * 0.62)
+		add_child(eye)
+
+	var glow := OmniLight3D.new()
+	glow.position = Vector3(0, eye_y, hit_radius * 0.5)
+	glow.light_color = Color(1.0, 0.2, 0.12)
+	glow.light_energy = 1.1
+	glow.omni_range = 3.0
+	add_child(glow)
+
+func _add_aura(color: Color) -> void:
+	var aura := MeshInstance3D.new()
+	var sph := SphereMesh.new()
+	var rad: float = hit_radius * 1.5
+	sph.radius = rad
+	sph.height = rad * 2.0
+	aura.mesh = sph
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Color(color.r, color.g, color.b, 0.16)
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.emission_enabled = true
+	m.emission = color
+	m.emission_energy_multiplier = 2.2
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.cull_mode = BaseMaterial3D.CULL_FRONT
+	aura.material_override = m
+	aura.position.y = hover_height + hit_radius * 0.9
+	add_child(aura)
+
+	var light := OmniLight3D.new()
+	light.position = aura.position
+	light.light_color = color
+	light.light_energy = 2.5
+	light.omni_range = hit_radius * 7.0
+	add_child(light)
+
+	var tw := create_tween().set_loops()
+	tw.tween_property(aura, "scale", Vector3(1.14, 1.14, 1.14), 0.9).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(aura, "scale", Vector3(0.92, 0.92, 0.92), 0.9).set_trans(Tween.TRANS_SINE)
+
+func _resolve_anim_names() -> void:
+	if anim == null:
+		return
+	var names := anim.get_animation_list()
+	anim_idle = _pick(names, ["Idle", "Flying_Idle"])
+	# Mixamo 베이스 클립이 정지 포즈(0.1초 미만)면 Walk 로 대체
+	if anim_idle != "" and anim.has_animation(anim_idle):
+		if anim.get_animation(anim_idle).length < 0.15:
+			anim_idle = _pick(names, ["Walk", "Fast_Flying", "Idle"])
+	anim_move = _pick(names, ["Walk", "Fast_Flying", "Run", "Flying_Idle"])
+	anim_attack = _pick(names, ["Punch", "Headbutt", "Bite", "JumpAttack", "Punch2"])
+	anim_hit = _pick(names, ["HitReact"])
+	anim_death = _pick(names, ["Death"])
+
+func _pick(names: PackedStringArray, wanted: Array) -> String:
+	for w in wanted:
+		if names.has(w):
+			return w
+	return ""
+
+func _play(name: String, force: bool = false) -> void:
+	if anim == null or name == "":
+		return
+	if not anim.has_animation(name):
+		return
+	if not force and anim.current_animation == name:
+		return
+	anim.play(name)
+
+func _build_hp_bar() -> void:
+	if max_hp <= 1.0:
+		return
+	var bar_y: float = hover_height + hit_radius * 2.4 + 0.5
+	var width: float = 48.0 if not is_boss_type() else 140.0
+
+	hp_bar_bg = Sprite3D.new()
+	hp_bar_bg.texture = _make_bar_texture(Color(0, 0, 0, 0.75), int(width))
+	hp_bar_bg.pixel_size = 0.012
+	hp_bar_bg.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	hp_bar_bg.no_depth_test = true
+	hp_bar_bg.position = Vector3(0, bar_y, 0)
+	add_child(hp_bar_bg)
+
+	hp_bar_fill = Sprite3D.new()
+	var fill_col := Color(0.35, 0.95, 0.4) if not is_boss_type() else Color(1.0, 0.3, 0.25)
+	hp_bar_fill.texture = _make_bar_texture(fill_col, int(width))
+	hp_bar_fill.pixel_size = 0.012
+	hp_bar_fill.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	hp_bar_fill.no_depth_test = true
+	hp_bar_fill.position = Vector3(0, bar_y, 0.02)
+	add_child(hp_bar_fill)
+
+func _make_bar_texture(color: Color, width: int) -> ImageTexture:
+	var img := Image.create(width, 8, false, Image.FORMAT_RGBA8)
+	img.fill(color)
+	return ImageTexture.create_from_image(img)
+
+func _find_anim_player(node: Node) -> AnimationPlayer:
+	if node is AnimationPlayer:
+		return node
+	for c in node.get_children():
+		var found := _find_anim_player(c)
+		if found:
+			return found
+	return null
+
+func _collect_meshes(node: Node) -> void:
+	if node is MeshInstance3D:
+		mesh_instances.append(node)
+	for c in node.get_children():
+		_collect_meshes(c)
+
+func _apply_tint(tint: Color) -> void:
+	for mi in mesh_instances:
+		if not is_instance_valid(mi):
+			continue
+		var base_mat: Material = mi.get_active_material(0)
+		if base_mat is StandardMaterial3D:
+			var dup: StandardMaterial3D = base_mat.duplicate()
+			dup.albedo_color = tint
+			mi.material_override = dup
+
+func _physics_process(delta: float) -> void:
+	if dead:
+		return
+	if hit_cd > 0: hit_cd -= delta
+	if attack_anim_timer > 0:
+		attack_anim_timer -= delta
+
+	if stun_timer > 0:
+		stun_timer -= delta
+		velocity.x = 0
+		velocity.z = 0
+		if not is_flying and not is_on_floor():
+			velocity.y -= GRAVITY * delta
+		move_and_slide()
+		return
+
+	if shoot_cd > 0: shoot_cd -= delta
+	if charge_cd > 0: charge_cd -= delta
+
+	# ── 돌진(charge): 예고 -> 돌진 ──
+	if charge_windup > 0.0:
+		charge_windup -= delta
+		velocity.x = 0
+		velocity.z = 0
+		if not is_flying and not is_on_floor():
+			velocity.y -= GRAVITY * delta
+		move_and_slide()
+		if charge_windup <= 0.0:
+			charge_dash = 0.42
+			if telegraph and is_instance_valid(telegraph):
+				telegraph.queue_free()
+				telegraph = null
+		return
+
+	if charge_dash > 0.0:
+		charge_dash -= delta
+		velocity.x = charge_dir.x * speed * 4.2
+		velocity.z = charge_dir.z * speed * 4.2
+		if is_flying:
+			velocity.y = 0
+		elif not is_on_floor():
+			velocity.y -= GRAVITY * delta
+		move_and_slide()
+		# 돌진 중 접촉 판정
+		var pl := get_tree().get_first_node_in_group("player")
+		if pl and is_instance_valid(pl) and pl.hp > 0 and hit_cd <= 0:
+			var fl: Vector3 = pl.global_position - global_position
+			fl.y = 0
+			if fl.length() < hit_radius + 1.1:
+				hit_cd = 0.8
+				pl.take_damage(contact_damage * 1.6)
+		return
+
+	var target_pos := Vector3.ZERO
+	var has_target := false
+	var player := get_tree().get_first_node_in_group("player")
+
+	if is_siege:
+		# 차원의 파괴자: 방벽/포탑을 우선 파괴하고, 없으면 방주로 직행
+		var best: Node3D = null
+		var best_d := INF
+		for d in get_tree().get_nodes_in_group("defenses"):
+			if not is_instance_valid(d): continue
+			var dist := global_position.distance_to(d.global_position)
+			if dist < best_d:
+				best_d = dist
+				best = d
+		if best:
+			target_pos = best.global_position
+			has_target = true
+		else:
+			var base_t := get_tree().get_first_node_in_group("base_core")
+			if base_t and is_instance_valid(base_t):
+				target_pos = base_t.global_position
+				has_target = true
+	elif player and is_instance_valid(player) and player.hp > 0:
+		target_pos = player.global_position
+		has_target = true
+	else:
+		var base := get_tree().get_first_node_in_group("base_core")
+		if base and is_instance_valid(base):
+			target_pos = base.global_position
+			has_target = true
+
+	var moving := false
+	if has_target:
+		var dir: Vector3 = target_pos - global_position
+		dir.y = 0
+		if dir.length() > 0.15:
+			dir = dir.normalized()
+			velocity.x = dir.x * speed
+			velocity.z = dir.z * speed
+			moving = true
+			if model:
+				model.rotation.y = atan2(dir.x, dir.z)
+		else:
+			velocity.x = 0
+			velocity.z = 0
+
+	if is_flying:
+		velocity.y = 0
+	elif not is_on_floor():
+		velocity.y -= GRAVITY * delta
+	else:
+		velocity.y = 0
+
+	move_and_slide()
+
+	if attack_anim_timer <= 0:
+		_play(anim_move if moving else anim_idle)
+
+	_try_pattern(player)
+
+	for i in range(get_slide_collision_count()):
+		var collision := get_slide_collision(i)
+		var collider = collision.get_collider()
+		if collider and hit_cd <= 0 and collider.is_in_group("defenses") and collider.has_method("take_damage"):
+			_attack()
+			collider.take_damage(contact_damage)
+			break
+
+	if player and is_instance_valid(player) and player.hp > 0 and hit_cd <= 0:
+		var flat: Vector3 = player.global_position - global_position
+		flat.y = 0
+		if flat.length() < hit_radius + 0.9:
+			_attack()
+			player.take_damage(contact_damage)
+
+	var base_node := get_tree().get_first_node_in_group("base_core")
+	if base_node and is_instance_valid(base_node) and hit_cd <= 0:
+		var flat: Vector3 = base_node.global_position - global_position
+		flat.y = 0
+		if flat.length() < hit_radius + 2.4:
+			_attack()
+			base_node.take_damage(contact_damage)
+
+
+## 원거리/돌진 패턴 발동
+func _try_pattern(player) -> void:
+	if player == null or not is_instance_valid(player) or player.hp <= 0:
+		return
+	var flat: Vector3 = player.global_position - global_position
+	flat.y = 0
+	var dist := flat.length()
+
+	match pattern:
+		"ranged":
+			# 일정 거리에서 멈춰 원거리 기탄을 발사
+			if dist < 16.0 and dist > 4.0 and shoot_cd <= 0.0:
+				shoot_cd = 2.3
+				attack_anim_timer = 0.5
+				_play(anim_attack, true)
+				_fire_projectile(flat.normalized())
+		"charge":
+			if dist < 13.0 and dist > 3.5 and charge_cd <= 0.0:
+				charge_cd = 4.5
+				charge_dir = flat.normalized()
+				charge_windup = 0.65
+				_show_telegraph(charge_dir)
+		"boss":
+			# 보스는 둘 다 쓴다
+			if dist < 22.0 and shoot_cd <= 0.0:
+				shoot_cd = 1.5
+				var spread := 5 if enemy_type == "warlord" else 3
+				for i in range(spread):
+					var a := (float(i) - (spread - 1) * 0.5) * 0.22
+					_fire_projectile(flat.normalized().rotated(Vector3.UP, a))
+			if dist < 16.0 and dist > 4.0 and charge_cd <= 0.0:
+				charge_cd = 6.0
+				charge_dir = flat.normalized()
+				charge_windup = 0.8
+				_show_telegraph(charge_dir)
+
+## 돌진 예고 표시 — 플레이어가 회피할 시간을 준다
+func _show_telegraph(dir: Vector3) -> void:
+	var length := speed * 4.2 * 0.42 + 2.0
+	var mesh := MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = Vector3(hit_radius * 2.2, 0.08, length)
+	mesh.mesh = bm
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Color(1.0, 0.2, 0.15, 0.4)
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.emission_enabled = true
+	m.emission = Color(1.0, 0.15, 0.1)
+	m.emission_energy_multiplier = 3.0
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mesh.material_override = m
+	get_parent().add_child(mesh)
+	mesh.global_position = global_position + dir * (length * 0.5) + Vector3(0, 0.1, 0)
+	mesh.rotation.y = atan2(dir.x, dir.z)
+	telegraph = mesh
+	var tw := create_tween()
+	tw.tween_property(m, "albedo_color:a", 0.75, 0.3)
+	tw.tween_property(m, "albedo_color:a", 0.3, 0.3)
+
+## 기탄 발사
+func _fire_projectile(dir: Vector3) -> void:
+	var proj := Area3D.new()
+	proj.collision_layer = 0
+	proj.collision_mask = 2
+	get_parent().add_child(proj)
+	proj.global_position = global_position + Vector3(0, hover_height + hit_radius, 0) + dir * 0.8
+	proj.set_script(load("res://scripts3d/Projectile3D.gd"))
+	proj.launch(dir, 13.0, contact_damage * 0.7, 4.5)
+
+func _attack() -> void:
+	hit_cd = 0.7
+	attack_anim_timer = 0.5
+	_play(anim_attack, true)
+
+func take_damage(amount: float, knockback: Vector3 = Vector3.ZERO) -> bool:
+	if dead:
+		return false
+	hp -= amount
+	if not is_boss_type():
+		global_position += knockback * 0.05
+	_do_flash()
+	if hp_bar_fill and is_instance_valid(hp_bar_fill):
+		hp_bar_fill.scale.x = clampf(hp / max_hp, 0.0, 1.0)
+	if amount < 50.0:
+		_spawn_damage_number(amount)
+	if hp <= 0:
+		dead = true
+		_die()
+		return true
+	return false
+
+func _do_flash() -> void:
+	var saved := []
+	for mi in mesh_instances:
+		if is_instance_valid(mi):
+			saved.append([mi, mi.material_override])
+			mi.material_override = flash_mat
+	var tw := create_tween()
+	tw.tween_interval(0.09)
+	tw.tween_callback(func():
+		for pair in saved:
+			if is_instance_valid(pair[0]):
+				pair[0].material_override = pair[1]
+	)
+
+func stun(duration: float) -> void:
+	if is_boss_type():
+		duration *= 0.35
+	stun_timer = maxf(stun_timer, duration)
+	_play(anim_hit, true)
+
+func _spawn_damage_number(amount: float) -> void:
+	var lbl := Label3D.new()
+	lbl.text = str(int(amount))
+	lbl.font_size = 64
+	lbl.pixel_size = 0.012
+	lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	lbl.no_depth_test = true
+	lbl.modulate = Color(1, 1, 0.7)
+	lbl.outline_size = 12
+	lbl.outline_modulate = Color(0, 0, 0)
+	lbl.global_position = global_position + Vector3(randf_range(-0.3, 0.3), hover_height + hit_radius * 2.0, 0)
+	get_parent().add_child(lbl)
+	var tw := create_tween()
+	tw.tween_property(lbl, "position:y", lbl.position.y + 1.2, 0.5)
+	tw.parallel().tween_property(lbl, "modulate:a", 0.0, 0.5)
+	tw.tween_callback(lbl.queue_free)
+
+func _die() -> void:
+	set_physics_process(false)
+	var col := get_node_or_null("CollisionShape3D")
+	if col:
+		col.queue_free()
+	if hp_bar_bg: hp_bar_bg.visible = false
+	if hp_bar_fill: hp_bar_fill.visible = false
+	GameManager.kill_count += 1
+	SoundManager.play("kill", -3.0, 0.1)
+	_play(anim_death, true)
+	_spawn_death_burst()
+
+	# 마석(정수) — 강화 재화
+	var tier_bonus := 0
+	if is_boss_type():
+		tier_bonus = 25
+	elif is_siege:
+		tier_bonus = 3
+	CraftManager.add_essence(CraftManager.roll_essence_drop(tier_bonus))
+
+	# 파밍: 보스는 확정 고등급, 일반 몹은 확률 드랍
+	# 구역 보정 — 균열 구역에서 죽인 몹이 훨씬 좋은 것을 떨어뜨린다
+	var zone_bonus := 0.0
+	var w = get_tree().current_scene
+	if w and w.has_method("zone_luck"):
+		zone_bonus = w.zone_luck(global_position)
+
+	if is_boss_type():
+		# 보스는 확정 드랍 + 매우 높은 운
+		LootManager.spawn_drop(global_position, 1.0,
+			RarityEnums.roll_rarity(TraitManager.get_drop_pct() + zone_bonus + 700.0))
+	elif is_siege:
+		LootManager.spawn_drop(global_position, 0.75, -1, zone_bonus)
+	else:
+		LootManager.spawn_drop(global_position, 0.42, -1, zone_bonus)
+
+	var tw := create_tween()
+	var linger := 0.9 if is_boss_type() else 0.55
+	tw.tween_interval(linger)
+	if model:
+		tw.tween_property(model, "scale", Vector3(0.01, 0.01, 0.01), 0.25)
+	tw.tween_callback(queue_free)
+
+func _spawn_death_burst() -> void:
+	var scale_f: float = 1.0 if not is_boss_type() else 3.0
+	var mesh := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.6 * scale_f
+	sphere.height = 1.2 * scale_f
+	mesh.mesh = sphere
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Color(1.0, 0.35, 0.3, 0.7)
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.emission_enabled = true
+	m.emission = Color(1.0, 0.3, 0.2)
+	m.emission_energy_multiplier = 3.5
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mesh.material_override = m
+	mesh.position = global_position + Vector3(0, hover_height + 0.7, 0)
+	get_parent().add_child(mesh)
+	var tw := create_tween()
+	tw.tween_property(mesh, "scale", Vector3(2.4, 2.4, 2.4), 0.35)
+	tw.parallel().tween_property(m, "albedo_color:a", 0.0, 0.35)
+	tw.tween_callback(mesh.queue_free)

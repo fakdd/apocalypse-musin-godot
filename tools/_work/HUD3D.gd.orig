@@ -1,0 +1,707 @@
+extends CanvasLayer
+## 메인 HUD — 다크 레드 판타지 스타일
+## 좌상단: 초상화 + 이름/일차 + HP/내공 바
+## 우상단: 원형 미니맵 + 퀘스트 추적
+## 우하단: 스킬 버튼 + 쿨다운 표시
+## 상단중앙: 페이즈/웨이브 상태
+
+const RED := Color(0.78, 0.10, 0.13)
+const RED_DIM := Color(0.35, 0.06, 0.08)
+const GOLD := Color(0.85, 0.70, 0.35)
+const PANEL_BG := Color(0.06, 0.05, 0.06, 0.88)
+
+var name_label: Label
+var trait_label: Label
+var level_label: Label
+var hp_bar: ColorRect
+var hp_text: Label
+var mp_bar: ColorRect
+var mp_text: Label
+var gear_label: Label
+var essence_label: Label
+var base_label: Label
+var kill_label: Label
+
+var mini_map: Control
+var quest_panel: Panel
+var quest_lines: Label
+
+var phase_label: Label
+var wave_label: Label
+var timer_label: Label
+
+var skill_buttons := {}
+var banner_label: Label
+var toast: Label
+var vignette: ColorRect
+var tutorial_panel: Control
+var game_over_panel: Control
+var game_over_label: Label
+var victory_panel: Control
+var stats_window: CanvasLayer
+var inventory_ui: CanvasLayer
+var portrait_holder: Control
+var weapon_icon_holder: Control
+var weapon_icon_mesh: MeshInstance3D
+var weapon_icon_rarity := -99
+var weapon_icon_tex: TextureRect
+
+func _ready() -> void:
+	layer = 10
+	_build_vignette()
+	_build_portrait()
+	_build_minimap_frame()
+	_build_quest_panel()
+	_build_center_status()
+	_build_skill_bar()
+	_build_banner()
+	_build_toast()
+	_build_tutorial()
+	_build_game_over()
+	_build_victory()
+
+	stats_window = load("res://scripts3d/StatsWindow.gd").new()
+	add_child(stats_window)
+	inventory_ui = load("res://scripts3d/InventoryUI.gd").new()
+	add_child(inventory_ui)
+
+func _framed_panel(pos: Vector2, size: Vector2, border: Color = RED) -> Panel:
+	var p := Panel.new()
+	p.position = pos
+	p.size = size
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = PANEL_BG
+	sb.border_color = border
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(3)
+	sb.shadow_color = Color(border.r, border.g, border.b, 0.35)
+	sb.shadow_size = 5
+	p.add_theme_stylebox_override("panel", sb)
+	add_child(p)
+	return p
+
+func _bar(parent: Control, pos: Vector2, size: Vector2, col: Color) -> ColorRect:
+	var bg := ColorRect.new()
+	bg.position = pos
+	bg.size = size
+	bg.color = Color(0.05, 0.04, 0.05, 0.95)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(bg)
+	var fill := ColorRect.new()
+	fill.position = pos
+	fill.size = size
+	fill.color = col
+	fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(fill)
+	return fill
+
+func _build_vignette() -> void:
+	vignette = ColorRect.new()
+	vignette.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vignette.color = Color(0.7, 0.05, 0.05, 0.0)
+	vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(vignette)
+
+func _build_portrait() -> void:
+	var panel := _framed_panel(Vector2(16, 14), Vector2(340, 96))
+
+	var portrait := Panel.new()
+	portrait.position = Vector2(8, 7)
+	portrait.size = Vector2(82, 82)
+	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var psb := StyleBoxFlat.new()
+	psb.bg_color = Color(0.14, 0.05, 0.06)
+	psb.border_color = GOLD
+	psb.set_border_width_all(2)
+	psb.set_corner_radius_all(41)
+	portrait.add_theme_stylebox_override("panel", psb)
+	panel.add_child(portrait)
+
+	# 실제 주인공 모델을 SubViewport 로 렌더해 초상화로 쓴다
+	portrait_holder = _make_model_viewport(portrait, Vector2(78, 78),
+		"res://assets3d/chars/hero.tscn", Vector3(0, 1.02, 3.15), Vector3(-2, 0, 0), 34.0)
+
+	name_label = Label.new()
+	name_label.text = "강백현"
+	name_label.add_theme_font_size_override("font_size", 19)
+	name_label.add_theme_color_override("font_color", Color(0.95, 0.93, 0.93))
+	name_label.position = Vector2(100, 6)
+	panel.add_child(name_label)
+
+	level_label = Label.new()
+	level_label.add_theme_font_size_override("font_size", 14)
+	level_label.add_theme_color_override("font_color", GOLD)
+	level_label.position = Vector2(268, 11)
+	panel.add_child(level_label)
+
+	hp_bar = _bar(panel, Vector2(100, 32), Vector2(210, 16), RED)
+	hp_text = Label.new()
+	hp_text.add_theme_font_size_override("font_size", 11)
+	hp_text.add_theme_color_override("font_color", Color(1, 0.92, 0.92))
+	hp_text.position = Vector2(104, 32)
+	panel.add_child(hp_text)
+
+	mp_bar = _bar(panel, Vector2(100, 53), Vector2(210, 14), Color(0.22, 0.45, 0.9))
+	mp_text = Label.new()
+	mp_text.add_theme_font_size_override("font_size", 11)
+	mp_text.add_theme_color_override("font_color", Color(0.86, 0.93, 1))
+	mp_text.position = Vector2(104, 52)
+	panel.add_child(mp_text)
+
+	trait_label = Label.new()
+	trait_label.add_theme_font_size_override("font_size", 13)
+	trait_label.position = Vector2(100, 72)
+	panel.add_child(trait_label)
+
+	gear_label = Label.new()
+	gear_label.add_theme_font_size_override("font_size", 12)
+	gear_label.add_theme_color_override("font_color", Color(0.74, 0.77, 0.84))
+	gear_label.position = Vector2(20, 118)
+	add_child(gear_label)
+
+	essence_label = Label.new()
+	essence_label.add_theme_font_size_override("font_size", 13)
+	essence_label.add_theme_color_override("font_color", Color(0.55, 0.85, 1.0))
+	essence_label.position = Vector2(20, 138)
+	add_child(essence_label)
+
+	base_label = Label.new()
+	base_label.add_theme_font_size_override("font_size", 14)
+	base_label.position = Vector2(20, 160)
+	add_child(base_label)
+
+	kill_label = Label.new()
+	kill_label.add_theme_font_size_override("font_size", 13)
+	kill_label.add_theme_color_override("font_color", Color(0.8, 0.72, 0.72))
+	kill_label.position = Vector2(20, 182)
+	add_child(kill_label)
+
+func _build_minimap_frame() -> void:
+	var ring := Panel.new()
+	ring.position = Vector2(1062, 12)
+	ring.size = Vector2(206, 206)
+	ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.04, 0.03, 0.04, 0.92)
+	sb.border_color = RED
+	sb.set_border_width_all(3)
+	sb.set_corner_radius_all(103)
+	sb.shadow_color = Color(RED.r, RED.g, RED.b, 0.4)
+	sb.shadow_size = 8
+	ring.add_theme_stylebox_override("panel", sb)
+	add_child(ring)
+
+	mini_map = load("res://scripts3d/MiniMap3D.gd").new()
+	mini_map.position = Vector2(1065, 15)
+	add_child(mini_map)
+
+func _build_quest_panel() -> void:
+	quest_panel = _framed_panel(Vector2(1002, 230), Vector2(264, 140), RED_DIM)
+	var head := Label.new()
+	head.text = "◈ 퀘스트 추적"
+	head.add_theme_font_size_override("font_size", 15)
+	head.add_theme_color_override("font_color", GOLD)
+	head.position = Vector2(12, 8)
+	quest_panel.add_child(head)
+
+	quest_lines = Label.new()
+	quest_lines.add_theme_font_size_override("font_size", 13)
+	quest_lines.add_theme_color_override("font_color", Color(0.86, 0.86, 0.9))
+	quest_lines.position = Vector2(12, 32)
+	quest_lines.size = Vector2(240, 100)
+	quest_lines.autowrap_mode = TextServer.AUTOWRAP_WORD
+	quest_panel.add_child(quest_lines)
+
+func _build_center_status() -> void:
+	phase_label = Label.new()
+	phase_label.add_theme_font_size_override("font_size", 21)
+	phase_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	phase_label.position = Vector2(390, 16)
+	phase_label.size = Vector2(500, 28)
+	add_child(phase_label)
+
+	wave_label = Label.new()
+	wave_label.add_theme_font_size_override("font_size", 15)
+	wave_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	wave_label.add_theme_color_override("font_color", Color(0.87, 0.82, 0.87))
+	wave_label.position = Vector2(390, 44)
+	wave_label.size = Vector2(500, 22)
+	add_child(wave_label)
+
+	timer_label = Label.new()
+	timer_label.add_theme_font_size_override("font_size", 14)
+	timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	timer_label.add_theme_color_override("font_color", Color(0.72, 0.72, 0.78))
+	timer_label.position = Vector2(340, 66)
+	timer_label.size = Vector2(600, 20)
+	add_child(timer_label)
+
+func _skill_button(pos: Vector2, radius: float, key: String, glyph: String, col: Color) -> Dictionary:
+	var btn := Panel.new()
+	btn.position = pos
+	btn.size = Vector2(radius * 2, radius * 2)
+	btn.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.10, 0.05, 0.06, 0.94)
+	sb.border_color = col
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(int(radius))
+	sb.shadow_color = Color(col.r, col.g, col.b, 0.4)
+	sb.shadow_size = 5
+	btn.add_theme_stylebox_override("panel", sb)
+	add_child(btn)
+
+	var icon := Label.new()
+	icon.text = glyph
+	icon.add_theme_font_size_override("font_size", int(radius * 0.8))
+	icon.add_theme_color_override("font_color", col)
+	icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	icon.set_anchors_preset(Control.PRESET_FULL_RECT)
+	btn.add_child(icon)
+
+	var cd := ColorRect.new()
+	cd.color = Color(0, 0, 0, 0.62)
+	cd.position = Vector2.ZERO
+	cd.size = btn.size
+	cd.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	btn.add_child(cd)
+
+	var cdtext := Label.new()
+	cdtext.add_theme_font_size_override("font_size", int(radius * 0.55))
+	cdtext.add_theme_color_override("font_color", Color(1, 1, 1))
+	cdtext.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	cdtext.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	cdtext.set_anchors_preset(Control.PRESET_FULL_RECT)
+	btn.add_child(cdtext)
+
+	var keyl := Label.new()
+	keyl.text = key
+	keyl.add_theme_font_size_override("font_size", 11)
+	keyl.add_theme_color_override("font_color", Color(0.9, 0.9, 0.95))
+	keyl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	keyl.position = Vector2(-8, radius * 2 - 2)
+	keyl.size = Vector2(radius * 2 + 16, 16)
+	btn.add_child(keyl)
+
+	return {"panel": btn, "cd": cd, "cdtext": cdtext, "full": btn.size.y}
+
+## UI 뷰포트 전용 환경 — 메인 씬의 톤매핑/글로우에 영향받지 않게 한다.
+func _add_ui_env(vp: SubViewport) -> void:
+	var we := WorldEnvironment.new()
+	var e := Environment.new()
+	e.background_mode = Environment.BG_CANVAS
+	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	e.ambient_light_color = Color(0.55, 0.5, 0.52)
+	e.ambient_light_energy = 1.0
+	e.tonemap_mode = Environment.TONE_MAPPER_LINEAR
+	e.tonemap_exposure = 1.0
+	we.environment = e
+	vp.add_child(we)
+
+## 3D 모델을 UI 안에 렌더하는 SubViewport 를 만든다.
+func _make_model_viewport(parent: Control, vsize: Vector2, scene_path: String,
+		cam_pos: Vector3, cam_rot_deg: Vector3, fov: float) -> Control:
+	var vc := SubViewportContainer.new()
+	vc.stretch = true
+	vc.position = Vector2(2, 2)
+	vc.size = vsize
+	vc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(vc)
+
+	var vp := SubViewport.new()
+	vp.size = Vector2i(int(vsize.x), int(vsize.y))
+	vp.transparent_bg = true
+	vp.own_world_3d = true
+	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	vc.add_child(vp)
+	_add_ui_env(vp)
+
+	var packed: PackedScene = load(scene_path)
+	if packed:
+		var inst: Node3D = packed.instantiate()
+		# 모델 정면이 이미 카메라(+Z) 쪽을 향한다. 살짝만 틀어 3/4 앵글로.
+		inst.rotation_degrees = Vector3(0, 18, 0)
+		vp.add_child(inst)
+		# 대기 애니메이션 재생
+		var ap: AnimationPlayer = inst.find_child("AnimationPlayer", true, false)
+		if ap and ap.has_animation("idle"):
+			ap.play("idle")
+
+	var cam := Camera3D.new()
+	cam.position = cam_pos
+	cam.rotation_degrees = cam_rot_deg
+	cam.fov = fov
+	vp.add_child(cam)
+	cam.make_current()
+
+	var key := DirectionalLight3D.new()
+	key.rotation_degrees = Vector3(-22, 20, 0)
+	key.light_energy = 2.6
+	key.light_color = Color(1.0, 0.88, 0.82)
+	vp.add_child(key)
+
+	var rim := OmniLight3D.new()
+	rim.position = Vector3(-0.9, 1.5, 1.4)
+	rim.light_color = Color(1.0, 0.3, 0.25)
+	rim.light_energy = 3.0
+	rim.omni_range = 4.0
+	vp.add_child(rim)
+	return vc
+
+## 좌클릭 버튼 안에 장착 무기 스킨을 3D로 띄운다.
+func _make_weapon_viewport(parent: Control, vsize: Vector2) -> void:
+	var vc := SubViewportContainer.new()
+	vc.stretch = true
+	vc.position = Vector2(6, 6)
+	vc.size = vsize
+	vc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(vc)
+
+	var vp := SubViewport.new()
+	vp.size = Vector2i(int(vsize.x), int(vsize.y))
+	vp.transparent_bg = true
+	vp.own_world_3d = true
+	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	vc.add_child(vp)
+	_add_ui_env(vp)
+
+	var pivot := Node3D.new()
+	vp.add_child(pivot)
+	weapon_icon_mesh = MeshInstance3D.new()
+	weapon_icon_mesh.rotation_degrees = Vector3(0, 0, 38)
+	pivot.add_child(weapon_icon_mesh)
+
+	var cam := Camera3D.new()
+	cam.position = Vector3(0, 0, 2.1)
+	cam.fov = 46
+	vp.add_child(cam)
+	cam.make_current()
+
+	var key := DirectionalLight3D.new()
+	key.rotation_degrees = Vector3(-20, 140, 0)
+	key.light_energy = 2.0
+	vp.add_child(key)
+	weapon_icon_holder = vc
+
+func _refresh_weapon_icon() -> void:
+	if weapon_icon_mesh == null:
+		return
+	var w: ItemData = PlayerStats.equipped.get("weapon", null)
+	var r: int = w.rarity if w else -1
+	if r == weapon_icon_rarity and w != null:
+		return
+	weapon_icon_rarity = r
+	if w == null:
+		weapon_icon_mesh.visible = false
+		if weapon_icon_tex:
+			weapon_icon_tex.visible = false
+		return
+	weapon_icon_mesh.visible = true
+	weapon_icon_mesh.mesh = ItemSkins.build_mesh(w.skin)
+	weapon_icon_mesh.material_override = ItemSkins.build_material(w.rarity)
+	if weapon_icon_tex:
+		var ip := ItemSkins.icon_path(w.skin)
+		if ip != "":
+			weapon_icon_tex.texture = load(ip)
+			weapon_icon_tex.modulate = w.get_color()
+			weapon_icon_tex.visible = true
+			# 아이콘이 있으면 3D 는 뒤에서 은은하게만
+			weapon_icon_mesh.visible = false
+		else:
+			weapon_icon_tex.visible = false
+
+func _build_skill_bar() -> void:
+	skill_buttons["slash"] = _skill_button(Vector2(1150, 556), 46, "좌클릭", "", RED)
+	_make_weapon_viewport(skill_buttons["slash"]["panel"], Vector2(80, 80))
+	# 아이콘 이미지를 3D 위에 겹쳐 실루엣을 또렷하게
+	weapon_icon_tex = TextureRect.new()
+	weapon_icon_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	weapon_icon_tex.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	weapon_icon_tex.position = Vector2(16, 16)
+	weapon_icon_tex.size = Vector2(60, 60)
+	weapon_icon_tex.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	skill_buttons["slash"]["panel"].add_child(weapon_icon_tex)
+	skill_buttons["ult"]   = _skill_button(Vector2(1054, 506), 32, "Q", "天", Color(0.95, 0.55, 0.2))
+	skill_buttons["dash"]  = _skill_button(Vector2(1000, 578), 30, "Shift", "步", Color(0.35, 0.7, 1.0))
+	skill_buttons["beam"]  = _skill_button(Vector2(1062, 636), 28, "E", "氣", Color(0.5, 0.9, 1.0))
+	skill_buttons["parry"] = _skill_button(Vector2(1140, 668), 26, "F", "還", GOLD)
+
+func _build_banner() -> void:
+	banner_label = Label.new()
+	banner_label.add_theme_font_size_override("font_size", 32)
+	banner_label.add_theme_color_override("font_color", Color(1, 0.85, 0.45))
+	banner_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	banner_label.position = Vector2(0, 250)
+	banner_label.size = Vector2(1280, 60)
+	banner_label.modulate.a = 0.0
+	banner_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(banner_label)
+
+func _build_toast() -> void:
+	toast = Label.new()
+	toast.add_theme_font_size_override("font_size", 19)
+	toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	toast.position = Vector2(0, 320)
+	toast.size = Vector2(1280, 30)
+	toast.modulate.a = 0.0
+	toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(toast)
+
+	LootManager.item_collected.connect(func(it): show_toast("%s 획득" % it.get_display_name(), it.get_color()))
+	PlayerStats.item_equipped.connect(func(it, _s): show_toast("%s 장착!" % it.get_display_name(), it.get_color()))
+
+func show_banner(text: String) -> void:
+	banner_label.text = text
+	banner_label.modulate.a = 1.0
+	var tw := create_tween()
+	tw.tween_interval(1.5)
+	tw.tween_property(banner_label, "modulate:a", 0.0, 0.7)
+
+func show_toast(text: String, col: Color = Color.WHITE) -> void:
+	toast.text = text
+	toast.add_theme_color_override("font_color", col)
+	toast.modulate.a = 1.0
+	var tw := create_tween()
+	tw.tween_interval(1.2)
+	tw.tween_property(toast, "modulate:a", 0.0, 0.6)
+
+func _build_tutorial() -> void:
+	tutorial_panel = Control.new()
+	tutorial_panel.visible = false
+	tutorial_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(tutorial_panel)
+
+	var bg := ColorRect.new()
+	bg.color = Color(0.02, 0.01, 0.02, 0.9)
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	tutorial_panel.add_child(bg)
+
+	var lbl := Label.new()
+	lbl.text = "1일차 — 폐허 탐험\n\n[낮] 폐허에서 빛나는 유물(F~SSS급)을 회수하고 생존자를 구하세요. 가까이 가서 E.\n중앙 안전지대의 마도 제단에서 F 키로 마석 40을 써 특성을 다시 뽑을 수 있습니다.\n\n[밤] 차원의 균열에서 괴수가 쏟아집니다. 밤은 여러 웨이브로 나뉘고 사이에 정비 시간이 있습니다.\n좌클릭 검기(3타 콤보) · Space 점프 · Shift 신법 · Q 만천화우 · E 기공파 · F 반로환동\n\n※ 바닥에 붉은 예고선이 보이면 돌진입니다 — Shift로 피하세요.\n※ 정비 시간: N 다음 웨이브 즉시 시작 / K 밤 넘기기(방주 HP 소모)\n※ Tab 스탯창 · I 인벤토리(합성·강화)
+※ [P] 키로 동행 펫 교체 — 펫이 떨어진 아이템을 자동으로 주워옵니다.
+   펫은 보스를 잡을 때마다 새 종류가 해금됩니다 (현재 보유한 것들 사이에서 순환).\n\n밤을 버텨낼 때마다 균열이 하나 봉인됩니다. 5개를 모두 봉인하면 최후의 군주가 강림합니다.\n\n[ 이동/공격 아무 키나 눌러 시작 ]"
+	lbl.add_theme_font_size_override("font_size", 18)
+	lbl.position = Vector2(180, 120)
+	lbl.size = Vector2(920, 480)
+	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD
+	tutorial_panel.add_child(lbl)
+
+func show_tutorial() -> void:
+	tutorial_panel.visible = true
+
+func is_tutorial_active() -> bool:
+	return tutorial_panel.visible
+
+func _build_game_over() -> void:
+	game_over_panel = Control.new()
+	game_over_panel.visible = false
+	game_over_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(game_over_panel)
+
+	var bg := ColorRect.new()
+	bg.color = Color(0.05, 0, 0, 0.84)
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	game_over_panel.add_child(bg)
+
+	game_over_label = Label.new()
+	game_over_label.add_theme_font_size_override("font_size", 46)
+	game_over_label.add_theme_color_override("font_color", Color(1, 0.25, 0.25))
+	game_over_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	game_over_label.position = Vector2(0, 250)
+	game_over_label.size = Vector2(1280, 60)
+	game_over_panel.add_child(game_over_label)
+
+	var btn := Button.new()
+	btn.text = "다시 도전 (R)"
+	btn.position = Vector2(565, 350)
+	btn.size = Vector2(150, 42)
+	btn.pressed.connect(_on_restart_pressed)
+	game_over_panel.add_child(btn)
+
+func _build_victory() -> void:
+	victory_panel = Control.new()
+	victory_panel.visible = false
+	victory_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(victory_panel)
+
+	var bg := ColorRect.new()
+	bg.color = Color(0.02, 0.02, 0.04, 0.92)
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	victory_panel.add_child(bg)
+
+	var title := Label.new()
+	title.text = "TRUE ENDING"
+	title.add_theme_font_size_override("font_size", 52)
+	title.add_theme_color_override("font_color", GOLD)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.position = Vector2(0, 150)
+	title.size = Vector2(1280, 70)
+	victory_panel.add_child(title)
+
+	var body := Label.new()
+	body.text = "최후의 외계 군주가 쓰러졌다.\n차원의 문이 완전히 닫히고, 핏빛 하늘이 걷힌다.\n\n\"이 멸망한 세계 위에… 다시는 무너지지 않을 우리들의 제국을 세운다.\"\n\n강백현은 검을 거두었다. 전설은 여기서 시작된다."
+	body.add_theme_font_size_override("font_size", 19)
+	body.add_theme_color_override("font_color", Color(0.88, 0.86, 0.88))
+	body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	body.position = Vector2(240, 250)
+	body.size = Vector2(800, 210)
+	body.autowrap_mode = TextServer.AUTOWRAP_WORD
+	victory_panel.add_child(body)
+
+	var btn := Button.new()
+	btn.text = "새로운 삶 (R)"
+	btn.position = Vector2(565, 500)
+	btn.size = Vector2(150, 44)
+	btn.pressed.connect(_on_restart_pressed)
+	victory_panel.add_child(btn)
+
+func show_victory() -> void:
+	victory_panel.visible = true
+	SoundManager.play("ultimate", -10.0)
+
+func show_game_over(reason: String) -> void:
+	SoundManager.play("game_over", -8.0)
+	game_over_panel.visible = true
+	game_over_label.text = "방주 함락" if reason == "base" else "패배"
+
+func _on_restart_pressed() -> void:
+	GameManager.reset_all()
+	TraitManager.reset()
+	PlayerStats.reset()
+	CraftManager.reset()
+	PetManager.reset()
+	Engine.time_scale = 1.0
+	get_tree().reload_current_scene()
+
+func _refresh_quest() -> void:
+	if quest_lines == null:
+		return
+	var lines := []
+	lines.append("◆ 차원문 봉인  %d / %d" % [GameManager.seals_done, GameManager.SEALS_NEEDED])
+	if GameManager.phase == GameManager.Phase.DAY:
+		lines.append("  - 정비 · 장비 정리 (J 로 밤 진입)")
+	else:
+		match GameManager.night_state:
+			GameManager.NightState.WAVE:
+				lines.append("  - 웨이브 %d/%d 격퇴" % [GameManager.wave_index + 1, GameManager.waves_tonight])
+			GameManager.NightState.REST:
+				lines.append("  - 정비 중 (N 즉시 진행)")
+			_:
+				lines.append("  - 아침을 기다린다")
+	if GameManager.seals_done >= GameManager.SEALS_NEEDED:
+		lines.append("◆ 최후의 군주를 격파하라")
+	quest_lines.text = "\n".join(lines)
+
+func _process(_delta: float) -> void:
+	if tutorial_panel.visible:
+		if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_S) \
+			or Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_SPACE) \
+			or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+			tutorial_panel.visible = false
+		return
+
+	if (game_over_panel.visible or victory_panel.visible) and Input.is_key_pressed(KEY_R):
+		_on_restart_pressed()
+		return
+
+	if TraitManager.has_trait():
+		var r: int = TraitManager.get_trait_rarity()
+		trait_label.text = "%s %s" % [RarityEnums.get_rarity_tag(r), TraitManager.get_trait_name()]
+		trait_label.add_theme_color_override("font_color", RarityEnums.get_rarity_color(r))
+	level_label.text = "Day %d" % GameManager.day_count
+
+	var player := get_tree().get_first_node_in_group("player")
+	if player and is_instance_valid(player):
+		var hr: float = clampf(player.hp / maxf(player.max_hp, 1.0), 0.0, 1.0)
+		hp_bar.size.x = 210.0 * hr
+		hp_text.text = "HP  %d / %d" % [int(player.hp), int(player.max_hp)]
+		var ur: float = clampf(player.ult_gauge / maxf(player.ult_max, 1.0), 0.0, 1.0)
+		mp_bar.size.x = 210.0 * ur
+		mp_text.text = "내공  %d%%" % int(ur * 100)
+		vignette.color.a = (0.12 + 0.12 * sin(Time.get_ticks_msec() / 180.0)) if hr < 0.3 else 0.0
+		_update_skill_cooldowns(player)
+
+	gear_label.text = "공격 %.0f · 속도 %.1f  |  %s" % [
+		PlayerStats.get_final_atk(), PlayerStats.get_final_speed(), PlayerStats.get_equipped_summary()]
+	var pet_name := "없음"
+	if PetManager.active != "":
+		pet_name = String(PetManager.get_info(PetManager.active).get("name", PetManager.active))
+	essence_label.text = "◇ 마석 %d      🐾 %s  (P 교체 %d종)" % [
+		CraftManager.essence, pet_name, PetManager.owned.size()]
+	base_label.text = "방주 HP  %d / %d" % [int(GameManager.base_hp), int(GameManager.base_max_hp)]
+	base_label.add_theme_color_override("font_color",
+		Color(1, 0.4, 0.4) if GameManager.base_hp < GameManager.base_max_hp * 0.35 else Color(0.6, 0.85, 1.0))
+	kill_label.text = "처치 %d" % GameManager.kill_count
+
+	if GameManager.phase == GameManager.Phase.DAY:
+		phase_label.text = "☀  낮 — 탐험"
+		phase_label.add_theme_color_override("font_color", Color(1, 0.75, 0.45))
+		var drops := get_tree().get_nodes_in_group("item_drops").size()
+		wave_label.text = "필드 아이템 %d" % drops
+		timer_label.text = "밤까지 %ds        [J] 바로 밤으로" % int(maxf(0.0, GameManager.phase_timer))
+	else:
+		phase_label.text = "🌙  밤 — 방어"
+		phase_label.add_theme_color_override("font_color", Color(0.78, 0.55, 1.0))
+		match GameManager.night_state:
+			GameManager.NightState.WAVE:
+				wave_label.text = "WAVE %d / %d   (적 %d)" % [
+					GameManager.wave_index + 1, GameManager.waves_tonight,
+					get_tree().get_nodes_in_group("enemies").size()]
+				timer_label.text = "웨이브 종료까지 %ds        [K] 밤 넘기기" % int(maxf(0.0, GameManager.phase_timer))
+			GameManager.NightState.REST:
+				wave_label.text = "정비 시간"
+				timer_label.text = "다음 웨이브까지 %ds        [N] 즉시 시작" % int(maxf(0.0, GameManager.phase_timer))
+			_:
+				wave_label.text = "웨이브 종료"
+				timer_label.text = "아침이 온다…"
+
+	_refresh_weapon_icon()
+	if weapon_icon_mesh and weapon_icon_mesh.visible:
+		weapon_icon_mesh.get_parent().rotation.y += _delta * 0.9
+
+	_refresh_quest()
+
+func _update_skill_cooldowns(p) -> void:
+	_set_cd("slash", p.atk_cd, p.ATTACK_COOLDOWN)
+	_set_cd("dash", p.dash_cd, p.DASH_COOLDOWN)
+	_set_cd("beam", p.ranged_cd, p.RANGED_COOLDOWN)
+	_set_cd("parry", p.parry_cd, p.PARRY_COOLDOWN)
+	var ult_ratio: float = 1.0 - clampf(p.ult_gauge / maxf(p.ult_max, 1.0), 0.0, 1.0)
+	var d: Dictionary = skill_buttons["ult"]
+	d["cd"].size.y = d["full"] * ult_ratio
+	d["cdtext"].text = "" if ult_ratio <= 0.001 else "%d%%" % int((1.0 - ult_ratio) * 100)
+
+func _set_cd(key: String, remain: float, total: float) -> void:
+	if not skill_buttons.has(key):
+		return
+	var d: Dictionary = skill_buttons[key]
+	var ratio: float = clampf(remain / maxf(total, 0.001), 0.0, 1.0)
+	d["cd"].size.y = d["full"] * ratio
+	d["cdtext"].text = "" if remain <= 0.05 else "%.1f" % remain
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_TAB:
+			if inventory_ui and inventory_ui.visible:
+				inventory_ui.visible = false
+			if stats_window:
+				stats_window.toggle()
+			get_viewport().set_input_as_handled()
+		elif event.keycode == KEY_I:
+			if stats_window and stats_window.visible:
+				stats_window.visible = false
+			if inventory_ui:
+				inventory_ui.toggle()
+			get_viewport().set_input_as_handled()
+		elif event.keycode == KEY_ESCAPE:
+			var closed := false
+			if stats_window and stats_window.visible:
+				stats_window.visible = false
+				closed = true
+			if inventory_ui and inventory_ui.visible:
+				inventory_ui.visible = false
+				closed = true
+			if closed:
+				get_viewport().set_input_as_handled()
