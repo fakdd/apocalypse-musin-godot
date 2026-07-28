@@ -46,6 +46,8 @@ func _ready() -> void:
 		players.append(p)
 
 	_load_audio_json()
+	_scan_sfx_folder()
+	_scan_bgm_folder()
 	_build_bgm()
 	set_master_db(MASTER_DB)
 	# 페이즈가 바뀌면 기본 BGM 도 따라간다 (랜드마크 안이면 랜드마크 곡이 우선)
@@ -74,6 +76,118 @@ const BGM_TRACKS := {
 const AUDIO_PATH := "res://data/audio.json"
 var audio_defs: Dictionary = {}
 
+# ══════════════════════════════════════════════
+#  폴더 자동 스캔
+#  파일을 넣기만 하면 잡힌다 — 코드도 JSON 도 고치지 않는다.
+#  우선순위: 폴더 스캔 > data/audio.json > 코드 preload
+# ══════════════════════════════════════════════
+const SFX_DIR := "res://assets/audio"
+## 음원을 어디에 두든 잡히게 두 곳을 본다.
+## (기존 플레이스홀더는 assets/audio/bgm, 새로 받은 음원은 assets/music 에 두는 경우가 많다)
+const BGM_DIRS := ["res://assets/music", "res://assets/audio/bgm"]
+const AUDIO_EXT := ["ogg", "wav", "mp3"]
+
+## BGM 트랙 키 → 파일명에 들어 있으면 그 트랙으로 보는 낱말들.
+## 앞쪽에 있을수록 먼저 잡힌다.
+const BGM_HINTS := {
+	"boss":    ["boss", "final", "lord", "epic", "raid"],
+	"danger":  ["danger", "chase", "panic", "horde", "alarm"],
+	"tense":   ["tense", "combat", "fight", "wave", "action"],
+	"night":   ["night", "battle", "dark", "evening", "moon"],
+	"explore": ["explore", "adventure", "journey", "field", "travel"],
+	"day":     ["day", "town", "peace", "calm", "village", "main", "theme"],
+}
+
+## res:// 를 뒤져 오디오 파일 경로를 모은다.
+## 내보낸 빌드에서는 원본이 .import 로만 보이므로 그 접미사를 떼고 확인한다.
+func _scan_dir(dir_path: String) -> Dictionary:
+	var out := {}
+	var d := DirAccess.open(dir_path)
+	if d == null:
+		return out
+	d.list_dir_begin()
+	var fn := d.get_next()
+	while fn != "":
+		if not d.current_is_dir():
+			var name := fn
+			if name.ends_with(".import"):
+				name = name.trim_suffix(".import")
+			var ext := name.get_extension().to_lower()
+			if ext in AUDIO_EXT:
+				var full := dir_path.path_join(name)
+				if ResourceLoader.exists(full):
+					out[name.get_basename()] = full
+		fn = d.get_next()
+	d.list_dir_end()
+	return out
+
+## 효과음 — 파일명(확장자 제외)이 그대로 키가 된다.
+func _scan_sfx_folder() -> void:
+	var found := _scan_dir(SFX_DIR)
+	var added := 0
+	for key in found:
+		if sounds.has(key):
+			continue          ## 이미 등록된 키는 덮어쓰지 않는다 (수동 지정 우선)
+		var st = _safe_load(found[key])
+		if st != null:
+			sounds[key] = st
+			added += 1
+	if added > 0:
+		print("[Sound] SFX %d개 자동 등록 (폴더 %d개)" % [added, found.size()])
+
+## BGM — 파일명 낱말로 트랙 키를 추정하고, 빈 트랙은 아무 곡으로나 채운다.
+func _scan_bgm_folder() -> void:
+	var found := {}
+	for dir_path in BGM_DIRS:
+		var one := _scan_dir(dir_path)
+		for k in one:
+			if not found.has(k):        ## 앞 폴더가 우선 (assets/music 이 이긴다)
+				found[k] = one[k]
+	if found.is_empty():
+		return
+	var mapped := {}
+	var used := {}
+	for track in BGM_HINTS:
+		for hint in BGM_HINTS[track]:
+			for base in found:
+				if used.has(base):
+					continue
+				if base.to_lower().find(hint) >= 0:
+					mapped[track] = found[base]
+					used[base] = true
+					break
+			if mapped.has(track):
+				break
+
+	# 낱말로 못 맞춘 트랙은 남은 곡 → 그래도 없으면 아무 곡이나.
+	# 무음보다는 겹쳐 쓰는 편이 낫다.
+	var leftovers := []
+	for base in found:
+		if not used.has(base):
+			leftovers.append(found[base])
+	var any_track: String = found[found.keys()[0]]
+	for track in BGM_HINTS:
+		if mapped.has(track):
+			continue
+		mapped[track] = leftovers.pop_back() if not leftovers.is_empty() else any_track
+
+	# audio.json / BGM_TRACKS 보다 우선한다 — 실제 파일이 있는 쪽이 이긴다
+	if not audio_defs.has("bgm"):
+		audio_defs["bgm"] = {}
+	for track in mapped:
+		audio_defs["bgm"][track] = mapped[track]
+	print("[Sound] BGM %d곡 스캔 → %s" % [found.size(), str(mapped.keys())])
+
+## 로드 실패해도 게임이 죽지 않게 한다
+func _safe_load(path: String):
+	if path == "" or not ResourceLoader.exists(path):
+		return null
+	var r = ResourceLoader.load(path, "AudioStream", ResourceLoader.CACHE_MODE_REUSE)
+	if r == null or not (r is AudioStream):
+		push_warning("[Sound] 로드 실패: %s" % path)
+		return null
+	return r
+
 func _load_audio_json() -> void:
 	var f := FileAccess.open(AUDIO_PATH, FileAccess.READ)
 	if f == null:
@@ -85,9 +199,9 @@ func _load_audio_json() -> void:
 	audio_defs = j
 	# 없는 파일은 조용히 건너뛴다 — 음원을 나중에 넣어도 된다
 	for key in j.get("sfx", {}):
-		var path := String(j["sfx"][key])
-		if ResourceLoader.exists(path):
-			sounds[key] = load(path)
+		var st = _safe_load(String(j["sfx"][key]))
+		if st != null:
+			sounds[key] = st
 	for key in j.get("pitch", {}):
 		pitches[key] = float(j["pitch"][key])
 
@@ -119,7 +233,9 @@ func default_bgm_for_phase() -> String:
 		return "night"
 	# 낮에는 챕터 테마곡. 정의가 없으면 예전처럼 day.
 	var c := chapter_bgm(GameManager.chapter)
-	return c if c != "" else "day"
+	if c != "" and String(audio_defs.get("bgm", {}).get(c, "")) != "":
+		return c
+	return "day"
 
 ## BGM 을 전환한다. 같은 트랙이면 아무것도 하지 않는다.
 ## 트랙 파일이 없으면 조용히 무시한다 (음악 에셋이 없어도 게임이 정상 동작해야 한다).
@@ -134,7 +250,7 @@ func set_bgm(track_id: String) -> void:
 		return
 
 	_bgm_current = track_id
-	var stream = load(path)
+	var stream = _safe_load(path)
 	if stream == null:
 		return
 

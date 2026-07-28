@@ -635,6 +635,7 @@ func _run_projectile_tests() -> void:
 	await _t_new_game_reset()
 	await _t_menu_click()
 	await _t_mute()
+	await _t_audio_scan()
 
 	host.queue_free()
 	if _pt_bad > 0:
@@ -986,4 +987,27 @@ func _t_mute() -> void:
 	else:
 		print("CT|  ✘ 무음 처리 이상 (loud %s / mute %s / stay %s / back %s)"
 			% [str(loud_ok), str(mute_ok), str(stay_ok), str(back_ok)])
+		_pt_bad += 1
+
+## [오디오 폴더 스캔] 파일을 넣기만 해도 잡히는가 · 빈 트랙이 없는가
+func _t_audio_scan() -> void:
+	var tracks := ["day", "night", "explore", "tense", "danger", "boss"]
+	var empty := []
+	for t in tracks:
+		var path := String(SoundManager.audio_defs.get("bgm", {}).get(t, ""))
+		if path == "" or not ResourceLoader.exists(path):
+			empty.append(t)
+	var sfx_n: int = SoundManager.sounds.size()
+	# feel.json 이 부르는 사운드 키가 전부 실제로 등록돼 있는가
+	var missing := []
+	for k in CombatFeel.feel().get("sound", {}).get("layers", {}):
+		for row in CombatFeel.feel()["sound"]["layers"][k]:
+			if typeof(row) == TYPE_ARRAY and row.size() >= 1:
+				if not SoundManager.sounds.has(String(row[0])):
+					missing.append(String(row[0]))
+	if empty.is_empty() and missing.is_empty() and sfx_n >= 20:
+		print("CT|  ✔ 오디오 스캔 — BGM 6트랙 전부 채워짐 · SFX %d개 · 누락 키 0" % sfx_n)
+	else:
+		print("CT|  ✘ 오디오 스캔 (빈 트랙 %s · 누락 SFX %s · 등록 %d)"
+			% [str(empty), str(missing), sfx_n])
 		_pt_bad += 1
