@@ -146,6 +146,14 @@ func setup(type: String, wave: int) -> void:
 	var mconf := VfxPool.model_conf("enemy", type)
 	model = VfxPool.spawn_model(mconf)
 	if model != null:
+		# 받아 온 모델은 팩마다 단위가 달라(0.3m ~ 21m) 그대로 쓰면
+		# 잡몹 하나가 맵을 덮는다. fit_height 가 있으면 그 키에 맞춘다.
+		var fh := float(mconf.get("fit_height", 0.0))
+		if fh > 0.0:
+			var got := VfxPool.mesh_of(String(mconf.get("model", "")))
+			if got.size() >= 1 and got[0] != null:
+				var f := VfxPool.fit_scale(got[0], fh)
+				model.scale = Vector3(f, f, f)
 		model.position.y += hover_height
 		add_child(model)
 		anim = VfxPool.find_anim(model)

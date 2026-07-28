@@ -24,10 +24,26 @@ func _resolve_anim_names() -> void:
 	owner_enemy.anim_hit = _pick(names, ["HitReact"])
 	owner_enemy.anim_death = _pick(names, ["Death"])
 
+## 원하는 이름을 찾는다.
+##
+## 1순위 정확히 일치, 2순위 "|" 뒤 이름이 일치, 3순위 부분 문자열.
+## FBX 는 "Demon|Idle1", glTF 는 "Armature|Walk" 처럼 접두사가 붙는 경우가 흔해서,
+## 정확 일치만 보면 애니메이션이 있는데도 못 찾아 가만히 서 있게 된다.
 func _pick(names: PackedStringArray, wanted: Array) -> String:
 	for w in wanted:
 		if names.has(w):
 			return w
+	for w in wanted:
+		var lw := String(w).to_lower()
+		for n in names:
+			var tail := String(n).get_slice("|", String(n).count("|")).to_lower()
+			if tail == lw:
+				return n
+	for w in wanted:
+		var lw2 := String(w).to_lower()
+		for n in names:
+			if String(n).to_lower().find(lw2) >= 0:
+				return n
 	return ""
 
 func _play(name: String, force: bool = false) -> void:

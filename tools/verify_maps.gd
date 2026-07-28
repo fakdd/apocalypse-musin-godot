@@ -238,6 +238,39 @@ func _check_applied() -> void:
 	else:
 		probs.append("무기 %d/%d" % [wm, wt])
 
+	# 4) 애니메이션 이름 매칭 — 접두사가 붙어도 잡아내는가
+	var anim_ok := 0
+	var anim_t := 0
+	for t in ["demon", "fire_dragon", "abyss_lord", "hound"]:
+		var conf2 := VfxPool.model_conf("enemy", t)
+		var mp := String(conf2.get("model", ""))
+		if mp == "":
+			continue
+		anim_t += 1
+		var n2 := VfxPool.load_model_node(mp)
+		if n2 == null:
+			continue
+		var ap := VfxPool.find_anim(n2)
+		if ap == null:
+			anim_ok += 1          ## 애니메이션이 없는 모델은 통과로 본다
+		else:
+			var names := ap.get_animation_list()
+			var e2 = load("res://scripts3d/Enemy3D.gd").new()
+			e2.anim = ap
+			e2.animation = load("res://scripts3d/enemy/EnemyAnimation.gd").new()
+			e2.animation.owner_enemy = e2
+			e2.animation._resolve_anim_names()
+			if e2.anim_idle != "" and e2.anim_death != "":
+				anim_ok += 1
+			else:
+				probs.append("%s 애니 매칭 실패 (idle '%s' death '%s' / %s)"
+					% [t, e2.anim_idle, e2.anim_death, str(names).substr(0, 50)])
+			e2.animation.free()
+			e2.free()
+		n2.queue_free()
+	if anim_t > 0 and anim_ok == anim_t:
+		print("MAP|  ✔ 애니메이션 이름 매칭 %d종 (접두사 있는 클립 포함)" % anim_ok)
+
 	host.queue_free()
 	if probs.is_empty():
 		print("MAP|  ✔ 다운로드 에셋이 실제 생성 경로까지 연결됨")

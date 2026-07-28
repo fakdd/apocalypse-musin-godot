@@ -64,8 +64,9 @@
       "rot_y": 180.0
     },
     "bandit": {
-      "model": "res://assets3d/models/ultimate-monsters/Ninja.gltf",
-      "scale": 1.4,
+      "model": "res://assets3d/models/imported/character_3.fbx",
+      "scale": 1.0,
+      "fit_height": 1.9,
       "y_offset": 0.0,
       "rot_y": 180.0
     },
@@ -100,8 +101,9 @@
       "rot_y": 180.0
     },
     "soldier": {
-      "model": "res://assets3d/models/ultimate-monsters/Tribal.gltf",
-      "scale": 1.5,
+      "model": "res://assets3d/models/imported/character_2.fbx",
+      "scale": 1.0,
+      "fit_height": 2.0,
       "y_offset": 0.0,
       "rot_y": 180.0
     },
@@ -136,20 +138,23 @@
       "rot_y": 180.0
     },
     "demon": {
-      "model": "res://assets3d/models/ultimate-monsters/Demon.gltf",
-      "scale": 1.6,
+      "model": "res://assets3d/models/imported/demon_big.fbx",
+      "scale": 1.0,
+      "fit_height": 2.4,
       "y_offset": 0.0,
       "rot_y": 180.0
     },
     "knight": {
-      "model": "res://assets3d/models/ultimate-monsters/Orc_Skull.gltf",
-      "scale": 1.7,
+      "model": "res://assets3d/models/imported/character_1.fbx",
+      "scale": 1.0,
+      "fit_height": 2.2,
       "y_offset": 0.0,
       "rot_y": 180.0
     },
     "fallen_knight": {
-      "model": "res://assets3d/models/ultimate-monsters/BlueDemon.gltf",
-      "scale": 1.8,
+      "model": "res://assets3d/models/imported/demon_big.fbx",
+      "scale": 1.0,
+      "fit_height": 2.6,
       "y_offset": 0.0,
       "rot_y": 180.0
     },
@@ -184,8 +189,9 @@
       "rot_y": 180.0
     },
     "fallen_lord": {
-      "model": "res://assets3d/models/ultimate-monsters/Orc_Skull.gltf",
-      "scale": 3.2,
+      "model": "res://assets3d/models/imported/demon_big.fbx",
+      "scale": 1.0,
+      "fit_height": 5.0,
       "y_offset": 0.0,
       "rot_y": 180.0
     },
@@ -196,8 +202,9 @@
       "rot_y": 180.0
     },
     "abyss_lord": {
-      "model": "res://assets3d/models/ultimate-monsters/Dragon_Evolved.gltf",
-      "scale": 3.8,
+      "model": "res://assets3d/models/imported/demon_drakon.obj",
+      "scale": 1.0,
+      "fit_height": 6.5,
       "y_offset": 0.0,
       "rot_y": 180.0
     },
@@ -503,9 +510,9 @@
     "blade_rust": "res://assets3d/models/medieval-weapons-pack/Sword.obj",
     "blade_steel": "res://assets3d/models/medieval-weapons-pack/Sword_2.obj",
     "blade_fang": "res://assets3d/models/medieval-weapons-pack/Claymore.obj",
-    "blade_crystal": "res://assets3d/models/medieval-weapons-pack/Sword_Big.obj",
-    "blade_dragon": "res://assets3d/models/medieval-weapons-pack/Sword_Golden.obj",
-    "blade_divine": "res://assets3d/models/medieval-weapons-pack/Sword_Golden.obj",
+    "blade_crystal": "res://assets3d/models/imported/crystal_sword.fbx",
+    "blade_dragon": "res://assets3d/models/imported/crystal_sword.fbx",
+    "blade_divine": "res://assets3d/models/imported/crystal_sword.fbx",
     "spear_rust": "res://assets3d/models/medieval-weapons-pack/Spear.obj",
     "spear_steel": "res://assets3d/models/medieval-weapons-pack/Spear.obj",
     "spear_fang": "res://assets3d/models/medieval-weapons-pack/Scythe.obj",
@@ -557,5 +564,14 @@
     "flower": 0.5,
     "mushroom": 0.5,
     "pebble": 0.4
+  },
+  "rejected": {
+    "note": "게임에 쓰기엔 무거워 제외한 것. 필요하면 폴리곤을 줄여 다시 넣으면 된다.",
+    "talwar.glb": "삼각형 264,330개 · 원본 200m — 맵 전체보다 무겁다",
+    "Sword.glb": "95MB — 검 하나에 쓸 용량이 아니다",
+    "cgtrader_optimized_Sword.fbx": "55MB",
+    "character.fbx": "80MB",
+    "evil.zip": "436MB — 압축만으로도 프로젝트보다 크다",
+    "*.rar": "이 환경에 압축 해제 도구가 없다 (직접 풀어서 Downloads 에 두면 설치된다)"
   }
 }
