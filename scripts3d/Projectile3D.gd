@@ -44,7 +44,8 @@ func setup(p_dir: Vector3, p_speed: float, p_damage: float, p_life: float,
 func retarget() -> void:
 	collision_layer = 0
 	collision_mask = LAYER_PLAYER if hits_player else LAYER_ENEMY
-	monitoring = true
+	# 여기도 시그널 처리 도중에 불릴 수 있으므로 지연 설정한다
+	set_deferred("monitoring", true)
 
 func launch(p_dir: Vector3, p_speed: float, p_damage: float, p_life: float) -> void:
 	# setup 을 거치지 않고 직접 부르는 옛 호출부를 위해 여기서도 마스크를 맞춘다
@@ -138,7 +139,11 @@ func _on_body_entered(body: Node3D) -> void:
 		_pop()
 
 func _pop() -> void:
-	monitoring = false          ## 소멸 연출 중에 다시 맞히지 않는다
+	# _on_body_entered 안에서 불리는 경로가 있다.
+	# 시그널을 내보내는 도중에 monitoring 을 직접 끄면 엔진이 막고 에러를 낸다
+	#   "Function blocked during in/out signal."
+	# 에디터(디버거 연결)에서는 이 에러에서 실행이 끊겨 "튕기는" 것처럼 보였다.
+	set_deferred("monitoring", false)   ## 소멸 연출 중에 다시 맞히지 않는다
 	set_physics_process(false)
 	if _pop_tween and _pop_tween.is_valid():
 		_pop_tween.kill()

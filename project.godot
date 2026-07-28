@@ -51,6 +51,7 @@ VerifyContent="*res://tools/verify_content.gd"
 VerifyMaps="*res://tools/verify_maps.gd"
 PlaytestBot="*res://tools/playtest_bot.gd"
 DebugConsole="*res://tools/debug_console.gd"
+VerifyDebug="*res://tools/verify_debug.gd"
 
 [display]
 
