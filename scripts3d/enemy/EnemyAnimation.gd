@@ -161,6 +161,16 @@ func _make_bar_texture(color: Color, width: int) -> ImageTexture:
 ##   1단계: 순백 (0.05초) — 타격이 "꽂힌" 순간
 ##   2단계: 붉은 잔상 (피해 비율만큼 길게) — 아팠다는 여운
 ## 이전에는 0.09초 흰색 단색이라 큰 타격과 작은 타격이 시각적으로 구분되지 않았다.
+## 피격/반응 발광. PlayerAnimation 과 이름을 맞춘다.
+##
+## 호출부(EnemyBrain 의 치유·강화·광폭화, Enemy3D 의 부활)는 `_flash()` 를 부르는데
+## 이 스크립트에는 `_do_flash()` 밖에 없어서 "Nonexistent function '_flash'" 로 튕겼다.
+## 색과 길이를 받아 두되, 기존 연출을 그대로 쓰도록 _do_flash 로 넘긴다.
+func _flash(color: Color = Color.WHITE, duration: float = 0.1) -> void:
+	# 밝은 색일수록 세게 번쩍인다 (기존 damage_ratio 를 밝기로 환산)
+	var ratio: float = clampf((color.r + color.g + color.b) / 3.0, 0.1, 1.0)
+	_do_flash(ratio * clampf(duration / 0.1, 0.5, 2.0))
+
 func _do_flash(damage_ratio: float = 0.2) -> void:
 	var saved := []
 	for mi in owner_enemy.mesh_instances:

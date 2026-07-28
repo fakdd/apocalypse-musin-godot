@@ -106,10 +106,11 @@ func _process(delta: float) -> void:
 		return
 
 	if CraftManager.essence >= REROLL_COST:
-		prompt.text = "마도 제단\n[F] 특성 재주사  (마석 %d)" % REROLL_COST
+		prompt.text = "마도 제단\n[G] 영구 강화 · 동행 뽑기\n[F] 특성 재주사 (마석 %d)" % REROLL_COST
 		prompt.modulate = Color(0.7, 0.95, 1.0)
 	else:
-		prompt.text = "마도 제단\n마석 부족 (%d/%d)" % [CraftManager.essence, REROLL_COST]
+		prompt.text = "마도 제단\n[G] 영구 강화 · 동행 뽑기\n[F] 재주사 — 마석 부족 (%d/%d)" \
+			% [CraftManager.essence, REROLL_COST]
 		prompt.modulate = Color(0.75, 0.6, 0.6)
 
 	if Input.is_key_pressed(KEY_F) and cooldown <= 0.0:

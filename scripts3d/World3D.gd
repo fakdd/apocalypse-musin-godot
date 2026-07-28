@@ -103,11 +103,14 @@ func _ready() -> void:
 	day_timer = DemoDirector.day_duration()
 	GameManager.phase_timer = day_timer
 
+	# 특성 뽑기 화면.
+	#
+	# 첫 실행에는 타이틀 메뉴도 같이 뜬다. 둘이 겹치면 입력을 서로 먹어
+	# "한 번에 시작이 안 되는" 상태가 된다 — 그래서 타이틀이 떠 있으면 미뤘다가,
+	# 슬롯을 고르고 메뉴가 닫힌 뒤에 띄운다.
 	if GameManager.day_count == 1:
-		# 특성 뽑기 화면이 먼저 뜨고, 시작을 누르면 튜토리얼로 넘어간다
-		trait_screen = load("res://scripts3d/TraitScreen.gd").new()
-		add_child(trait_screen)
-		trait_screen.started.connect(_on_trait_screen_done)
+		_trait_pending = true
+		call_deferred("_try_open_trait_screen")
 
 ## 매니저를 만들어 자식으로 붙이고 월드 참조를 넘긴다.
 func _create_managers() -> void:
@@ -134,6 +137,20 @@ func _attach(node: WorldSystem, node_name: String) -> WorldSystem:
 	node.setup(self)
 	add_child(node)
 	return node
+
+## 타이틀이 닫힌 뒤에만 특성 화면을 띄운다. 아직 떠 있으면 다음 프레임에 다시 본다.
+var _trait_pending := false
+
+func _try_open_trait_screen() -> void:
+	if not _trait_pending:
+		return
+	if hud and hud.get("menu_ui") != null and hud.menu_ui.is_open():
+		call_deferred("_try_open_trait_screen")
+		return
+	_trait_pending = false
+	trait_screen = load("res://scripts3d/TraitScreen.gd").new()
+	add_child(trait_screen)
+	trait_screen.started.connect(_on_trait_screen_done)
 
 func _on_trait_screen_done() -> void:
 	trait_screen = null

@@ -645,6 +645,7 @@ func _run_projectile_tests() -> void:
 	await _t_qol()
 	await _t_aim()
 	await _t_pet()
+	await _t_boot()
 
 	host.queue_free()
 	if _pt_bad > 0:
@@ -1278,3 +1279,39 @@ func _t_pet() -> void:
 		print("CT|  ✘ 펫 저장 누락 (lv %d · pity %d)"
 			% [PetManager.level_of("warden"), PetManager.pity]); _pt_bad += 1
 	PetManager.reset()
+
+## [부팅] 첫 실행에 타이틀과 특성 화면이 겹치지 않는가 · 애니메이션 함수가 있는가
+func _t_boot() -> void:
+	var w = get_tree().current_scene
+	# 1) 두 전체화면이 동시에 뜨면 입력을 서로 먹어 시작이 안 된다
+	var menu_open: bool = w.get("hud") != null and w.hud.get("menu_ui") != null 		and w.hud.menu_ui.is_open()
+	var trait_open: bool = w.get("trait_screen") != null 		and is_instance_valid(w.trait_screen)
+	if not (menu_open and trait_open):
+		print("CT|  ✔ 타이틀·특성 화면이 동시에 뜨지 않는다")
+	else:
+		print("CT|  ✘ 타이틀과 특성 화면이 겹쳐 있다"); _pt_bad += 1
+
+	# 2) 애니메이션 노드가 _flash 를 갖고 있는가 (없으면 전투 중 튕긴다)
+	var ea = load("res://scripts3d/enemy/EnemyAnimation.gd").new()
+	var pa = load("res://scripts3d/player/PlayerAnimation.gd").new()
+	var ok_e: bool = ea.has_method("_flash")
+	var ok_p: bool = pa.has_method("_flash")
+	ea.free()
+	pa.free()
+	if ok_e and ok_p:
+		print("CT|  ✔ Enemy/Player 애니메이션 모두 _flash 보유")
+	else:
+		print("CT|  ✘ _flash 없음 (enemy %s / player %s)" % [str(ok_e), str(ok_p)])
+		_pt_bad += 1
+
+	# 3) 제단 프롬프트에 G 안내가 있는가
+	var found := false
+	for a in get_tree().get_nodes_in_group("altars"):
+		if a.get("prompt") != null:
+			a._process(0.016)
+			if String(a.prompt.text).find("[G]") >= 0:
+				found = true
+	if found:
+		print("CT|  ✔ 제단 프롬프트에 [G] 안내")
+	else:
+		print("CT|  ✘ 제단 프롬프트에 [G] 가 없다"); _pt_bad += 1

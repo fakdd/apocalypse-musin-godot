@@ -369,7 +369,7 @@ func _tick_signature(_delta: float) -> void:
 		if owner_enemy.hp / maxf(owner_enemy.max_hp, 1.0) < float(behavior.get("hp", 0.5)):
 			enraged_low = true
 			owner_enemy.speed *= float(behavior.get("speed", 1.3))
-			owner_enemy.animation._flash()
+			_safe_flash(owner_enemy.animation)
 		return
 
 	if sig_cd > 0.0:
@@ -387,7 +387,7 @@ func _tick_signature(_delta: float) -> void:
 					continue
 				if o.hp < o.max_hp:
 					o.hp = minf(o.max_hp, o.hp + o.max_hp * pct)
-					o.animation._flash()
+					_safe_flash(o.animation)
 		"buff_allies":
 			sig_cd = float(behavior.get("cd", 8.0))
 			var r2 := float(behavior.get("radius", 10.0))
@@ -400,7 +400,7 @@ func _tick_signature(_delta: float) -> void:
 				if not o.get_meta("empowered", false):
 					o.set_meta("empowered", true)
 					o.contact_damage *= m
-					o.animation._flash()
+					_safe_flash(o.animation)
 		"slam":
 			var pl := Battlefield.live_player()
 			if pl == null:
@@ -984,3 +984,9 @@ func spawn_field(radius: float, life: float, at: Vector3 = Vector3.INF) -> void:
 			if slow < 1.0 and "slow_timer" in pl:
 				pl.slow_timer = maxf(pl.slow_timer, tick * 1.5)
 	VfxPool.give_fx(fx)
+
+## 애니메이션 노드가 `_flash` 를 갖고 있을 때만 부른다.
+## 모델을 교체하면 다른 애니메이션 스크립트가 붙을 수 있어, 없는 함수를 부르면 튕긴다.
+func _safe_flash(a) -> void:
+	if a != null and is_instance_valid(a) and a.has_method("_flash"):
+		a._flash()

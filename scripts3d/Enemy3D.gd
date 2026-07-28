@@ -443,7 +443,8 @@ func _signature_on_death() -> bool:
 				brain.revived = true
 				hp = max_hp * float(b.get("hp_pct", 0.35))
 				dead = false
-				animation._flash()
+				if animation and animation.has_method("_flash"):
+					animation._flash()
 				stun(float(b.get("delay", 1.2)))
 				return true
 	return false
