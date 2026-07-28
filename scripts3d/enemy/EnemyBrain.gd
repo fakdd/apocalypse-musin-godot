@@ -405,10 +405,10 @@ func _tick_signature(_delta: float) -> void:
 			var pl := Battlefield.live_player()
 			if pl == null:
 				return
-			var rad := float(behavior.get("radius", 6.0))
+			var rad := float(behavior.get("radius", 6.0)) * EnemyConfig.mon_chapter_scale("slam_radius")
 			if owner_enemy.global_position.distance_to(pl.global_position) > rad:
 				return
-			sig_cd = float(behavior.get("cd", 6.0))
+			sig_cd = float(behavior.get("cd", 6.0)) * EnemyConfig.mon_chapter_scale("slam_cd")
 			owner_enemy.attack_anim_timer = maxf(owner_enemy.attack_anim_timer, 0.4)
 			CombatFeel.impact("slam")
 			pl.take_damage(owner_enemy.contact_damage * float(behavior.get("damage", 1.4)),
@@ -433,8 +433,8 @@ func _tick_signature(_delta: float) -> void:
 			if owner_enemy.global_position.distance_to(pl4.global_position) \
 					> float(behavior.get("range", 16.0)):
 				return
-			sig_cd = float(behavior.get("cd", 8.0))
-			spawn_field(float(behavior.get("radius", 4.0)),
+			sig_cd = float(behavior.get("cd", 8.0)) * EnemyConfig.mon_chapter_scale("field_cd")
+			spawn_field(float(behavior.get("radius", 4.0)) * EnemyConfig.mon_chapter_scale("field_radius"),
 				float(behavior.get("life", 5.0)), pl4.global_position)
 		"pierce_guard":
 			# 방어 관통 — 예고 후 강하게 친다. 패링으로만 넘길 수 있다.

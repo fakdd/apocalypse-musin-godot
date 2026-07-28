@@ -31,7 +31,15 @@ func _ready() -> void:
 ## ── 데미지 숫자 ──
 
 ## 풀에서 Label3D 를 꺼낸다. parent 아래에 붙여 반환한다.
+## 화면에 한꺼번에 뜨는 데미지 숫자 상한.
+## 떼전투에서 숫자가 캐릭터를 완전히 덮어 아무것도 안 보였다.
+const ACTIVE_DAMAGE_MAX := 3
+var _active_damage := 0
+
 func take_damage_label(parent: Node) -> Label3D:
+	if _active_damage >= ACTIVE_DAMAGE_MAX:
+		return null
+	_active_damage += 1
 	var lbl: Label3D = null
 	while _damage_pool.size() > 0 and lbl == null:
 		var cand: Label3D = _damage_pool.pop_back()
@@ -60,6 +68,7 @@ func _make_damage_label() -> Label3D:
 
 ## 사용이 끝난 Label3D 를 반납한다.
 func give_damage_label(lbl: Label3D) -> void:
+	_active_damage = maxi(0, _active_damage - 1)
 	if not is_instance_valid(lbl):
 		return
 	lbl.visible = false
@@ -109,6 +118,7 @@ func give_projectile(proj: Area3D) -> void:
 
 ## 씬 전환으로 무효가 된 항목 제거
 func _prune() -> void:
+	_active_damage = 0
 	_damage_pool = _damage_pool.filter(func(n): return is_instance_valid(n))
 	_projectile_pool = _projectile_pool.filter(func(n): return is_instance_valid(n))
 	_fx_pool = _fx_pool.filter(func(n): return is_instance_valid(n))

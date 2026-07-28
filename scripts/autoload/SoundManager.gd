@@ -89,13 +89,26 @@ const AUDIO_EXT := ["ogg", "wav", "mp3"]
 
 ## BGM 트랙 키 → 파일명에 들어 있으면 그 트랙으로 보는 낱말들.
 ## 앞쪽에 있을수록 먼저 잡힌다.
+## 낱말은 소문자로 비교한다. 앞쪽일수록 먼저 잡힌다.
 const BGM_HINTS := {
-	"boss":    ["boss", "final", "lord", "epic", "raid"],
-	"danger":  ["danger", "chase", "panic", "horde", "alarm"],
-	"tense":   ["tense", "combat", "fight", "wave", "action"],
-	"night":   ["night", "battle", "dark", "evening", "moon"],
-	"explore": ["explore", "adventure", "journey", "field", "travel"],
-	"day":     ["day", "town", "peace", "calm", "village", "main", "theme"],
+	"boss":    ["bgm08boss1", "bgm08boss2", "boss", "final", "lord", "epic", "raid"],
+	"danger":  ["bgm02evil", "bgm14chase", "danger", "chase", "panic", "horde", "alarm"],
+	"tense":   ["bgm12dungeon1", "bgm13dungeon2", "tense", "dungeon", "combat", "fight", "wave"],
+	"night":   ["bgm07battle1", "bgm07battle2", "bgm07battle3", "night", "battle", "dark", "moon"],
+	"explore": ["bgm06adventure1", "bgm03prairie", "bgm10desert1",
+				"explore", "adventure", "prairie", "journey", "field", "travel"],
+	"day":     ["bgm04town1", "bgm04town0", "bgm04town2", "bgm01hero",
+				"day", "town", "hero", "peace", "calm", "village", "main", "theme"],
+}
+
+## 징글/효과음 파일명 → 기존 사운드 키.
+## 파일명이 제각각이라 이름만으로는 못 잡히는 것들을 여기서 이어 준다.
+## 한 파일이 여러 키를 맡아도 된다.
+const SFX_ALIASES := {
+	"ms02gameover1nl":  ["game_over"],
+	"ms08levelup1nl":   ["level_up", "rescue"],
+	"ms01triumph1nl":   ["ultimate"],
+	"ms03discoverynl":  ["pickup"],
 }
 
 ## res:// 를 뒤져 오디오 파일 경로를 모은다.
@@ -132,8 +145,21 @@ func _scan_sfx_folder() -> void:
 		if st != null:
 			sounds[key] = st
 			added += 1
-	if added > 0:
-		print("[Sound] SFX %d개 자동 등록 (폴더 %d개)" % [added, found.size()])
+	# 별칭 — 파일명이 기존 키와 다를 때 이어 준다 (실제 파일이 있을 때만)
+	var aliased := 0
+	for base in found:
+		var lower: String = String(base).to_lower()
+		if not SFX_ALIASES.has(lower):
+			continue
+		var st2 = _safe_load(found[base])
+		if st2 == null:
+			continue
+		for key in SFX_ALIASES[lower]:
+			sounds[key] = st2      ## 별칭은 기존 키를 덮어쓴다 (더 좋은 음원이므로)
+			aliased += 1
+	if added > 0 or aliased > 0:
+		print("[Sound] SFX %d개 자동 등록 · 별칭 %d개 (폴더 %d개)"
+			% [added, aliased, found.size()])
 
 ## BGM — 파일명 낱말로 트랙 키를 추정하고, 빈 트랙은 아무 곡으로나 채운다.
 func _scan_bgm_folder() -> void:
@@ -152,7 +178,7 @@ func _scan_bgm_folder() -> void:
 			for base in found:
 				if used.has(base):
 					continue
-				if base.to_lower().find(hint) >= 0:
+				if base.to_lower().find(hint.to_lower()) >= 0:
 					mapped[track] = found[base]
 					used[base] = true
 					break

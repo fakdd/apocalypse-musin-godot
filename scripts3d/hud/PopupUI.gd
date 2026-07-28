@@ -27,9 +27,10 @@ func build_toast() -> void:
 	var hud := owner_hud
 	hud.toast = Label.new()
 	hud.toast.add_theme_font_size_override("font_size", 19)
-	hud.toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hud.toast.position = Vector2(0, 320)
-	hud.toast.size = Vector2(1280, 30)
+	# 화면 정중앙(y=320)에 뜨면 전투 시야를 통째로 가린다 — 우측 상단으로 옮긴다.
+	hud.toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	hud.toast.position = Vector2(640, 300)
+	hud.toast.size = Vector2(626, 30)
 	hud.toast.modulate.a = 0.0
 	hud.toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud.add_child(hud.toast)

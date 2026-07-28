@@ -168,12 +168,20 @@ func _show_shop() -> void:
 		var base := int(it.get("price", 0))
 		var tag := "◇%d" % p
 		if p < base:
-			tag = "◇%d [color=#6a6a72](%d)[/color]" % [p, base]
+			# Button 은 BBCode 를 해석하지 않는다 — 태그를 쓰면 글자 그대로 보인다
+			tag = "◇%d  (정가 %d)" % [p, base]
 		rows.append(["%s   %s\n     %s" % [String(it.get("name", "")), tag,
 			String(it.get("desc", ""))],
 			String(it.get("id", "")), CraftManager.essence >= p, "shop"])
 	rows.append(["← 돌아가기", "__back", true, "back"])
 	_build_rows(rows)
+
+## Button.text 로 들어갈 문자열에서 BBCode 태그를 벗긴다.
+## JSON 쪽 대사에 태그가 섞여 들어와도 화면이 깨지지 않게 하는 안전망이다.
+static func plain(t: String) -> String:
+	var re := RegEx.new()
+	re.compile("\\[/?[a-zA-Z][^\\]]*\\]")
+	return re.sub(t, "", true)
 
 func _build_rows(rows: Array) -> void:
 	for c in choice_box.get_children():
@@ -182,7 +190,7 @@ func _build_rows(rows: Array) -> void:
 	for i in range(rows.size()):
 		var r: Array = rows[i]
 		var b := Button.new()
-		b.text = String(r[0])
+		b.text = plain(String(r[0]))
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.custom_minimum_size = Vector2(820, 30)
 		b.disabled = not bool(r[2])

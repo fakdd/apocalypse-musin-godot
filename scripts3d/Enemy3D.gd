@@ -307,6 +307,14 @@ func _die() -> void:
 	# 대표 행동 — 죽는 순간에 일어나는 것들 (폭발/분열/부활)
 	if _signature_on_death():
 		return
+	# 돌진 예고 중에 죽으면 빨간 띠가 바닥에 영원히 남는다.
+	# EnemyMovement 는 '돌진이 시작될 때'만 지우므로 여기서도 지워야 한다.
+	if telegraph and is_instance_valid(telegraph):
+		telegraph.queue_free()
+	telegraph = null
+	charge_windup = 0.0
+	charge_dash = 0.0
+
 	GameManager.kill_count += 1
 	CombatFeel.note_kill()
 	var _pl := Battlefield.live_player()

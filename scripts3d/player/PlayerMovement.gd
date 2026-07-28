@@ -23,21 +23,37 @@ func _start_dash() -> void:
 	SoundManager.play("dash")
 	owner_player.animation._spawn_dash_trail()
 
+## 마우스 방향으로 몸을 돌린다.
+##
+## 예전에는 바닥 평면과 광선을 교차시켰다. 카메라가 -50도로 내려다보고 있어서
+## **화면 아래쪽을 가리키면 광선이 카메라 코앞 바닥에 꽂힌다.** 그 지점은
+## 플레이어보다 뒤쪽이라 캐릭터가 반대로 돌아버렸고, 그래서 아래로 조준이 안 됐다.
+##
+## 지금은 화면 좌표에서 바로 방향을 구한다. 플레이어의 화면 위치에서 마우스까지의
+## 벡터를 카메라의 좌우/전방 축에 얹으면 화면 어디를 가리켜도 그대로 그 방향이 된다.
 func _aim_at_mouse() -> void:
 	var vp := get_viewport()
-	if vp == null or owner_player.camera == null:
+	var cam: Camera3D = owner_player.camera
+	if vp == null or cam == null or not is_instance_valid(cam):
 		return
 	var mouse := vp.get_mouse_position()
-	var from: Vector3 = owner_player.camera.project_ray_origin(mouse)
-	var dir: Vector3 = owner_player.camera.project_ray_normal(mouse)
-	if absf(dir.y) < 0.0001:
+	var origin := cam.unproject_position(owner_player.global_position)
+	var d := mouse - origin
+	if d.length() < 6.0:          ## 캐릭터 위를 가리키면 방향을 바꾸지 않는다
 		return
-	var t := (owner_player.global_position.y - from.y) / dir.y
-	if t <= 0:
+
+	# 카메라의 좌우축과, 바닥에 눕힌 전방축
+	var basis := cam.global_transform.basis
+	var right := Vector3(basis.x.x, 0.0, basis.x.z)
+	var fwd := Vector3(-basis.z.x, 0.0, -basis.z.z)
+	if right.length_squared() < 0.0001 or fwd.length_squared() < 0.0001:
 		return
-	var target := from + dir * t
-	var to_target := target - owner_player.global_position
-	to_target.y = 0
-	if to_target.length() < 0.1:
+	right = right.normalized()
+	fwd = fwd.normalized()
+
+	# 화면 y 는 아래로 증가한다 — 아래로 끌면 전방의 반대(화면 아래쪽)를 향한다
+	var world := right * d.x - fwd * d.y
+	if world.length_squared() < 0.0001:
 		return
-	owner_player.facing_angle = atan2(to_target.x, to_target.z)
+	world = world.normalized()
+	owner_player.facing_angle = atan2(world.x, world.z)

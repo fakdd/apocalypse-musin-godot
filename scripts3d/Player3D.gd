@@ -297,6 +297,8 @@ func shake(mag: float, dur: float) -> void:
 ## 타격 순간 잠깐 좁아졌다 돌아온다. 화면이 "파고드는" 느낌을 만든다.
 var _fov_punch := 0.0
 var _near_death_shown := false
+## 피격 무적 최소 시간. 어떤 경로로 맞아도 이 아래로는 안 내려간다.
+const I_FRAME_MIN := 0.35
 
 func fov_punch(amount: float) -> void:
 	_fov_punch = maxf(_fov_punch, amount)
@@ -384,7 +386,10 @@ func take_damage(amount: float, from: Vector3 = Vector3.ZERO) -> void:
 		_near_death_shown = false
 	# 떼로 붙었을 때 초당 피격 횟수를 제한한다.
 	# 0.35 이면 초당 2.9회까지 맞아, 몹 3~4기에 둘러싸이면 빠져나올 틈이 없었다.
-	invuln_timer = 0.55
+	# I_FRAME_MIN 아래로는 절대 내려가지 않는다 (다른 곳에서 덮어써도 안전).
+	invuln_timer = maxf(invuln_timer, maxf(I_FRAME_MIN, 0.55))
+	# 맞은 것이 손에 잡히도록 히트스톱을 준다 — 피해량이 클수록 길다
+	CombatFeel.hit_stop(clampf(amount / max_hp, 0.02, 0.09))
 	# 피해량이 클수록 더 크게 흔들린다 (전부 같은 세기로 흔들리면 위기감이 안 생긴다)
 	var weight: float = clampf(amount / 25.0, 0.35, 1.6)
 	var kick_dir := Vector3.ZERO

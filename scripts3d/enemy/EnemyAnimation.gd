@@ -189,6 +189,8 @@ func _do_flash(damage_ratio: float = 0.2) -> void:
 ## 피해 비율에 따라 글자 크기와 색이 달라져 큰 타격이 눈에 들어온다.
 func _spawn_damage_number(amount: float) -> void:
 	var lbl := VfxPool.take_damage_label(owner_enemy.get_parent())
+	if lbl == null:
+		return          ## 동시 표시 상한 — 화면을 덮지 않게 이번 숫자는 건너뛴다
 	lbl.text = str(int(amount))
 	var ratio: float = clampf(amount / maxf(owner_enemy.max_hp, 1.0), 0.0, 1.0)
 	# 큰 피해는 크고 붉게, 작은 피해는 작고 노랗게

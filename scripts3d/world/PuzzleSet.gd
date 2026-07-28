@@ -235,8 +235,9 @@ func _solve() -> void:
 	for e in _elements:
 		_set_lit(e, true)
 
+	# 어느 한 단계에서 죽어도 나머지가 돌아가야 한다.
+	# 특히 보상 단계에서 멈추면 연출용 time_scale 이 복원되지 않아 화면이 언다.
 	SaveGame.solve_puzzle(_id())
-	# 업적은 AchievementManager 를 거친다 — 토스트·카운터가 함께 처리된다
 	AchievementManager.bump("puzzle")
 	var ach := String(puzzle.get("achievement", ""))
 	if ach != "":
@@ -245,7 +246,8 @@ func _solve() -> void:
 	CombatFeel.screen_flash(Color(1.0, 0.9, 0.55), 0.22, 0.0, 0.3)
 	SoundManager.play("ultimate", -8.0)
 	_banner("◈ 수수께끼가 풀렸다")
-	_give_reward()
+	if is_inside_tree():
+		_give_reward()
 
 ## 보상 — chest(희귀 상자) / altar(업그레이드 제단) / passage(숨겨진 길)
 ## altar 는 4순위에서 실제 제단으로 바뀐다. 지금은 상자로 대신 준다.
@@ -253,6 +255,8 @@ func _give_reward() -> void:
 	var kind := String(puzzle.get("reward", "chest"))
 	var rarity := String(puzzle.get("rarity", "B"))
 	var idx := _rarity_index(rarity)
+	if not is_inside_tree():
+		return
 	var at := global_position + Vector3(0, 0, 1.5)
 
 	match kind:
@@ -291,12 +295,25 @@ func _hint() -> void:
 			_toast(h, Color(0.85, 0.9, 1.0))
 	LandmarkRegistry.landmark_entered.connect(cb)
 
-func _toast(text: String, col: Color) -> void:
+## 씬 재로드 직후에는 current_scene 이 아직 HUD 를 안 만들었을 수 있다.
+## get("hud") 로 물어야 프로퍼티가 없는 씬에서도 죽지 않는다.
+func _hud():
+	if not is_inside_tree():
+		return null
 	var world = get_tree().current_scene
-	if world and world.hud:
-		world.hud.show_toast(text, col)
+	if world == null or not is_instance_valid(world):
+		return null
+	var h = world.get("hud")
+	if h == null or not is_instance_valid(h):
+		return null
+	return h
+
+func _toast(text: String, col: Color) -> void:
+	var h = _hud()
+	if h and h.has_method("show_toast"):
+		h.show_toast(text, col)
 
 func _banner(text: String) -> void:
-	var world = get_tree().current_scene
-	if world and world.hud:
-		world.hud.show_banner(text)
+	var h = _hud()
+	if h and h.has_method("show_banner"):
+		h.show_banner(text)

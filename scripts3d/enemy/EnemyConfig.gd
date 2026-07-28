@@ -506,3 +506,11 @@ static func mon_color(type: String) -> Color:
 	if typeof(c) == TYPE_ARRAY and c.size() >= 3:
 		return Color(float(c[0]), float(c[1]), float(c[2]))
 	return Color(1, 1, 1)
+
+## 초반 챕터 장판/충격파 완화 배율 (data/monsters.json 의 chapter_scale)
+static func mon_chapter_scale(key: String) -> float:
+	var cs: Dictionary = mon_data().get("chapter_scale", {})
+	var c := str(clampi(GameManager.chapter, 1, 99))
+	while int(c) > 1 and not cs.has(c):
+		c = str(int(c) - 1)
+	return float(cs.get(c, {}).get(key, 1.0))

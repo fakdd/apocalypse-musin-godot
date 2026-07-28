@@ -6,7 +6,8 @@
     "danger": "1~5. 이름표 색과 우선 처치 안내에 쓴다.",
     "weak": "약점 태그. stun/bleed/poison/burn/burst/range/flank/charge",
     "counter": "플레이어에게 보여줄 상대법 한 줄.",
-    "tell": "행동 직전에 보이는 신호."
+    "tell": "행동 직전에 보이는 신호.",
+    "chapter_scale": "초반 챕터는 아래 배율로 완화한다 (pacing.json tempo 와 별개)"
   },
   "behaviors": {
     "note": "전부 기존 EnemyBrain/Enemy3D 기능의 조합이다.",
@@ -81,8 +82,8 @@
     },
     "ground_slam": {
       "kind": "slam",
-      "radius": 6.0,
-      "cd": 6.0,
+      "radius": 5.1,
+      "cd": 7.5,
       "damage": 1.4
     },
     "split": {
@@ -133,10 +134,10 @@
     },
     "hazard_field": {
       "kind": "field",
-      "cd": 8.0,
+      "cd": 11.0,
       "range": 16.0,
-      "radius": 4.0,
-      "life": 5.0,
+      "radius": 3.4,
+      "life": 4.2,
       "tick": 0.5,
       "damage": 0.35,
       "slow": 0.75,
@@ -350,6 +351,27 @@
       "weak": "poison",
       "counter": "호위를 정리하고 본체를 친다",
       "tell": "무릎 꿇으면 호위를 부른다"
+    }
+  },
+  "chapter_scale": {
+    "note": "1~2장은 장판/충격파를 넓게 쓰지 않는다. 회피할 공간을 준다.",
+    "1": {
+      "field_radius": 0.85,
+      "field_cd": 1.35,
+      "slam_radius": 0.85,
+      "slam_cd": 1.3
+    },
+    "2": {
+      "field_radius": 0.9,
+      "field_cd": 1.2,
+      "slam_radius": 0.9,
+      "slam_cd": 1.18
+    },
+    "3": {
+      "field_radius": 1.0,
+      "field_cd": 1.0,
+      "slam_radius": 1.0,
+      "slam_cd": 1.0
     }
   }
 }

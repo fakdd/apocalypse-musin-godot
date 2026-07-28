@@ -30,6 +30,9 @@ var _flash_rect: ColorRect
 var _flash_tween: Tween
 
 func _ready() -> void:
+	# 메뉴가 트리를 멈춰도 시간배율 복원은 돌아야 한다.
+	# 이게 없으면 히트스톱 중에 일시정지 → 해제 시 화면이 언 채로 남는다.
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	process_mode = Node.PROCESS_MODE_ALWAYS   ## time_scale 0.03 에서도 복원 타이머가 돌아야 한다
 	process_priority = 1000                    ## 다른 노드가 끝난 뒤 시간 복원
 	_build_flash_overlay()
@@ -68,6 +71,19 @@ func _process(delta: float) -> void:
 	if was_stop != (_stop_remain > 0.0) or was_slow != (_slowmo_remain > 0.0):
 		_apply_time_scale()
 
+	# ── 안전장치 ──
+	# 어떤 이유로든 타이머가 다 끝났는데 배율이 남아 있으면 되돌린다.
+	# (연출 중에 호출부가 예외로 중단되면 배율만 남아 게임이 언 것처럼 보인다)
+	if _stop_remain <= 0.0 and _slowmo_remain <= 0.0 and Engine.time_scale != 1.0:
+		Engine.time_scale = 1.0
+	# 0 이하로 떨어지면 물리·타이머가 전부 멈춰 영구 프리즈가 된다
+	if Engine.time_scale <= 0.001:
+		push_warning("[Feel] time_scale 이 0 에 붙어 복구했다")
+		_stop_remain = 0.0
+		_slowmo_remain = 0.0
+		_slowmo_scale = 1.0
+		Engine.time_scale = 1.0
+
 ## 히트스톱이 슬로모션보다 우선한다 (짧고 강한 것이 먼저)
 func _apply_time_scale() -> void:
 	if _stop_remain > 0.0:
@@ -81,6 +97,7 @@ func _apply_time_scale() -> void:
 func hit_stop(weight: float) -> void:
 	if weight <= 0.0:
 		return
+	weight = minf(weight, 0.4)      ## 상한 — 잘못된 값이 들어와도 오래 멈추지 않는다
 	# 진행 중인 것보다 약하면서 아직 시간이 남아 있으면 새로 걸지 않는다
 	if weight <= _stop_weight and _stop_remain > 0.0:
 		return

@@ -118,8 +118,8 @@
           "shoot_cd": 1.6,
           "charge_cd": 6.5,
           "spread": 4,
-          "slam_cd": 7.0,
-          "slam_radius": 6.5
+          "slam_cd": 8.75,
+          "slam_radius": 5.52
         },
         {
           "at": 0.33,
@@ -132,8 +132,8 @@
           "shoot_cd": 1.3,
           "charge_cd": 4.5,
           "spread": 5,
-          "slam_cd": 5.5,
-          "slam_radius": 7.5,
+          "slam_cd": 6.88,
+          "slam_radius": 6.38,
           "homing_cd": 9.1,
           "homing_count": 2
         },
@@ -148,8 +148,8 @@
           "shoot_cd": 1.0,
           "charge_cd": 3.4,
           "spread": 6,
-          "slam_cd": 4.0,
-          "slam_radius": 9.0,
+          "slam_cd": 5.0,
+          "slam_radius": 7.65,
           "nova_cd": 6.0,
           "nova_count": 14,
           "homing_cd": 7.0,

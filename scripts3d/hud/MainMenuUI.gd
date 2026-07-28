@@ -203,7 +203,7 @@ func _rebuild_buttons() -> void:
 	_btns.clear()
 	for r in _rows:
 		var b := Button.new()
-		b.text = String(r["label"])
+		b.text = NPCUI.plain(String(r["label"]))
 		b.custom_minimum_size = Vector2(400, 46)
 		b.disabled = not bool(r["enabled"])
 		var rid := String(r["id"])

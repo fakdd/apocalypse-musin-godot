@@ -156,9 +156,15 @@ func earned() -> int:
 	return n
 
 func _toast(d: Dictionary) -> void:
-	var world = get_tree().current_scene
-	if world == null or world.get("hud") == null:
+	# 씬 전환 중에는 current_scene 이 null 이거나 HUD 가 이미 해제된 상태일 수 있다.
+	# 여기서 죽으면 호출부(퍼즐·보스·랜드마크)의 나머지 처리가 통째로 중단된다.
+	var tree := get_tree()
+	if tree == null:
 		return
-	if world.hud.has_method("show_achievement"):
-		world.hud.show_achievement(String(d.get("name", "")), String(d.get("desc", "")))
+	var world = tree.current_scene
+	if world == null or not is_instance_valid(world):
+		return
+	var h = world.get("hud")
+	if h != null and is_instance_valid(h) and h.has_method("show_achievement"):
+		h.show_achievement(String(d.get("name", "")), String(d.get("desc", "")))
 	SoundManager.play("rescue", -8.0)

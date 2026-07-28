@@ -636,6 +636,7 @@ func _run_projectile_tests() -> void:
 	await _t_menu_click()
 	await _t_mute()
 	await _t_audio_scan()
+	await _t_freeze_guard()
 
 	host.queue_free()
 	if _pt_bad > 0:
@@ -1010,4 +1011,36 @@ func _t_audio_scan() -> void:
 	else:
 		print("CT|  ✘ 오디오 스캔 (빈 트랙 %s · 누락 SFX %s · 등록 %d)"
 			% [str(empty), str(missing), sfx_n])
+		_pt_bad += 1
+
+## [프리즈 방지] 연출 도중 호출부가 끊겨도 시간배율이 되돌아오는가
+func _t_freeze_guard() -> void:
+	CombatFeel.reset()
+	# 잘못된 값이 들어와도 오래 멈추지 않는다
+	CombatFeel.hit_stop(99.0)
+	var capped: bool = CombatFeel._stop_remain <= 0.41
+	# 0 에 붙어도 다음 프레임에 복구된다
+	Engine.time_scale = 0.0
+	CombatFeel._stop_remain = 0.0
+	CombatFeel._slowmo_remain = 0.0
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var recovered: bool = Engine.time_scale >= 0.99
+	# 타이머가 끝났는데 배율이 남아 있으면 되돌린다
+	Engine.time_scale = 0.3
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var restored: bool = Engine.time_scale >= 0.99
+	CombatFeel.reset()
+
+	# BBCode 가 버튼 글자에 그대로 새지 않는가
+	var raw := "값 [color=#6a6a72](60)[/color] 끝"
+	var cleaned := NPCUI.plain(raw)
+	var clean_ok: bool = cleaned.find("[") < 0 and cleaned.find("60") >= 0
+
+	if capped and recovered and restored and clean_ok:
+		print("CT|  ✔ 프리즈 방지 — 히트스톱 상한 · 0배율 복구 · 잔여배율 복구 · BBCode 제거")
+	else:
+		print("CT|  ✘ 프리즈 방지 (cap %s / zero %s / left %s / bbcode %s)"
+			% [str(capped), str(recovered), str(restored), str(clean_ok)])
 		_pt_bad += 1
