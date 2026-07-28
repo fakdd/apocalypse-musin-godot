@@ -51,11 +51,30 @@ func auto_merge_from(rarity: int) -> int:
 	var made := 0
 	var r := rarity
 	while r < RarityEnums.Rarity.SSS and can_merge(r):
-		if not merge(r):
+		if not merge_guaranteed(r):
 			break
 		made += 1
 		r += 1          ## 올라간 등급이 또 3개가 되면 한 번 더
 	return made
+
+## 자동 합성 전용 — **확정** 상위 등급.
+##
+## merge() 는 확률 도박이라 실패하면 재료 3개를 태우고 같은 등급 1개만 남긴다.
+## 플레이어가 직접 누른 경우엔 그게 맞지만, 자동으로 굴려서 손해를 보게 하면 안 된다.
+## 그래서 자동 경로만 확정으로 분리했다. 수동 합성(인벤토리 UI)은 그대로 도박이다.
+func merge_guaranteed(rarity: int) -> bool:
+	if not can_merge(rarity):
+		return false
+	var idxs := _find_in_inventory(rarity, MERGE_COST)
+	idxs.sort()
+	idxs.reverse()
+	for i in idxs:
+		PlayerStats.inventory.remove_at(i)
+	var item := LootManager.generate_item(rarity + 1)
+	PlayerStats.acquire_item(item)      ## 더 강하면 바로 장착된다
+	PlayerStats.inventory_changed.emit()
+	craft_result.emit(true, "자동 합성 — %s" % item.get_display_name(), item)
+	return true
 
 func auto_merge_enabled() -> bool:
 	return bool(CombatFeel.pacing().get("auto_merge", {}).get("enabled", true))

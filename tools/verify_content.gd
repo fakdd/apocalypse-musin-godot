@@ -1067,16 +1067,27 @@ func _t_qol() -> void:
 		it.rarity = RarityEnums.Rarity.D
 		it.slot = "weapon"
 		PlayerStats.acquire_item(it)
+	var inv_d := 0
+	for chk in PlayerStats.inventory:
+		if chk != null and chk.rarity == RarityEnums.Rarity.D:
+			inv_d += 1
 	var made := CraftManager.auto_merge_from(RarityEnums.Rarity.D)
+	# 합성 결과물은 더 강하므로 곧바로 장착된다 — 인벤토리만 보면 놓친다
 	var has_up := false
 	for it2 in PlayerStats.inventory:
 		if it2 != null and it2.rarity > RarityEnums.Rarity.D:
 			has_up = true
+	for slot in ["weapon", "armor", "relic"]:
+		var eq: ItemData = PlayerStats.equipped.get(slot, null)
+		if eq != null and eq.rarity > RarityEnums.Rarity.D:
+			has_up = true
+	var consumed: bool = inv_d >= 3 and PlayerStats.inventory.size() < inv_d
 	if made > 0 and has_up:
 		print("CT|  ✔ 자동 합성 — 인벤 D 3개 → 상위 등급 %d회 (인벤 %d개 남음)"
 			% [made, PlayerStats.inventory.size()])
 	else:
-		print("CT|  ✘ 자동 합성 실패 (made %d · 상위 %s)" % [made, str(has_up)])
+		print("CT|  ✘ 자동 합성 실패 (made %d · 소모 %s · 상위 %s · 인벤D %d)"
+			% [made, str(consumed), str(has_up), inv_d])
 		_pt_bad += 1
 
 	# 2) '그냥 간다' 가 대화를 끝내는 선택지로 표시돼 있는가
