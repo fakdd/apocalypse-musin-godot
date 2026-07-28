@@ -184,6 +184,8 @@ func setup(type: String, wave: int) -> void:
 			model.rotation.y = atan2(to_pl.x, to_pl.z)
 
 func _physics_process(delta: float) -> void:
+	if is_queued_for_deletion() or not is_inside_tree():
+		return
 	if dead:
 		return
 	movement.physics_step(delta)

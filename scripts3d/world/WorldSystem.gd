@@ -91,7 +91,9 @@ func _tint_node(node: Node, factor: float) -> void:
 	if node == null or is_equal_approx(factor, 1.0):
 		return
 	var stack: Array = [node]
-	while stack.size() > 0:
+	var ws_guard := 0
+	while stack.size() > 0 and ws_guard < 20000:
+		ws_guard += 1
 		var cur = stack.pop_back()
 		if cur is MeshInstance3D:
 			var base_mat: Material = cur.get_active_material(0)

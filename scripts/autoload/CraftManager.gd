@@ -51,7 +51,12 @@ func auto_merge_from(rarity: int) -> int:
 		return 0
 	var made := 0
 	var r := rarity
+	var guard := 0          ## 안전장치 — 조건이 꼬여도 프레임을 잡아먹지 않게
 	while r < RarityEnums.Rarity.SSS and can_merge(r):
+		guard += 1
+		if guard > 16:
+			push_warning("[Craft] 자동 합성 상한 도달 — 중단")
+			break
 		if not merge_guaranteed(r):
 			break
 		made += 1

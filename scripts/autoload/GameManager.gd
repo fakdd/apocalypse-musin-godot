@@ -87,7 +87,10 @@ func add_exp(amount: int) -> void:
 		* SaveGame.tier_mult("exp") * CombatFeel.tempo("exp", 1.0)))
 	player_exp += amount
 	var leveled := false
-	while player_exp >= exp_to_next():
+	# 안전장치 — exp_to_next 가 0 이하로 잘못 설정돼도 프레임이 멈추지 않게
+	var lv_guard := 0
+	while player_exp >= exp_to_next() and exp_to_next() > 0 and lv_guard < 200:
+		lv_guard += 1
 		player_exp -= exp_to_next()
 		player_level += 1
 		leveled = true

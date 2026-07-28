@@ -973,7 +973,9 @@ func spawn_field(radius: float, life: float, at: Vector3 = Vector3.INF) -> void:
 	var slow: float = float(d.get("slow", 1.0))
 	var tree := e.get_tree()
 	var elapsed := 0.0
-	while elapsed < life:
+	var guard := 0
+	while elapsed < life and guard < 200:
+		guard += 1
 		await tree.create_timer(tick, true, false, true).timeout
 		elapsed += tick
 		if not is_instance_valid(fx):

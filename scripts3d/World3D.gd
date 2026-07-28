@@ -110,7 +110,6 @@ func _ready() -> void:
 	# 슬롯을 고르고 메뉴가 닫힌 뒤에 띄운다.
 	if GameManager.day_count == 1:
 		_trait_pending = true
-		call_deferred("_try_open_trait_screen")
 
 ## 매니저를 만들어 자식으로 붙이고 월드 참조를 넘긴다.
 func _create_managers() -> void:
@@ -138,15 +137,21 @@ func _attach(node: WorldSystem, node_name: String) -> WorldSystem:
 	add_child(node)
 	return node
 
-## 타이틀이 닫힌 뒤에만 특성 화면을 띄운다. 아직 떠 있으면 다음 프레임에 다시 본다.
+## 타이틀이 닫힌 뒤에만 특성 화면을 띄운다.
+##
+## 예전에는 아직 열려 있으면 call_deferred 로 자기 자신을 다시 걸었다.
+## 지연 호출은 같은 프레임 안에서 계속 비워지므로 **한 프레임에 무한히 반복**되어
+## 엔진이 그대로 죽었다(디버거 메시지 없이 프로세스 종료).
+## 프레임 단위로 확인하려면 _process 에서 봐야 한다.
 var _trait_pending := false
 
-func _try_open_trait_screen() -> void:
+func _tick_trait_screen() -> void:
 	if not _trait_pending:
 		return
-	if hud and hud.get("menu_ui") != null and hud.menu_ui.is_open():
-		call_deferred("_try_open_trait_screen")
+	if hud == null or not is_instance_valid(hud):
 		return
+	if hud.get("menu_ui") != null and hud.menu_ui.is_open():
+		return          ## 타이틀이 아직 떠 있다 — 다음 프레임에 다시 본다
 	_trait_pending = false
 	trait_screen = load("res://scripts3d/TraitScreen.gd").new()
 	add_child(trait_screen)
@@ -208,6 +213,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				hud.show_toast("동행: %s" % String(info.get("name", t)), Color(1, 0.9, 0.5))
 
 func _process(delta: float) -> void:
+	_tick_trait_screen()
 	# 회차 누적 시간 — 스피드런 챌린지 판정. 저장은 기존 저장 지점에서 함께 된다.
 	if not GameManager.game_won:
 		SaveGame.run_seconds += delta

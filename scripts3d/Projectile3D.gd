@@ -95,6 +95,8 @@ func _build_parts() -> void:
 	body_entered.connect(_on_body_entered)
 
 func _physics_process(delta: float) -> void:
+	if is_queued_for_deletion() or not is_inside_tree():
+		return
 	# 유도 — 목표 방향으로 조금씩 튼다. 각속도가 낮아 크게 돌면 피할 수 있다.
 	if homing_turn > 0.0 and is_instance_valid(homing_target):
 		var want: Vector3 = homing_target.global_position - global_position

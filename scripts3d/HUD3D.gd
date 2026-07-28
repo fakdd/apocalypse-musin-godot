@@ -329,7 +329,10 @@ func show_achievement(title: String, desc: String) -> void:
 ## 화면 하단 스킬 아이콘 위에 커서가 올라가면 Control 이 이벤트를 먹어
 ## 3D 바닥 조준이 그 자리에서 끊겼다 — 아래쪽으로 조준이 안 되던 원인 중 하나.
 ## 창(메뉴·대화·제단)은 열릴 때 스스로 STOP 으로 되돌린다.
-func make_hud_click_through(root: Node = self) -> void:
+func make_hud_click_through(root: Node = self, depth: int = 0) -> void:
+	# 깊이 제한 — 트리가 예상보다 깊거나 순환이 생겨도 스택이 터지지 않게
+	if depth > 12 or root == null or not is_instance_valid(root):
+		return
 	for c in root.get_children():
 		if c is Control:
 			# 버튼과 "ui_clickable" 로 표시한 것(인벤토리 슬롯 등)은 클릭을 받는다.
@@ -338,7 +341,7 @@ func make_hud_click_through(root: Node = self) -> void:
 				c.mouse_filter = Control.MOUSE_FILTER_STOP
 			elif c.mouse_filter == Control.MOUSE_FILTER_STOP:
 				c.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		make_hud_click_through(c)
+		make_hud_click_through(c, depth + 1)
 
 func _process(_delta: float) -> void:
 	if popup_ui.handle_popup_input():

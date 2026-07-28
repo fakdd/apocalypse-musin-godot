@@ -41,7 +41,9 @@ func take_damage_label(parent: Node) -> Label3D:
 		return null
 	_active_damage += 1
 	var lbl: Label3D = null
-	while _damage_pool.size() > 0 and lbl == null:
+	var guard_lbl := 0
+	while _damage_pool.size() > 0 and lbl == null and guard_lbl < 64:
+		guard_lbl += 1
 		var cand: Label3D = _damage_pool.pop_back()
 		if is_instance_valid(cand):
 			lbl = cand
@@ -69,7 +71,7 @@ func _make_damage_label() -> Label3D:
 ## 사용이 끝난 Label3D 를 반납한다.
 func give_damage_label(lbl: Label3D) -> void:
 	_active_damage = maxi(0, _active_damage - 1)
-	if not is_instance_valid(lbl):
+	if not is_instance_valid(lbl) or lbl.is_queued_for_deletion():
 		return
 	lbl.visible = false
 	if lbl.get_parent():
@@ -83,7 +85,9 @@ func give_damage_label(lbl: Label3D) -> void:
 
 func take_projectile(parent: Node) -> Area3D:
 	var proj: Area3D = null
-	while _projectile_pool.size() > 0 and proj == null:
+	var guard_proj := 0
+	while _projectile_pool.size() > 0 and proj == null and guard_proj < 64:
+		guard_proj += 1
 		var cand: Area3D = _projectile_pool.pop_back()
 		if is_instance_valid(cand):
 			proj = cand
@@ -105,7 +109,7 @@ func take_projectile(parent: Node) -> Area3D:
 	return proj
 
 func give_projectile(proj: Area3D) -> void:
-	if not is_instance_valid(proj):
+	if not is_instance_valid(proj) or proj.is_queued_for_deletion():
 		return
 	proj.visible = false
 	proj.set_physics_process(false)
@@ -135,7 +139,9 @@ var fx_reused := 0
 
 func take_fx(parent: Node, mesh: Mesh, mat: Material) -> MeshInstance3D:
 	var mi: MeshInstance3D = null
-	while _fx_pool.size() > 0 and mi == null:
+	var guard_mi := 0
+	while _fx_pool.size() > 0 and mi == null and guard_mi < 64:
+		guard_mi += 1
 		var cand: MeshInstance3D = _fx_pool.pop_back()
 		if is_instance_valid(cand):
 			mi = cand
@@ -156,7 +162,7 @@ func take_fx(parent: Node, mesh: Mesh, mat: Material) -> MeshInstance3D:
 	return mi
 
 func give_fx(mi: MeshInstance3D) -> void:
-	if not is_instance_valid(mi):
+	if not is_instance_valid(mi) or mi.is_queued_for_deletion():
 		return
 	if _fx_pool.size() >= FX_POOL_MAX:
 		mi.queue_free()
@@ -238,13 +244,14 @@ func spawn_model(conf: Dictionary) -> Node3D:
 	return n
 
 ## 모델 안에서 AnimationPlayer 를 찾는다 (.glb 는 보통 한 단계 아래에 있다)
-func find_anim(root: Node) -> AnimationPlayer:
-	if root == null:
+func find_anim(root: Node, depth: int = 0) -> AnimationPlayer:
+	# .glb 계층이 깊어도 8단계면 충분하다. 무한 하강을 막는다.
+	if root == null or not is_instance_valid(root) or depth > 8:
 		return null
 	for c in root.get_children():
 		if c is AnimationPlayer:
 			return c
-		var deep := find_anim(c)
+		var deep := find_anim(c, depth + 1)
 		if deep != null:
 			return deep
 	return null
@@ -302,5 +309,5 @@ func burst(parent: Node, pos: Vector3, color: Color,
 
 func _free_after(n: Node, seconds: float) -> void:
 	await get_tree().create_timer(seconds, true, false, true).timeout
-	if is_instance_valid(n):
+	if is_instance_valid(n) and not n.is_queued_for_deletion():
 		n.queue_free()

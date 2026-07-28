@@ -166,6 +166,8 @@ func _tick_attack(delta: float) -> void:
 	if GameManager.phase != GameManager.Phase.NIGHT:
 		return
 
+	if not is_inside_tree() or get_parent() == null:
+		return
 	var reach := float(conf.get("range", 12.0))
 	var best: Node3D = null
 	var best_d := reach

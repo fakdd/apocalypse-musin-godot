@@ -127,7 +127,9 @@ func _scan_dir(dir_path: String) -> Dictionary:
 		return out
 	d.list_dir_begin()
 	var fn := d.get_next()
-	while fn != "":
+	var scan_guard := 0
+	while fn != "" and scan_guard < 4000:
+		scan_guard += 1
 		if not d.current_is_dir():
 			var name := fn
 			if name.ends_with(".import"):

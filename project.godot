@@ -48,6 +48,7 @@ VerifyEv="*res://tools/verify_events.gd"
 VerifyNpc="*res://tools/verify_npc.gd"
 VerifyQA="*res://tools/verify_qa.gd"
 VerifyContent="*res://tools/verify_content.gd"
+VerifyMaps="*res://tools/verify_maps.gd"
 PlaytestBot="*res://tools/playtest_bot.gd"
 DebugConsole="*res://tools/debug_console.gd"
 
