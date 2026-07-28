@@ -115,6 +115,7 @@ func _show(screen: String) -> void:
 	SoundManager.set_paused(true)      ## 효과음·BGM 버스를 함께 멈춘다
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	owner_hud.pop_in(panel)
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	SoundManager.play("ui_open", -10.0)
 	_refresh()
 

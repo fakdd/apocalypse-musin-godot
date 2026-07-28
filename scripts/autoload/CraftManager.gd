@@ -42,6 +42,24 @@ func roll_essence_drop(tier_bonus: int = 0) -> int:
 
 ## ── 합성 ──
 ## 인벤토리에서 지정 등급의 아이템 3개를 소모해 상위 등급 1개를 시도한다.
+## 주운 직후 자동 합성.
+## 인벤토리가 같은 등급으로 꽉 차는 것을 막는다 — 조건이 되는 동안 계속 위로 올린다.
+## data/pacing.json 의 auto_merge 로 켜고 끈다 (기본 켜짐).
+func auto_merge_from(rarity: int) -> int:
+	if not auto_merge_enabled():
+		return 0
+	var made := 0
+	var r := rarity
+	while r < RarityEnums.Rarity.SSS and can_merge(r):
+		if not merge(r):
+			break
+		made += 1
+		r += 1          ## 올라간 등급이 또 3개가 되면 한 번 더
+	return made
+
+func auto_merge_enabled() -> bool:
+	return bool(CombatFeel.pacing().get("auto_merge", {}).get("enabled", true))
+
 func can_merge(rarity: int) -> bool:
 	if rarity >= RarityEnums.Rarity.SSS:
 		return false

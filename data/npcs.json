@@ -5,135 +5,364 @@
     "condition": "kind: achievement | puzzle | chapter | boss | affinity | quest_done | quest_active | counter | item | essence",
     "dialog": "조건을 만족하는 첫 줄이 대사가 된다. 조건 없는 줄은 항상 참(기본 대사)",
     "affinity_tiers": "0 낯섦 · 2 안면 · 5 신뢰 · 9 동료",
-    "shop_discount": "호감도 1당 3% 할인, 최대 30%"
+    "shop_discount": "호감도 1당 3% 할인, 최대 30%",
+    "closes": "true 면 이 선택지를 고른 뒤 대화창이 자동으로 닫힌다."
   },
   "affinity_tiers": [
-    {"at": 0, "name": "낯섦"},
-    {"at": 2, "name": "안면"},
-    {"at": 5, "name": "신뢰"},
-    {"at": 9, "name": "동료"}
+    {
+      "at": 0,
+      "name": "낯섦"
+    },
+    {
+      "at": 2,
+      "name": "안면"
+    },
+    {
+      "at": 5,
+      "name": "신뢰"
+    },
+    {
+      "at": 9,
+      "name": "동료"
+    }
   ],
   "npcs": [
     {
-      "id": "hunter_old", "name": "노인 사냥꾼", "portrait": "🏹",
-      "chapter": 1, "location": "guard_wood",
+      "id": "hunter_old",
+      "name": "노인 사냥꾼",
+      "portrait": "🏹",
+      "chapter": 1,
+      "location": "guard_wood",
       "dialog": [
-        {"text": "펜리르는 달이 뜨면 더욱 흉폭해진다. 밤에는 세계수 근처에 가지 마라.",
-         "conditions": [{"kind": "affinity", "value": 5}]},
-        {"text": "숲이 변했어. 짐승이 사람을 피하질 않아.",
-         "conditions": []}
+        {
+          "text": "펜리르는 달이 뜨면 더욱 흉폭해진다. 밤에는 세계수 근처에 가지 마라.",
+          "conditions": [
+            {
+              "kind": "affinity",
+              "value": 5
+            }
+          ]
+        },
+        {
+          "text": "숲이 변했어. 짐승이 사람을 피하질 않아.",
+          "conditions": []
+        }
       ],
       "choices": [
-        {"id": "help", "text": "늑대를 잡아주겠다", "affinity": 2,
-         "start_quest": "q_npc_wolves",
-         "reply": "고맙네. 열 마리만 줄여줘도 숨통이 트일 게야."},
-        {"id": "ask", "text": "이 숲에 대해 알려달라", "affinity": 1,
-         "reply": "고목 제단이 깨진 뒤부터야. 그 전엔 이러지 않았어.",
-         "reward": {"essence": 25}},
-        {"id": "leave", "text": "그냥 간다", "affinity": 0, "reply": "…조심하게."}
+        {
+          "id": "help",
+          "text": "늑대를 잡아주겠다",
+          "affinity": 2,
+          "start_quest": "q_npc_wolves",
+          "reply": "고맙네. 열 마리만 줄여줘도 숨통이 트일 게야."
+        },
+        {
+          "id": "ask",
+          "text": "이 숲에 대해 알려달라",
+          "affinity": 1,
+          "reply": "고목 제단이 깨진 뒤부터야. 그 전엔 이러지 않았어.",
+          "reward": {
+            "essence": 25
+          }
+        },
+        {
+          "id": "leave",
+          "text": "그냥 간다",
+          "affinity": 0,
+          "reply": "…조심하게.",
+          "closes": true
+        }
       ],
       "quests": [
-        {"id": "q_npc_wolves", "name": "숲을 정리하다",
-         "desc": "늑대 10마리를 처치한다.",
-         "goal": {"kind": "counter", "key": "kill_wolf", "target": 10},
-         "reward": {"essence": 150, "rarity": "B", "affinity": 3,
-                    "achievement": "ach_npc_hunter"}}
+        {
+          "id": "q_npc_wolves",
+          "name": "숲을 정리하다",
+          "desc": "늑대 10마리를 처치한다.",
+          "goal": {
+            "kind": "counter",
+            "key": "kill_wolf",
+            "target": 10
+          },
+          "reward": {
+            "essence": 150,
+            "rarity": "B",
+            "affinity": 3,
+            "achievement": "ach_npc_hunter"
+          }
+        }
       ],
       "shop": []
     },
     {
-      "id": "herb_wanderer", "name": "떠돌이 약초상", "portrait": "🌿",
-      "chapter": 1, "location": "hunter_town",
+      "id": "herb_wanderer",
+      "name": "떠돌이 약초상",
+      "portrait": "🌿",
+      "chapter": 1,
+      "location": "hunter_town",
       "dialog": [
-        {"text": "단골에게는 좋은 걸 내주지. 골라보게.",
-         "conditions": [{"kind": "affinity", "value": 5}]},
-        {"text": "안쪽 창고에 약초가 남았을 거요. 나눠 갑시다.", "conditions": []}
+        {
+          "text": "단골에게는 좋은 걸 내주지. 골라보게.",
+          "conditions": [
+            {
+              "kind": "affinity",
+              "value": 5
+            }
+          ]
+        },
+        {
+          "text": "안쪽 창고에 약초가 남았을 거요. 나눠 갑시다.",
+          "conditions": []
+        }
       ],
       "choices": [
-        {"id": "shop", "text": "물건을 본다", "affinity": 1, "open_shop": true,
-         "reply": "천천히 보시오."},
-        {"id": "leave", "text": "그냥 간다", "affinity": 0, "reply": "또 오시오."}
+        {
+          "id": "shop",
+          "text": "물건을 본다",
+          "affinity": 1,
+          "open_shop": true,
+          "reply": "천천히 보시오."
+        },
+        {
+          "id": "leave",
+          "text": "그냥 간다",
+          "affinity": 0,
+          "reply": "또 오시오.",
+          "closes": true
+        }
       ],
       "quests": [],
       "shop": [
-        {"id": "s_heal", "name": "약초 꾸러미", "desc": "체력을 절반 회복한다.",
-         "price": 60, "effect": {"heal_pct": 0.5}},
-        {"id": "s_essence_pack", "name": "마석 주머니", "desc": "마석 40 을 얻는다.",
-         "price": 30, "effect": {"essence": 40}},
-        {"id": "s_relic_c", "name": "낡은 유물", "desc": "C 등급 유물 하나.",
-         "price": 220, "effect": {"drop_rarity": "C"}},
-        {"id": "s_relic_a", "name": "봉인된 유물", "desc": "A 등급 유물 하나.",
-         "price": 900, "effect": {"drop_rarity": "A"},
-         "conditions": [{"kind": "affinity", "value": 5}]}
+        {
+          "id": "s_heal",
+          "name": "약초 꾸러미",
+          "desc": "체력을 절반 회복한다.",
+          "price": 60,
+          "effect": {
+            "heal_pct": 0.5
+          }
+        },
+        {
+          "id": "s_essence_pack",
+          "name": "마석 주머니",
+          "desc": "마석 40 을 얻는다.",
+          "price": 30,
+          "effect": {
+            "essence": 40
+          }
+        },
+        {
+          "id": "s_relic_c",
+          "name": "낡은 유물",
+          "desc": "C 등급 유물 하나.",
+          "price": 220,
+          "effect": {
+            "drop_rarity": "C"
+          }
+        },
+        {
+          "id": "s_relic_a",
+          "name": "봉인된 유물",
+          "desc": "A 등급 유물 하나.",
+          "price": 900,
+          "effect": {
+            "drop_rarity": "A"
+          },
+          "conditions": [
+            {
+              "kind": "affinity",
+              "value": 5
+            }
+          ]
+        }
       ]
     },
     {
-      "id": "forest_ward", "name": "숲의 수호자", "portrait": "🌳",
-      "chapter": 1, "location": "elder_altar",
+      "id": "forest_ward",
+      "name": "숲의 수호자",
+      "portrait": "🌳",
+      "chapter": 1,
+      "location": "elder_altar",
       "dialog": [
-        {"text": "제단이 다시 숨을 쉰다. 자네 덕이야.",
-         "conditions": [{"kind": "puzzle", "value": "pz_forest_hall"}]},
-        {"text": "제단이 깨졌다. 그날부터 짐승이 미쳤지.", "conditions": []}
+        {
+          "text": "제단이 다시 숨을 쉰다. 자네 덕이야.",
+          "conditions": [
+            {
+              "kind": "puzzle",
+              "value": "pz_forest_hall"
+            }
+          ]
+        },
+        {
+          "text": "제단이 깨졌다. 그날부터 짐승이 미쳤지.",
+          "conditions": []
+        }
       ],
       "choices": [
-        {"id": "vow", "text": "제단을 되살리겠다", "affinity": 2,
-         "start_quest": "q_npc_altar",
-         "reply": "돌 넷을 맞추게. 순서는 땅이 알려줄 걸세."},
-        {"id": "leave", "text": "그냥 간다", "affinity": 0, "reply": "숲이 지켜보고 있네."}
+        {
+          "id": "vow",
+          "text": "제단을 되살리겠다",
+          "affinity": 2,
+          "start_quest": "q_npc_altar",
+          "reply": "돌 넷을 맞추게. 순서는 땅이 알려줄 걸세."
+        },
+        {
+          "id": "leave",
+          "text": "그냥 간다",
+          "affinity": 0,
+          "reply": "숲이 지켜보고 있네.",
+          "closes": true
+        }
       ],
       "quests": [
-        {"id": "q_npc_altar", "name": "제단의 부름",
-         "desc": "사냥꾼 마을의 수수께끼를 푼다.",
-         "goal": {"kind": "puzzle", "key": "pz_forest_hall"},
-         "reward": {"essence": 200, "rarity": "A", "affinity": 4}}
+        {
+          "id": "q_npc_altar",
+          "name": "제단의 부름",
+          "desc": "사냥꾼 마을의 수수께끼를 푼다.",
+          "goal": {
+            "kind": "puzzle",
+            "key": "pz_forest_hall"
+          },
+          "reward": {
+            "essence": 200,
+            "rarity": "A",
+            "affinity": 4
+          }
+        }
       ],
       "shop": []
     },
     {
-      "id": "merchant_sand", "name": "상인", "portrait": "🐫",
-      "chapter": 2, "location": "oasis",
+      "id": "merchant_sand",
+      "name": "상인",
+      "portrait": "🐫",
+      "chapter": 2,
+      "location": "oasis",
       "dialog": [
-        {"text": "사막을 넘은 자에게는 값을 깎아주지.",
-         "conditions": [{"kind": "affinity", "value": 3}]},
-        {"text": "물은 팔지 않소. 대신 길을 알려주지.", "conditions": []}
+        {
+          "text": "사막을 넘은 자에게는 값을 깎아주지.",
+          "conditions": [
+            {
+              "kind": "affinity",
+              "value": 3
+            }
+          ]
+        },
+        {
+          "text": "물은 팔지 않소. 대신 길을 알려주지.",
+          "conditions": []
+        }
       ],
       "choices": [
-        {"id": "shop", "text": "물건을 본다", "affinity": 1, "open_shop": true,
-         "reply": "눈으로만 보는 건 공짜요."},
-        {"id": "leave", "text": "그냥 간다", "affinity": 0, "reply": "모래를 조심하시오."}
+        {
+          "id": "shop",
+          "text": "물건을 본다",
+          "affinity": 1,
+          "open_shop": true,
+          "reply": "눈으로만 보는 건 공짜요."
+        },
+        {
+          "id": "leave",
+          "text": "그냥 간다",
+          "affinity": 0,
+          "reply": "모래를 조심하시오.",
+          "closes": true
+        }
       ],
       "quests": [
-        {"id": "q_npc_tomb", "name": "왕의 무덤",
-         "desc": "왕의 무덤을 클리어한다.",
-         "goal": {"kind": "counter", "key": "clear", "target": 4},
-         "reward": {"essence": 260, "rarity": "A", "affinity": 3}}
+        {
+          "id": "q_npc_tomb",
+          "name": "왕의 무덤",
+          "desc": "왕의 무덤을 클리어한다.",
+          "goal": {
+            "kind": "counter",
+            "key": "clear",
+            "target": 4
+          },
+          "reward": {
+            "essence": 260,
+            "rarity": "A",
+            "affinity": 3
+          }
+        }
       ],
       "shop": [
-        {"id": "s_water", "name": "물주머니", "desc": "체력을 절반 회복한다.",
-         "price": 70, "effect": {"heal_pct": 0.5}},
-        {"id": "s_map", "name": "낡은 지도", "desc": "마석 60 을 얻는다.",
-         "price": 40, "effect": {"essence": 60}},
-        {"id": "s_relic_b", "name": "사막의 유물", "desc": "B 등급 유물 하나.",
-         "price": 480, "effect": {"drop_rarity": "B"}}
+        {
+          "id": "s_water",
+          "name": "물주머니",
+          "desc": "체력을 절반 회복한다.",
+          "price": 70,
+          "effect": {
+            "heal_pct": 0.5
+          }
+        },
+        {
+          "id": "s_map",
+          "name": "낡은 지도",
+          "desc": "마석 60 을 얻는다.",
+          "price": 40,
+          "effect": {
+            "essence": 60
+          }
+        },
+        {
+          "id": "s_relic_b",
+          "name": "사막의 유물",
+          "desc": "B 등급 유물 하나.",
+          "price": 480,
+          "effect": {
+            "drop_rarity": "B"
+          }
+        }
       ]
     },
     {
-      "id": "lost_soul", "name": "잃어버린 영혼", "portrait": "👁",
-      "chapter": 7, "location": "soul_river",
+      "id": "lost_soul",
+      "name": "잃어버린 영혼",
+      "portrait": "👁",
+      "chapter": 7,
+      "location": "soul_river",
       "dialog": [
-        {"text": "이름이 떠올랐어요. …고마워요.",
-         "conditions": [{"kind": "affinity", "value": 4}]},
-        {"text": "이름이… 기억나지 않아요. 당신은 기억하나요?", "conditions": []}
+        {
+          "text": "이름이 떠올랐어요. …고마워요.",
+          "conditions": [
+            {
+              "kind": "affinity",
+              "value": 4
+            }
+          ]
+        },
+        {
+          "text": "이름이… 기억나지 않아요. 당신은 기억하나요?",
+          "conditions": []
+        }
       ],
       "choices": [
-        {"id": "listen", "text": "이야기를 들어준다", "affinity": 2,
-         "reply": "…누군가 저를 기다린다고 했어요. 그게 누구였죠?",
-         "reward": {"essence": 60}},
-        {"id": "give", "text": "마석을 나눠준다", "affinity": 3,
-         "cost": {"essence": 100},
-         "reply": "따뜻해요. 오랜만이에요.",
-         "achievement": "ach_npc_soul"},
-        {"id": "leave", "text": "그냥 간다", "affinity": 0, "reply": "…"}
+        {
+          "id": "listen",
+          "text": "이야기를 들어준다",
+          "affinity": 2,
+          "reply": "…누군가 저를 기다린다고 했어요. 그게 누구였죠?",
+          "reward": {
+            "essence": 60
+          }
+        },
+        {
+          "id": "give",
+          "text": "마석을 나눠준다",
+          "affinity": 3,
+          "cost": {
+            "essence": 100
+          },
+          "reply": "따뜻해요. 오랜만이에요.",
+          "achievement": "ach_npc_soul"
+        },
+        {
+          "id": "leave",
+          "text": "그냥 간다",
+          "affinity": 0,
+          "reply": "…",
+          "closes": true
+        }
       ],
       "quests": [],
       "shop": []

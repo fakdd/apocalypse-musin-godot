@@ -88,6 +88,8 @@ func _ready() -> void:
 	achievement_ui.build()
 	upgrade_ui.build()
 	menu_ui.build()
+	# 모듈이 전부 만들어진 뒤 한 번에 처리한다
+	call_deferred("make_hud_click_through")
 	npc_ui.build()
 
 	stats_window = load("res://scripts3d/StatsWindow.gd").new()
@@ -315,6 +317,20 @@ func show_achievement(title: String, desc: String) -> void:
 	achievement_ui.show_achievement(title, desc)
 
 ## ── 매 프레임 갱신 — 원본 _process 와 동일한 순서 ──
+
+## HUD 전체를 마우스 투명하게 만든다.
+## 화면 하단 스킬 아이콘 위에 커서가 올라가면 Control 이 이벤트를 먹어
+## 3D 바닥 조준이 그 자리에서 끊겼다 — 아래쪽으로 조준이 안 되던 원인 중 하나.
+## 창(메뉴·대화·제단)은 열릴 때 스스로 STOP 으로 되돌린다.
+func make_hud_click_through(root: Node = self) -> void:
+	for c in root.get_children():
+		if c is Control:
+			# 버튼만 클릭을 받는다
+			if c is Button:
+				c.mouse_filter = Control.MOUSE_FILTER_STOP
+			elif c.mouse_filter == Control.MOUSE_FILTER_STOP:
+				c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		make_hud_click_through(c)
 
 func _process(_delta: float) -> void:
 	if popup_ui.handle_popup_input():

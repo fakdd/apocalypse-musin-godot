@@ -264,3 +264,50 @@ func apply_quality(level: int) -> void:
 		vp.msaa_3d = clampi(int(d.get("msaa", 1)), 0, 3) as Viewport.MSAA
 	RenderingServer.directional_soft_shadow_filter_set_quality(
 		clampi(int(d.get("soft_shadow", 1)), 0, 4) as RenderingServer.ShadowQuality)
+
+## 개별 효과를 코드에서 바로 껐다 켠다 (그래픽 옵션·디버그용).
+##   set_effect("glow", false) / set_effect("ssao", true) …
+## 이름: glow / fog / volumetric / ssao / sdfgi / ssr / tonemap
+func set_effect(name: String, on: bool) -> void:
+	if world == null or world.env == null:
+		return
+	var e: Environment = world.env.environment
+	if e == null:
+		return
+	match name:
+		"glow": e.glow_enabled = on
+		"fog": e.fog_enabled = on
+		"volumetric": e.volumetric_fog_enabled = on
+		"ssao": e.ssao_enabled = on
+		"sdfgi": e.sdfgi_enabled = on
+		"ssr": e.ssr_enabled = on
+		"tonemap":
+			if on:
+				_apply_tone(e)
+			else:
+				e.tonemap_mode = Environment.TONE_MAPPER_LINEAR
+				e.adjustment_enabled = false
+
+func effect_on(name: String) -> bool:
+	if world == null or world.env == null:
+		return false
+	var e: Environment = world.env.environment
+	if e == null:
+		return false
+	match name:
+		"glow": return e.glow_enabled
+		"fog": return e.fog_enabled
+		"volumetric": return e.volumetric_fog_enabled
+		"ssao": return e.ssao_enabled
+		"sdfgi": return e.sdfgi_enabled
+		"ssr": return e.ssr_enabled
+		"tonemap": return e.tonemap_mode != Environment.TONE_MAPPER_LINEAR
+	return false
+
+## 현재 화면 상태 한 줄 (디버그 출력용)
+func effect_summary() -> String:
+	var on := []
+	for k in ["tonemap", "glow", "fog", "volumetric", "ssao", "sdfgi", "ssr"]:
+		if effect_on(k):
+			on.append(k)
+	return "%s [%s]" % [level_name(SaveGame.graphics), ", ".join(on)]

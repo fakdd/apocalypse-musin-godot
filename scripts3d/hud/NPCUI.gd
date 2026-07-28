@@ -106,6 +106,7 @@ func open(npc_id: String) -> void:
 	panel.visible = true
 	owner_hud.close_windows(self)
 	owner_hud.pop_in(panel)
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	# 목표를 채운 퀘스트가 있으면 대화하는 순간 완료된다
 	var done := NPCManager.try_complete(npc_id)
 	_refresh()

@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "note": "3D 모델 교체용. 여기 경로만 바꾸면 코드 수정 없이 모델이 바뀐다. 파일이 없으면 조용히 기존 모델을 쓴다 — 일부만 교체해도 된다.",
+  "rules": {
+    "scale": "모델이 너무 크거나 작을 때만 쓴다 (1.0 = 원본)",
+    "y_offset": "발이 바닥에 안 붙을 때 위아래로 민다",
+    "rot_y": "모델이 옆을 보고 있으면 도(degree) 로 돌린다",
+    "anim": "모델 안 애니메이션 이름이 다를 때 매핑 (idle/walk/attack/hit/death)"
+  },
+  "player": {
+    "model": "",
+    "scale": 1.0,
+    "y_offset": 0.0,
+    "rot_y": 0.0,
+    "anim": {}
+  },
+  "enemies": {
+    "_default": {
+      "scale": 1.0,
+      "y_offset": 0.0,
+      "rot_y": 0.0,
+      "anim": {}
+    },
+    "dire_wolf": {
+      "model": "",
+      "scale": 1.0
+    },
+    "sandworm": {
+      "model": "",
+      "scale": 1.0
+    },
+    "ice_golem": {
+      "model": "",
+      "scale": 1.0
+    },
+    "fire_dragon": {
+      "model": "",
+      "scale": 1.0
+    },
+    "fallen_lord": {
+      "model": "",
+      "scale": 1.0
+    },
+    "seraph": {
+      "model": "",
+      "scale": 1.0
+    },
+    "abyss_lord": {
+      "model": "",
+      "scale": 1.0
+    },
+    "overlord": {
+      "model": "",
+      "scale": 1.0
+    },
+    "warlord": {
+      "model": "",
+      "scale": 1.0
+    }
+  },
+  "props": {
+    "note": "BiomeBuilder 의 기본 도형을 실제 모델로 바꿀 때. 비어 있으면 기존 도형.",
+    "tree": "",
+    "rock": "",
+    "bush": "",
+    "crystal": "",
+    "ruin": ""
+  }
+}

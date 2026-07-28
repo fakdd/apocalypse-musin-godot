@@ -143,8 +143,12 @@ func _ready() -> void:
 	shape.position.y = 0.8
 	add_child(shape)
 
-	var packed: PackedScene = load("res://assets3d/chars/hero.tscn")
-	model = packed.instantiate()
+	# data/models.json 의 player.model 이 있으면 그것으로 교체한다.
+	# 충돌체(위에서 만든 CollisionShape3D)와 스크립트는 그대로라 구조가 흔들리지 않는다.
+	model = VfxPool.spawn_model(VfxPool.model_conf("player"))
+	if model == null:
+		var packed: PackedScene = load("res://assets3d/chars/hero.tscn")
+		model = packed.instantiate()
 	add_child(model)
 	anim = animation._find_anim_player(model)
 	animation._collect_meshes(model)

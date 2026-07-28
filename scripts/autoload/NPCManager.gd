@@ -143,6 +143,13 @@ func can_afford(c: Dictionary) -> bool:
 	return CraftManager.essence >= int(cost.get("essence", 0))
 
 ## 선택지를 고른다. 반환: 답변 대사 (실패면 빈 문자열)
+## 이 선택지를 고르면 대화가 끝나는가 (data/npcs.json 의 closes)
+func closes_talk(npc_id: String, choice_id: String) -> bool:
+	for c in choices_for(npc_id):
+		if String(c.get("id", "")) == choice_id:
+			return bool(c.get("closes", false))
+	return false
+
 func choose(npc_id: String, choice_id: String) -> String:
 	var pick: Dictionary = {}
 	for c in choices_for(npc_id):

@@ -130,6 +130,7 @@ func toggle() -> void:
 		owner_hud.close_windows(self)
 		_select_cat(_cat)
 		owner_hud.pop_in(panel)
+		panel.mouse_filter = Control.MOUSE_FILTER_STOP
 
 func _select_cat(id: String) -> void:
 	_cat = id

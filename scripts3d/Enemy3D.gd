@@ -141,7 +141,16 @@ func setup(type: String, wave: int) -> void:
 		floor_block_on_wall = true
 		slide_on_ceiling = false
 
-	var packed: PackedScene = load(cfg["model"])
+	# data/models.json 에 교체 모델이 지정돼 있으면 그것을 먼저 쓴다.
+	# 없거나 파일이 빠졌으면 EnemyConfig 의 기본 모델로 돌아간다 — 일부만 교체해도 된다.
+	var mconf := VfxPool.model_conf("enemy", type)
+	model = VfxPool.spawn_model(mconf)
+	if model != null:
+		model.position.y += hover_height
+		add_child(model)
+		anim = VfxPool.find_anim(model)
+		animation._collect_meshes(model)
+	var packed: PackedScene = null if model != null else load(cfg["model"])
 	if packed:
 		model = packed.instantiate()
 		var s := float(cfg["scale"])

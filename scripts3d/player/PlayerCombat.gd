@@ -42,6 +42,11 @@ func _slash() -> void:
 	var crit_mult: float = crit[0]
 	if bool(crit[1]):
 		_crit_feedback()
+	# 3타 피니시 — 벤 자리에서 검기 파편이 터진다
+	if owner_player.combo_step >= 2:
+		VfxPool.burst(owner_player.get_parent(),
+			owner_player.global_position + owner_player.facing_dir() * 2.2 + Vector3(0, 1.1, 0),
+			Color(1.0, 0.72, 0.45), 30, 8.0, 0.5, 0.14, -8.0)
 	var is_crit: bool = crit[1]
 	var fwd: Vector3 = owner_player.facing_dir()
 	# 무기 계열 계수 — 사거리/각도/피해. 무기가 없으면 전부 1.0 이라 기존과 같다.
@@ -376,5 +381,8 @@ func _fire_arrows(dir: Vector3, damage_mult: float) -> void:
 		# 플레이어가 쏜 화살은 적을 맞힌다 — setup 이 충돌 마스크까지 잡아 준다
 		proj.setup(d, spd, dmg, life, false, bool(fam.get("pierce", false)))
 
+	# 발사 지점에서 빛가루가 튄다
+	VfxPool.burst(owner_player.get_parent(), origin, Color(0.65, 0.95, 1.0),
+		14, 5.0, 0.35, 0.09, -2.0)
 	CombatFeel.impact("hit_light")
 	SoundManager.play_pitched("dash", -10.0, 1.35)

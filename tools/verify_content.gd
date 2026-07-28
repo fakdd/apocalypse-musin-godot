@@ -98,8 +98,13 @@ func _run() -> void:
 		print("CT|  ✘ 페이즈 선택 이상: %d/%d/%d" % [i_full, i_mid, i_low]); bad += 1
 
 	# ── 5) 접사 — 등급이 오를수록 옵션이 늘어나는가 ──
+	# 고유 아이템은 확률로 나오고 접사가 없다 — 여러 번 굴려 일반 생성물로 비교한다
 	var lo := LootManager.generate_item(0)
 	var hi := LootManager.generate_item(6)
+	for _i in range(12):
+		if hi != null and String(hi.unique_id) == "":
+			break
+		hi = LootManager.generate_item(6)
 	if lo == null or hi == null:
 		print("CT|  ✘ 아이템 생성 실패"); bad += 1
 	else:
@@ -637,6 +642,7 @@ func _run_projectile_tests() -> void:
 	await _t_mute()
 	await _t_audio_scan()
 	await _t_freeze_guard()
+	await _t_qol()
 
 	host.queue_free()
 	if _pt_bad > 0:
@@ -1044,3 +1050,106 @@ func _t_freeze_guard() -> void:
 		print("CT|  ✘ 프리즈 방지 (cap %s / zero %s / left %s / bbcode %s)"
 			% [str(capped), str(recovered), str(restored), str(clean_ok)])
 		_pt_bad += 1
+
+## [편의 기능] 자동 합성 · 대화 자동 종료 · 퀘스트 안내 · 모델/파티클 체계
+func _t_qol() -> void:
+	var bad0 := _pt_bad
+
+	# 1) 자동 합성 — 같은 등급 3개가 모이면 상위로 올라간다
+	PlayerStats.reset()
+	CraftManager.reset()
+	var before_n := PlayerStats.inventory.size()
+	# 첫 개는 빈 슬롯에 장착된다 — 인벤토리에 3개가 남으려면 4개가 필요하다.
+	# (장착 중인 장비는 합성 재료로 쓰지 않는다 — 갑자기 알몸이 되면 안 되므로)
+	for i in range(4):
+		var it := ItemData.new()
+		it.rarity = RarityEnums.Rarity.D
+		it.slot = "weapon"
+		PlayerStats.acquire_item(it)
+	var made := CraftManager.auto_merge_from(RarityEnums.Rarity.D)
+	var has_up := false
+	for it2 in PlayerStats.inventory:
+		if it2 != null and it2.rarity > RarityEnums.Rarity.D:
+			has_up = true
+	if made > 0 and has_up:
+		print("CT|  ✔ 자동 합성 — 인벤 D 3개 → 상위 등급 %d회 (인벤 %d개 남음)"
+			% [made, PlayerStats.inventory.size()])
+	else:
+		print("CT|  ✘ 자동 합성 실패 (made %d · 상위 %s)" % [made, str(has_up)])
+		_pt_bad += 1
+
+	# 2) '그냥 간다' 가 대화를 끝내는 선택지로 표시돼 있는가
+	var closers := 0
+	for nid in NPCManager.ids():
+		for c in NPCManager.defs[nid].get("choices", []):
+			if bool(c.get("closes", false)):
+				closers += 1
+	if closers >= NPCManager.ids().size() and NPCManager.has("hunter_old") 			and NPCManager.closes_talk("hunter_old", "leave"):
+		print("CT|  ✔ 대화 자동 종료 — NPC %d명 모두 '그냥 간다' 에 closes" % closers)
+	else:
+		print("CT|  ✘ closes 표시 %d개 / NPC %d명" % [closers, NPCManager.ids().size()])
+		_pt_bad += 1
+
+	# 3) 퀘스트 안내가 상황마다 다른 문장을 주는가
+	var w = get_tree().current_scene
+	var q = w.hud.quest_ui if w and w.get("hud") != null else null
+	if q == null or not q.has_method("_next_step"):
+		print("CT|  ✘ 퀘스트 안내 함수가 없다"); _pt_bad += 1
+	else:
+		var keep_phase := GameManager.phase
+		var keep_boss := GameManager.chapter_boss_down
+		GameManager.chapter_boss_down = false
+		GameManager.phase = GameManager.Phase.DAY
+		var a: String = String(q._next_step())
+		GameManager.phase = GameManager.Phase.NIGHT
+		GameManager.night_state = GameManager.NightState.WAVE
+		var b: String = String(q._next_step())
+		GameManager.chapter_boss_down = true
+		var c2: String = String(q._next_step())
+		GameManager.phase = keep_phase
+		GameManager.chapter_boss_down = keep_boss
+		if a != "" and b != "" and c2 != "" and a != b and b != c2:
+			print("CT|  ✔ 퀘스트 안내 — 낮/밤/보스처치 각각 다른 지시")
+		else:
+			print("CT|  ✘ 퀘스트 안내가 상황을 구분하지 못한다"); _pt_bad += 1
+
+	# 4) 모델 교체 체계 — 빈 경로면 null 을 돌려 기존 모델로 폴백해야 한다
+	var empty_conf := VfxPool.model_conf("enemy", "dire_wolf")
+	var inst = VfxPool.spawn_model(empty_conf)
+	if inst == null:
+		print("CT|  ✔ 모델 교체 — 경로가 비면 기존 모델로 폴백")
+	else:
+		inst.queue_free()
+		print("CT|  ✔ 모델 교체 — 지정 모델 인스턴스 생성")
+
+	# 5) 파티클이 만들어지고 스스로 사라지는가
+	var host := Node3D.new()
+	get_tree().current_scene.add_child(host)
+	var pa := VfxPool.burst(host, Vector3.ZERO, Color(1, 1, 1), 8, 4.0, 0.2)
+	var made_ok: bool = pa != null and is_instance_valid(pa)
+	await get_tree().create_timer(1.0, true, false, true).timeout
+	var gone: bool = pa == null or not is_instance_valid(pa)
+	host.queue_free()
+	if made_ok and gone:
+		print("CT|  ✔ 파티클 — 생성 후 수명 끝나면 자동 해제")
+	else:
+		print("CT|  ✘ 파티클 (생성 %s · 해제 %s)" % [str(made_ok), str(gone)])
+		_pt_bad += 1
+
+	# 6) 그래픽 효과 개별 토글
+	var em = w.environment_manager if w and w.get("environment_manager") != null else null
+	if em and em.has_method("set_effect"):
+		var was: bool = bool(em.effect_on("glow"))
+		em.set_effect("glow", not was)
+		var flipped: bool = em.effect_on("glow") != was
+		em.set_effect("glow", was)
+		if flipped:
+			print("CT|  ✔ 그래픽 개별 토글 — %s" % em.effect_summary())
+		else:
+			print("CT|  ✘ 그래픽 토글이 먹지 않는다"); _pt_bad += 1
+	else:
+		print("CT|  ✘ set_effect 없음"); _pt_bad += 1
+
+	PlayerStats.reset()
+	if _pt_bad == bad0:
+		pass

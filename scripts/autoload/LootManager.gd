@@ -289,6 +289,10 @@ func collect(item: ItemData) -> void:
 	# 업적 — 주운 유물 수 (판정은 AchievementManager 가 한다)
 	AchievementManager.bump("chest")
 	PlayerStats.acquire_item(item)
+	# 같은 등급 3개가 모이면 그 자리에서 상위 등급으로 합친다 (인벤토리 포화 방지)
+	var made := CraftManager.auto_merge_from(item.rarity)
+	if made > 0:
+		CombatFeel.impact("crit")
 	item_collected.emit(item)
 
 func _get_world() -> Node:

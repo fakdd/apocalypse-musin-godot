@@ -186,3 +186,121 @@ func stats() -> Dictionary:
 		"proj_created": projectile_created,
 		"proj_reused": projectile_reused,
 	}
+
+# ══════════════════════════════════════════════
+#  외부 3D 모델 (data/models.json)
+#  파일을 넣고 경로만 적으면 바뀐다. 없으면 기존 모델을 그대로 쓴다.
+# ══════════════════════════════════════════════
+const MODELS_PATH := "res://data/models.json"
+var _models: Dictionary = {}
+
+func models() -> Dictionary:
+	if not _models.is_empty():
+		return _models
+	var f := FileAccess.open(MODELS_PATH, FileAccess.READ)
+	if f == null:
+		_models = {"player": {}, "enemies": {}, "props": {}}
+		return _models
+	var j = JSON.parse_string(f.get_as_text())
+	f.close()
+	_models = j if typeof(j) == TYPE_DICTIONARY else {"player": {}, "enemies": {}, "props": {}}
+	return _models
+
+## 적 타입의 교체 설정 (_default 위에 개별 설정을 얹는다)
+func model_conf(kind: String, id: String = "") -> Dictionary:
+	var m := models()
+	if kind == "player":
+		return m.get("player", {})
+	var e: Dictionary = m.get("enemies", {})
+	var base: Dictionary = e.get("_default", {}).duplicate()
+	for k in e.get(id, {}):
+		base[k] = e[id][k]
+	return base
+
+## 설정에 모델이 지정돼 있고 파일이 실제로 있으면 인스턴스를 만들어 준다.
+## 없으면 null — 호출부는 기존 모델을 그대로 쓰면 된다.
+func spawn_model(conf: Dictionary) -> Node3D:
+	var path := String(conf.get("model", ""))
+	if path == "" or not ResourceLoader.exists(path):
+		return null
+	var packed = ResourceLoader.load(path)
+	if packed == null or not (packed is PackedScene):
+		push_warning("[Model] PackedScene 이 아니다: %s" % path)
+		return null
+	var inst = packed.instantiate()
+	if inst == null or not (inst is Node3D):
+		return null
+	var n: Node3D = inst
+	var sc := float(conf.get("scale", 1.0))
+	n.scale = Vector3(sc, sc, sc)
+	n.position.y += float(conf.get("y_offset", 0.0))
+	n.rotation_degrees.y += float(conf.get("rot_y", 0.0))
+	return n
+
+## 모델 안에서 AnimationPlayer 를 찾는다 (.glb 는 보통 한 단계 아래에 있다)
+func find_anim(root: Node) -> AnimationPlayer:
+	if root == null:
+		return null
+	for c in root.get_children():
+		if c is AnimationPlayer:
+			return c
+		var deep := find_anim(c)
+		if deep != null:
+			return deep
+	return null
+
+# ══════════════════════════════════════════════
+#  파티클 (GPUParticles3D) — 쓰고 자동으로 사라진다
+# ══════════════════════════════════════════════
+## 한 번 터지고 수명이 끝나면 스스로 정리된다.
+## one_shot 이라 emitting 을 켜면 그걸로 끝 — 매 프레임 비용이 없다.
+func burst(parent: Node, pos: Vector3, color: Color,
+		count: int = 24, speed: float = 6.0, life: float = 0.6,
+		size: float = 0.12, gravity: float = -6.0) -> GPUParticles3D:
+	if parent == null or not is_instance_valid(parent):
+		return null
+	var p := GPUParticles3D.new()
+	p.amount = maxi(1, count)
+	p.lifetime = life
+	p.one_shot = true
+	p.explosiveness = 0.92
+	p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+	var mat := ParticleProcessMaterial.new()
+	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
+	mat.emission_sphere_radius = 0.25
+	mat.direction = Vector3(0, 1, 0)
+	mat.spread = 70.0
+	mat.initial_velocity_min = speed * 0.5
+	mat.initial_velocity_max = speed
+	mat.gravity = Vector3(0, gravity, 0)
+	mat.scale_min = 0.5
+	mat.scale_max = 1.0
+	mat.color = color
+	p.process_material = mat
+
+	var mesh := QuadMesh.new()
+	mesh.size = Vector2(size, size)
+	p.draw_pass_1 = mesh
+	var sm := StandardMaterial3D.new()
+	sm.albedo_color = color
+	sm.emission_enabled = true
+	sm.emission = color
+	sm.emission_energy_multiplier = 4.0
+	sm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	sm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	sm.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	sm.vertex_color_use_as_albedo = true
+	p.material_override = sm
+
+	parent.add_child(p)
+	p.global_position = pos
+	p.emitting = true
+	# 수명 + 여유를 두고 스스로 사라진다 (queue_free 를 호출부가 신경 쓰지 않아도 된다)
+	_free_after(p, life + 0.4)
+	return p
+
+func _free_after(n: Node, seconds: float) -> void:
+	await get_tree().create_timer(seconds, true, false, true).timeout
+	if is_instance_valid(n):
+		n.queue_free()

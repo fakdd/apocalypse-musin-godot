@@ -76,11 +76,66 @@ func update_phase_status() -> void:
 				hud.timer_label.text = "아침이 온다…"
 
 ## 퀘스트 추적 패널 갱신
+## 다음에 할 일 한 줄. 위에서부터 내려가며 처음 걸리는 것을 쓴다.
+## 순서는 "막힌 것 → 진행 중 → 다음 목표" 다.
+func _next_step() -> String:
+	# 1) 결과 화면
+	if GameManager.game_won:
+		return "포탈에 들어가 다음 회차로"
+	# 2) 보스를 잡았다 — 나가는 문이 열려 있다
+	if GameManager.chapter_boss_down:
+		return "방주 앞 포탈로 들어가 다음 지역으로"
+
+	# 3) 밤이면 지금 벌어지는 일
+	if GameManager.phase == GameManager.Phase.NIGHT:
+		match GameManager.night_state:
+			GameManager.NightState.WAVE:
+				return "웨이브 %d/%d 격퇴 — 방주를 지켜라" % [
+					GameManager.wave_index + 1, GameManager.waves_tonight]
+			GameManager.NightState.REST:
+				return "정비 시간 — N 을 눌러 다음 웨이브"
+			_:
+				return "아침까지 버텨라"
+
+	# 4) 낮 — 아직 안 밟은 랜드마크가 있으면 그리로
+	var target: LandmarkData = null
+	for d in LandmarkRegistry.landmarks:
+		if not d.explored:
+			target = d
+			break
+	if target != null:
+		return "%s 으로 이동 (미탐험 %d곳)" % [target.display_name, _unexplored()]
+
+	# 5) 전부 밟았는데 안 깬 곳이 남았다 — 밤에 싸워야 한다
+	var uncleared := _uncleared()
+	if uncleared != null:
+		return "밤에 %s 를 공략 (J 로 밤 진입)" % uncleared.display_name
+
+	# 6) 다 깼다 — 보스전
+	return "지역 보스를 찾아 쓰러뜨려라 (J 로 밤 진입)"
+
+func _unexplored() -> int:
+	var n := 0
+	for d in LandmarkRegistry.landmarks:
+		if not d.explored:
+			n += 1
+	return n
+
+func _uncleared() -> LandmarkData:
+	for d in LandmarkRegistry.landmarks:
+		if not d.cleared:
+			return d
+	return null
+
 func refresh_quest() -> void:
 	var hud := owner_hud
 	if hud.quest_lines == null:
 		return
 	var lines := []
+	# ── 지금 할 일 ── 목록이 길어져 "뭘 해야 하는지" 가 묻혔다.
+	# 맨 위에 딱 한 줄, 다음 행동만 크게 보여준다.
+	lines.append("▶ %s" % _next_step())
+	lines.append("")
 	# 레벨을 어딘가에는 보여야 한다 — 랜드마크의 "추천 레벨"과 비교할 기준이 없으면
 	# 탐험 보상으로 오르는 레벨이 플레이어에게 보이지 않는다
 	lines.append("◆ Lv %d   (%d / %d)" % [GameManager.player_level,
