@@ -1,32 +1,34 @@
 """로컬 zip 에서 3D 에셋을 꺼내 프로젝트에 설치한다.
 
-    python tools/install_3d_assets.py            # ~/Downloads 의 zip 전부
-    python tools/install_3d_assets.py a.zip b.zip
+    python tools/install_3d_assets.py                 # ~/Downloads 의 에셋 zip 자동 탐색
+    python tools/install_3d_assets.py a.zip b.zip     # 지정한 것만
 
 **인터넷에서 내려받지는 않는다.** 자동 다운로드는 이 환경에서 불가능해서,
-받아 둔 zip 을 넣기만 하면 되게 만들었다. 아래 목록에서 직접 받아
-~/Downloads 에 두고 이 스크립트를 돌리면 된다.
+받아 둔 zip 을 넣기만 하면 되게 만들었다.
 
 받을 곳 (전부 CC0 · 상업 이용 가능)
-  건축/던전   https://kenney.nl/assets/modular-dungeon-kit     ← 이미 설치됨
+  건축/던전   https://kenney.nl/assets/modular-dungeon-kit
   자연/폐허   https://kenney.nl/assets/nature-kit
-  성/고딕     https://kenney.nl/assets/castle-kit
-  무기        https://kenney.nl/assets/blaster-kit  (SF)
-              https://quaternius.com/packs/ultimatestylizedweapons.html (판타지 무기)
-  캐릭터      https://quaternius.com/packs/ultimatemonsters.html   (몬스터 40종)
-              https://quaternius.com/packs/universalanimationlibrary.html (애니메이션)
+  무기        https://quaternius.com/packs/medievalweapons.html
+  몬스터      https://quaternius.com/packs/ultimatemonsters.html
+  애니메이션  https://quaternius.com/packs/universalanimationlibrary.html
 
-설치하면 res://assets3d/models/<팩이름>/ 아래에 .glb 만 복사되고,
-data/models.json 의 catalog 항목이 갱신된다. 경로를 그 목록에서 골라 쓰면 된다.
+Godot 가 읽는 형식만 골라 복사한다.
+  1순위 .glb   (단일 파일 — 가장 깔끔)
+  2순위 .gltf  (+ 같은 이름 .bin 과 텍스처 폴더가 함께 필요하다)
+  3순위 .obj   (+ .mtl 과 텍스처)
+같은 이름의 모델이 여러 형식으로 있으면 위 순서로 하나만 가져온다.
+FBX 는 건너뛴다 — Godot 4 가 읽긴 하지만 변환기가 필요해 실패하기 쉽다.
+
+설치하면 res://assets3d/models/<팩이름>/ 아래에 놓이고,
+data/models.json 의 catalog 가 갱신된다. 경로를 그 목록에서 골라 쓰면 된다.
 """
 import json
-import os
 import pathlib
 import shutil
 import sys
 import zipfile
 
-# 콘솔이 cp949 라 한글/기호 출력이 깨진다 — UTF-8 로 강제한다
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception:
@@ -36,66 +38,131 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 DEST = ROOT / "assets3d" / "models"
 MODELS_JSON = ROOT / "data" / "models.json"
 
+MODEL_EXT = [".glb", ".gltf", ".obj"]          ## 우선순위 순서
+SIDE_EXT = [".bin", ".mtl", ".png", ".jpg", ".jpeg", ".tga", ".webp"]
+SKIP_DIR = ["__macosx", "source", "blend"]
+
 
 def pack_name(zip_path: pathlib.Path) -> str:
-    n = zip_path.stem.lower()
-    for junk in ("kenney_", "quaternius_"):
+    n = zip_path.stem
+    for junk in ["kenney_", "Kenney_", " by @Quaternius", "[Standard]"]:
         n = n.replace(junk, "")
-    return n.rsplit("_", 1)[0] if n.rsplit("_", 1)[-1].replace(".", "").isdigit() else n
+    # 구글 드라이브가 붙이는 -20260728T132300Z-1-001 같은 꼬리를 뗀다
+    for sep in ["-2026", "-2025", "-2024"]:
+        if sep in n:
+            n = n.split(sep)[0]
+    n = n.strip().strip("-_ ").replace(" ", "-").lower()
+    parts = n.rsplit("_", 1)
+    if len(parts) == 2 and parts[1].replace(".", "").isdigit():
+        n = parts[0]
+    return n or "pack"
+
+
+def looks_like_asset(z: zipfile.ZipFile) -> bool:
+    for e in z.namelist():
+        if e.lower().endswith(tuple(MODEL_EXT)):
+            return True
+    return False
 
 
 def install(zip_path: pathlib.Path) -> list:
     if not zip_path.exists():
         print("  없음:", zip_path)
         return []
+    try:
+        z = zipfile.ZipFile(zip_path)
+    except Exception as exc:
+        print("  열기 실패: %s (%s)" % (zip_path.name, exc))
+        return []
+    if not looks_like_asset(z):
+        return []
+
     name = pack_name(zip_path)
     out = DEST / name
     out.mkdir(parents=True, exist_ok=True)
+
+    # 같은 모델이 여러 형식이면 우선순위가 높은 것 하나만
+    best = {}
+    for entry in z.namelist():
+        low = entry.lower()
+        if any(("/%s/" % d) in ("/" + low) for d in SKIP_DIR):
+            continue
+        base = entry.rsplit("/", 1)[-1]
+        stem, dot, ext = base.rpartition(".")
+        ext = "." + ext.lower()
+        if ext not in MODEL_EXT:
+            continue
+        rank = MODEL_EXT.index(ext)
+        if stem not in best or rank < best[stem][0]:
+            best[stem] = (rank, entry, ext)
+
     made = []
-    with zipfile.ZipFile(zip_path) as z:
-        for entry in z.namelist():
-            if not entry.lower().endswith(".glb"):
-                continue
-            base = entry.rsplit("/", 1)[-1]
-            target = out / base
-            with z.open(entry) as src, open(target, "wb") as dst:
-                shutil.copyfileobj(src, dst)
-            made.append("res://assets3d/models/%s/%s" % (name, base))
-    print("  %-28s .glb %d개 → %s" % (zip_path.name, len(made), out))
+    wanted_sides = set()
+    for stem, (_r, entry, ext) in best.items():
+        target = out / (stem + ext)
+        with z.open(entry) as src, open(target, "wb") as dst:
+            shutil.copyfileobj(src, dst)
+        made.append("res://assets3d/models/%s/%s%s" % (name, stem, ext))
+        if ext in (".gltf", ".obj"):
+            wanted_sides.add(entry.rsplit("/", 1)[0])   ## 같은 폴더의 부속 파일
+
+    # .gltf/.obj 는 .bin·.mtl·텍스처가 함께 있어야 열린다
+    sides = 0
+    for entry in z.namelist():
+        low = entry.lower()
+        if not low.endswith(tuple(SIDE_EXT)):
+            continue
+        folder = entry.rsplit("/", 1)[0]
+        if folder not in wanted_sides and not any(
+                folder.startswith(w) or w.startswith(folder) for w in wanted_sides):
+            continue
+        base = entry.rsplit("/", 1)[-1]
+        target = out / base
+        if target.exists():
+            continue
+        with z.open(entry) as src, open(target, "wb") as dst:
+            shutil.copyfileobj(src, dst)
+        sides += 1
+
+    print("  %-46s 모델 %3d · 부속 %3d → %s" % (zip_path.name, len(made), sides, out.name))
     return made
+
+
+def rebuild_catalog() -> dict:
+    cat = {}
+    for f in sorted(DEST.rglob("*")):
+        if f.suffix.lower() not in MODEL_EXT:
+            continue
+        rel = f.relative_to(DEST)
+        pack = rel.parts[0] if len(rel.parts) > 1 else "base"
+        cat.setdefault(pack, []).append("res://assets3d/models/" + "/".join(rel.parts))
+    return cat
 
 
 def main() -> None:
     args = [pathlib.Path(a) for a in sys.argv[1:]]
     if not args:
-        dl = pathlib.Path.home() / "Downloads"
-        args = sorted(dl.glob("*.zip"))
-    if not args:
-        print("설치할 zip 이 없다. ~/Downloads 에 에셋 zip 을 두고 다시 실행할 것.")
-        print(__doc__)
-        return
+        args = sorted((pathlib.Path.home() / "Downloads").glob("*.zip"))
 
     DEST.mkdir(parents=True, exist_ok=True)
-    catalog = {}
     print("== 3D 에셋 설치 ==")
+    installed = 0
     for a in args:
-        paths = install(a)
-        if paths:
-            catalog[pack_name(a)] = sorted(paths)
+        if install(a):
+            installed += 1
+    if installed == 0:
+        print("  설치할 모델이 없었다.")
 
-    if not catalog:
-        return
-
-    # models.json 의 catalog 만 갱신한다 (사용자가 적어 둔 매핑은 건드리지 않는다)
+    cat = rebuild_catalog()
     d = json.loads(MODELS_JSON.read_text(encoding="utf-8")) if MODELS_JSON.exists() else {}
-    old = d.get("catalog", {})
-    old.update(catalog)
-    d["catalog"] = old
-    d["catalog_note"] = ("설치된 .glb 목록. 여기서 경로를 골라 player/enemies/props 에 붙인다. "
+    d["catalog"] = cat
+    d["catalog_note"] = ("설치된 모델 목록. 여기서 경로를 골라 player/enemies/props 에 붙인다. "
                          "tools/install_3d_assets.py 가 자동으로 채운다.")
     MODELS_JSON.write_text(json.dumps(d, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    total = sum(len(v) for v in old.values())
-    print("== models.json catalog 갱신 — 팩 %d개 · 모델 %d개 ==" % (len(old), total))
+    total = sum(len(v) for v in cat.values())
+    print("== catalog 갱신: 팩 %d개 · 모델 %d개 ==" % (len(cat), total))
+    for k in sorted(cat):
+        print("   %-28s %d" % (k, len(cat[k])))
 
 
 if __name__ == "__main__":

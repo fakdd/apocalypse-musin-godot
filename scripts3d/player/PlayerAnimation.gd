@@ -121,12 +121,27 @@ func _refresh_weapon_visual() -> void:
 		owner_player.weapon_mesh.visible = false
 		return
 	owner_player.weapon_mesh.visible = true
-	owner_player.weapon_mesh.mesh = ItemSkins.build_mesh(w.skin)
-	owner_player.weapon_mesh.material_override = ItemSkins.build_material(w.rarity)
+
+	# data/models.json 의 weapons 에 실제 모델이 있으면 그것을 손에 쥔다.
+	# 없으면 기존 절차 생성 스킨으로 돌아간다 — 일부 계열만 교체해도 된다.
+	var wpath := String(VfxPool.models().get("weapons", {}).get(String(w.skin), ""))
+	var got: Array = VfxPool.mesh_of(wpath) if wpath != "" else []
+	var fit := 1.0
+	if got.size() >= 2 and got[0] != null:
+		owner_player.weapon_mesh.mesh = got[0]
+		# 무기 팩마다 단위가 달라 길이 1m 기준으로 맞춘다
+		fit = VfxPool.fit_scale(got[0],
+			float(VfxPool.models().get("weapons", {}).get("_target_len", 1.0)), false)
+		# 모델 자체 머티리얼을 쓰되, 등급 발광을 잃지 않게 등급 색을 덮는다
+		owner_player.weapon_mesh.material_override = 			got[1] if w.rarity < RarityEnums.Rarity.A else ItemSkins.build_material(w.rarity)
+	else:
+		owner_player.weapon_mesh.mesh = ItemSkins.build_mesh(w.skin)
+		owner_player.weapon_mesh.material_override = ItemSkins.build_material(w.rarity)
 	# 본 어태치먼트는 모델 스케일(92.5배)을 상속하므로 역수로 되돌린다.
 	# 이 보정을 빼면 거대한 발광 검이 화면 전체를 하얗게 태운다.
 	var inv: float = 1.0 / maxf(owner_player.base_scale.x, 0.0001)
-	var s: float = (0.9 + w.rarity * 0.06) * inv
+	var wscale := float(VfxPool.models().get("weapons", {}).get("_scale", 1.0))
+	var s: float = (0.9 + w.rarity * 0.06) * inv * wscale * fit
 	owner_player.weapon_mesh.scale = Vector3(s, s, s)
 	owner_player.weapon_mesh.position = Vector3(0.0, 0.06, 0.02) * inv
 

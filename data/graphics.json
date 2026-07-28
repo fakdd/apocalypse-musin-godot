@@ -8,11 +8,11 @@
   },
   "tone": {
     "mode": "aces",
-    "exposure": 0.92,
+    "exposure": 1.0,
     "white": 5.2,
-    "contrast": 1.18,
+    "contrast": 1.12,
     "saturation": 0.94,
-    "brightness": 0.96
+    "brightness": 1.0
   },
   "levels": [
     {
@@ -94,11 +94,11 @@
   },
   "dark_fantasy": {
     "note": "묵직한 색감. sun_energy 를 낮추고 글로우만 쨍하게 남긴다.",
-    "sun_energy": 0.45,
+    "sun_energy": 0.78,
     "sun_angular": 1.6,
-    "ambient_energy": 0.26,
-    "ambient_sky": 0.55,
-    "fog_density_mult": 1.35,
+    "ambient_energy": 0.4,
+    "ambient_sky": 0.68,
+    "fog_density_mult": 1.15,
     "glow_hdr_threshold": 0.8
   }
 }

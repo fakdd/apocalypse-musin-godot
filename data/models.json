@@ -21,58 +21,225 @@
       "rot_y": 0.0,
       "anim": {}
     },
+    "hound": {
+      "model": "res://assets3d/models/ultimate-monsters/Dog.gltf",
+      "scale": 1.5,
+      "y_offset": 0.0,
+      "rot_y": 180.0
+    },
+    "wolf": {
+      "model": "res://assets3d/models/ultimate-monsters/Dog.gltf",
+      "scale": 1.6,
+      "y_offset": 0.0,
+      "rot_y": 180.0
+    },
+    "goblin": {
+      "model": "res://assets3d/models/ultimate-monsters/GreenBlob.gltf",
+      "scale": 1.4,
+      "y_offset": 0.0,
+      "rot_y": 180.0
+    },
+    "stalker": {
+      "model": "res://assets3d/models/ultimate-monsters/Armabee.gltf",
+      "scale": 1.3,
+      "y_offset": 0.0,
+      "rot_y": 180.0
+    },
+    "scorpion": {
+      "model": "res://assets3d/models/ultimate-monsters/Glub.gltf",
+      "scale": 1.4,
+      "y_offset": 0.0,
+      "rot_y": 180.0
+    },
+    "ravager": {
+      "model": "res://assets3d/models/ultimate-monsters/Orc.gltf",
+      "scale": 1.4,
+      "y_offset": 0.0,
+      "rot_y": 180.0
+    },
+    "screecher": {
+      "model": "res://assets3d/models/ultimate-monsters/Birb.gltf",
+      "scale": 1.3,
+      "y_offset": 0.0,
+      "rot_y": 180.0
+    },
+    "bandit": {
+      "model": "res://assets3d/models/ultimate-monsters/Ninja.gltf",
+      "scale": 1.4,
+      "y_offset": 0.0,
+      "rot_y": 180.0
+    },
+    "ice_wisp": {
+      "model": "res://assets3d/models/ultimate-monsters/Ghost.gltf",
+      "scale": 1.4,
+      "y_offset": 0.0,
+      "rot_y": 180.0
+    },
+    "fire_wisp": {
+      "model": "res://assets3d/models/ultimate-monsters/PinkBlob.gltf",
+      "scale": 1.4,
+      "y_offset": 0.0,
+      "rot_y": 180.0
+    },
+    "mummy": {
+      "model": "res://assets3d/models/ultimate-monsters/Ghost_Skull.gltf",
+      "scale": 1.5,
+      "y_offset": 0.0,
+      "rot_y": 180.0
+    },
+    "orc": {
+      "model": "res://assets3d/models/ultimate-monsters/Orc.gltf",
+      "scale": 1.6,
+      "y_offset": 0.0,
+      "rot_y": 180.0
+    },
+    "lizardman": {
+      "model": "res://assets3d/models/ultimate-monsters/Dino.gltf",
+      "scale": 1.5,
+      "y_offset": 0.0,
+      "rot_y": 180.0
+    },
+    "soldier": {
+      "model": "res://assets3d/models/ultimate-monsters/Tribal.gltf",
+      "scale": 1.5,
+      "y_offset": 0.0,
+      "rot_y": 180.0
+    },
+    "yeti": {
+      "model": "res://assets3d/models/ultimate-monsters/Yeti.gltf",
+      "scale": 1.7,
+      "y_offset": 0.0,
+      "rot_y": 180.0
+    },
+    "mutant_m": {
+      "model": "res://assets3d/models/ultimate-monsters/GreenSpikyBlob.gltf",
+      "scale": 1.6,
+      "y_offset": 0.0,
+      "rot_y": 180.0
+    },
+    "juggernaut": {
+      "model": "res://assets3d/models/ultimate-monsters/Goleling_Evolved.gltf",
+      "scale": 1.8,
+      "y_offset": 0.0,
+      "rot_y": 180.0
+    },
+    "destroyer": {
+      "model": "res://assets3d/models/ultimate-monsters/Goleling.gltf",
+      "scale": 1.8,
+      "y_offset": 0.0,
+      "rot_y": 180.0
+    },
+    "angel": {
+      "model": "res://assets3d/models/ultimate-monsters/Wizard.gltf",
+      "scale": 1.5,
+      "y_offset": 0.0,
+      "rot_y": 180.0
+    },
+    "demon": {
+      "model": "res://assets3d/models/ultimate-monsters/Demon.gltf",
+      "scale": 1.6,
+      "y_offset": 0.0,
+      "rot_y": 180.0
+    },
+    "knight": {
+      "model": "res://assets3d/models/ultimate-monsters/Orc_Skull.gltf",
+      "scale": 1.7,
+      "y_offset": 0.0,
+      "rot_y": 180.0
+    },
+    "fallen_knight": {
+      "model": "res://assets3d/models/ultimate-monsters/BlueDemon.gltf",
+      "scale": 1.8,
+      "y_offset": 0.0,
+      "rot_y": 180.0
+    },
+    "mutant": {
+      "model": "res://assets3d/models/ultimate-monsters/Mushnub.gltf",
+      "scale": 1.5,
+      "y_offset": 0.0,
+      "rot_y": 180.0
+    },
     "dire_wolf": {
-      "model": "",
-      "scale": 1.0
+      "model": "res://assets3d/models/ultimate-monsters/Monkroose.gltf",
+      "scale": 3.0,
+      "y_offset": 0.0,
+      "rot_y": 180.0
     },
     "sandworm": {
-      "model": "",
-      "scale": 1.0
+      "model": "res://assets3d/models/ultimate-monsters/Squidle.gltf",
+      "scale": 3.2,
+      "y_offset": 0.0,
+      "rot_y": 180.0
     },
     "ice_golem": {
-      "model": "",
-      "scale": 1.0
+      "model": "res://assets3d/models/ultimate-monsters/Goleling_Evolved.gltf",
+      "scale": 3.4,
+      "y_offset": 0.0,
+      "rot_y": 180.0
     },
     "fire_dragon": {
-      "model": "",
-      "scale": 1.0
+      "model": "res://assets3d/models/ultimate-monsters/Dragon.gltf",
+      "scale": 3.2,
+      "y_offset": 0.0,
+      "rot_y": 180.0
     },
     "fallen_lord": {
-      "model": "",
-      "scale": 1.0
+      "model": "res://assets3d/models/ultimate-monsters/Orc_Skull.gltf",
+      "scale": 3.2,
+      "y_offset": 0.0,
+      "rot_y": 180.0
     },
     "seraph": {
-      "model": "",
-      "scale": 1.0
+      "model": "res://assets3d/models/ultimate-monsters/Armabee_Evolved.gltf",
+      "scale": 3.0,
+      "y_offset": 0.0,
+      "rot_y": 180.0
     },
     "abyss_lord": {
-      "model": "",
-      "scale": 1.0
+      "model": "res://assets3d/models/ultimate-monsters/Dragon_Evolved.gltf",
+      "scale": 3.8,
+      "y_offset": 0.0,
+      "rot_y": 180.0
     },
     "overlord": {
-      "model": "",
-      "scale": 1.0
+      "model": "res://assets3d/models/ultimate-monsters/MushroomKing.gltf",
+      "scale": 2.8,
+      "y_offset": 0.0,
+      "rot_y": 180.0
     },
     "warlord": {
-      "model": "",
-      "scale": 1.0
+      "model": "res://assets3d/models/ultimate-monsters/Alien.gltf",
+      "scale": 3.0,
+      "y_offset": 0.0,
+      "rot_y": 180.0
     }
   },
   "props": {
     "note": "BiomeBuilder 의 기본 도형 대신 쓸 모델. 비면 기존 도형.",
-    "tree": "res://assets3d/models/tree-large.glb",
-    "tree_pine": "res://assets3d/models/tree-pine-large.glb",
-    "bush": "res://assets3d/models/tree-shrub.glb",
-    "rock": "res://assets3d/models/rock-a.glb",
-    "rock_b": "res://assets3d/models/rock-b.glb",
-    "rock_c": "res://assets3d/models/rock-c.glb",
+    "tree": "res://assets3d/models/stylized-nature-megakit/CommonTree_3.gltf",
+    "tree_pine": "res://assets3d/models/stylized-nature-megakit/Pine_3.gltf",
+    "tree_dead": "res://assets3d/models/stylized-nature-megakit/DeadTree_2.gltf",
+    "tree_twist": "res://assets3d/models/stylized-nature-megakit/TwistedTree_2.gltf",
+    "bush": "res://assets3d/models/stylized-nature-megakit/Bush_Common.gltf",
+    "grass": "res://assets3d/models/stylized-nature-megakit/Grass_Common_Tall.gltf",
+    "fern": "res://assets3d/models/stylized-nature-megakit/Fern_1.gltf",
+    "flower": "res://assets3d/models/stylized-nature-megakit/Flower_3_Group.gltf",
+    "mushroom": "res://assets3d/models/stylized-nature-megakit/Mushroom_Common.gltf",
+    "rock": "res://assets3d/models/stylized-nature-megakit/Rock_Medium_1.gltf",
+    "rock_b": "res://assets3d/models/stylized-nature-megakit/Rock_Medium_2.gltf",
+    "rock_c": "res://assets3d/models/stylized-nature-megakit/Rock_Medium_3.gltf",
+    "pebble": "res://assets3d/models/stylized-nature-megakit/Pebble_Round_2.gltf",
     "crystal": "",
     "ruin": "res://assets3d/models/wall-broken-type-a.glb",
     "ruin_b": "res://assets3d/models/wall-broken-type-b.glb",
     "barrel": "res://assets3d/models/barrel.glb",
     "chest": "res://assets3d/models/chest.glb",
-    "grass": "res://assets3d/models/patch-grass.glb",
-    "fence": "res://assets3d/models/fence.glb"
+    "fence": "res://assets3d/models/fence.glb",
+    "palm": "res://assets3d/models/stylized-nature-megakit/CommonTree_5.gltf",
+    "pine": "res://assets3d/models/stylized-nature-megakit/Pine_3.gltf",
+    "dead_tree": "res://assets3d/models/stylized-nature-megakit/DeadTree_2.gltf",
+    "cactus": "res://assets3d/models/stylized-nature-megakit/Plant_1_Big.gltf",
+    "boulder": "res://assets3d/models/stylized-nature-megakit/Rock_Medium_3.gltf"
   },
   "catalog": {
     "base": [
@@ -140,6 +307,32 @@
       "res://assets3d/models/wall-c-flat.glb",
       "res://assets3d/models/wall-fence.glb"
     ],
+    "medieval-weapons-pack": [
+      "res://assets3d/models/medieval-weapons-pack/Arrow.obj",
+      "res://assets3d/models/medieval-weapons-pack/Axe.obj",
+      "res://assets3d/models/medieval-weapons-pack/Axe_Double.obj",
+      "res://assets3d/models/medieval-weapons-pack/Axe_Small.obj",
+      "res://assets3d/models/medieval-weapons-pack/Bow_Evil.obj",
+      "res://assets3d/models/medieval-weapons-pack/Bow_Golden.obj",
+      "res://assets3d/models/medieval-weapons-pack/Bow_Wooden.obj",
+      "res://assets3d/models/medieval-weapons-pack/Bow_Wooden2.obj",
+      "res://assets3d/models/medieval-weapons-pack/Claymore.obj",
+      "res://assets3d/models/medieval-weapons-pack/Dagger.obj",
+      "res://assets3d/models/medieval-weapons-pack/Dagger_2.obj",
+      "res://assets3d/models/medieval-weapons-pack/Hammer_Double.obj",
+      "res://assets3d/models/medieval-weapons-pack/Hammer_Small.obj",
+      "res://assets3d/models/medieval-weapons-pack/Scythe.obj",
+      "res://assets3d/models/medieval-weapons-pack/Shield_Celtic_Golden.obj",
+      "res://assets3d/models/medieval-weapons-pack/Shield_Heater.obj",
+      "res://assets3d/models/medieval-weapons-pack/Shield_Heater_2.obj",
+      "res://assets3d/models/medieval-weapons-pack/Shield_Round.obj",
+      "res://assets3d/models/medieval-weapons-pack/Shield_Round_2.obj",
+      "res://assets3d/models/medieval-weapons-pack/Spear.obj",
+      "res://assets3d/models/medieval-weapons-pack/Sword.obj",
+      "res://assets3d/models/medieval-weapons-pack/Sword_2.obj",
+      "res://assets3d/models/medieval-weapons-pack/Sword_Big.obj",
+      "res://assets3d/models/medieval-weapons-pack/Sword_Golden.obj"
+    ],
     "modular-dungeon-kit": [
       "res://assets3d/models/modular-dungeon-kit/corridor-corner.glb",
       "res://assets3d/models/modular-dungeon-kit/corridor-end.glb",
@@ -180,9 +373,121 @@
       "res://assets3d/models/modular-dungeon-kit/template-wall-stairs.glb",
       "res://assets3d/models/modular-dungeon-kit/template-wall-top.glb",
       "res://assets3d/models/modular-dungeon-kit/template-wall.glb"
+    ],
+    "stylized-nature-megakit": [
+      "res://assets3d/models/stylized-nature-megakit/Bush_Common.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Bush_Common_Flowers.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Clover_1.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Clover_2.gltf",
+      "res://assets3d/models/stylized-nature-megakit/CommonTree_1.gltf",
+      "res://assets3d/models/stylized-nature-megakit/CommonTree_2.gltf",
+      "res://assets3d/models/stylized-nature-megakit/CommonTree_3.gltf",
+      "res://assets3d/models/stylized-nature-megakit/CommonTree_4.gltf",
+      "res://assets3d/models/stylized-nature-megakit/CommonTree_5.gltf",
+      "res://assets3d/models/stylized-nature-megakit/DeadTree_1.gltf",
+      "res://assets3d/models/stylized-nature-megakit/DeadTree_2.gltf",
+      "res://assets3d/models/stylized-nature-megakit/DeadTree_3.gltf",
+      "res://assets3d/models/stylized-nature-megakit/DeadTree_4.gltf",
+      "res://assets3d/models/stylized-nature-megakit/DeadTree_5.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Fern_1.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Flower_3_Group.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Flower_3_Single.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Flower_4_Group.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Flower_4_Single.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Grass_Common_Short.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Grass_Common_Tall.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Grass_Wispy_Short.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Grass_Wispy_Tall.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Mushroom_Common.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Mushroom_Laetiporus.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Pebble_Round_1.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Pebble_Round_2.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Pebble_Round_3.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Pebble_Round_4.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Pebble_Round_5.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Pebble_Square_1.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Pebble_Square_2.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Pebble_Square_3.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Pebble_Square_4.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Pebble_Square_5.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Pebble_Square_6.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Petal_1.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Petal_2.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Petal_3.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Petal_4.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Petal_5.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Pine_1.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Pine_2.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Pine_3.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Pine_4.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Pine_5.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Plant_1.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Plant_1_Big.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Plant_7.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Plant_7_Big.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Rock_Medium_1.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Rock_Medium_2.gltf",
+      "res://assets3d/models/stylized-nature-megakit/Rock_Medium_3.gltf",
+      "res://assets3d/models/stylized-nature-megakit/RockPath_Round_Small_1.gltf",
+      "res://assets3d/models/stylized-nature-megakit/RockPath_Round_Small_2.gltf",
+      "res://assets3d/models/stylized-nature-megakit/RockPath_Round_Small_3.gltf",
+      "res://assets3d/models/stylized-nature-megakit/RockPath_Round_Thin.gltf",
+      "res://assets3d/models/stylized-nature-megakit/RockPath_Round_Wide.gltf",
+      "res://assets3d/models/stylized-nature-megakit/RockPath_Square_Small_1.gltf",
+      "res://assets3d/models/stylized-nature-megakit/RockPath_Square_Small_2.gltf",
+      "res://assets3d/models/stylized-nature-megakit/RockPath_Square_Small_3.gltf",
+      "res://assets3d/models/stylized-nature-megakit/RockPath_Square_Thin.gltf",
+      "res://assets3d/models/stylized-nature-megakit/RockPath_Square_Wide.gltf",
+      "res://assets3d/models/stylized-nature-megakit/TwistedTree_1.gltf",
+      "res://assets3d/models/stylized-nature-megakit/TwistedTree_2.gltf",
+      "res://assets3d/models/stylized-nature-megakit/TwistedTree_3.gltf",
+      "res://assets3d/models/stylized-nature-megakit/TwistedTree_4.gltf",
+      "res://assets3d/models/stylized-nature-megakit/TwistedTree_5.gltf"
+    ],
+    "ultimate-monsters": [
+      "res://assets3d/models/ultimate-monsters/Alien.gltf",
+      "res://assets3d/models/ultimate-monsters/Alpaking.gltf",
+      "res://assets3d/models/ultimate-monsters/Alpaking_Evolved.gltf",
+      "res://assets3d/models/ultimate-monsters/Armabee.gltf",
+      "res://assets3d/models/ultimate-monsters/Armabee_Evolved.gltf",
+      "res://assets3d/models/ultimate-monsters/Birb.gltf",
+      "res://assets3d/models/ultimate-monsters/BlueDemon.gltf",
+      "res://assets3d/models/ultimate-monsters/Bunny.gltf",
+      "res://assets3d/models/ultimate-monsters/Cactoro.gltf",
+      "res://assets3d/models/ultimate-monsters/Cat.gltf",
+      "res://assets3d/models/ultimate-monsters/Chicken.gltf",
+      "res://assets3d/models/ultimate-monsters/Demon.gltf",
+      "res://assets3d/models/ultimate-monsters/Dino.gltf",
+      "res://assets3d/models/ultimate-monsters/Dog.gltf",
+      "res://assets3d/models/ultimate-monsters/Dragon.gltf",
+      "res://assets3d/models/ultimate-monsters/Dragon_Evolved.gltf",
+      "res://assets3d/models/ultimate-monsters/Fish.gltf",
+      "res://assets3d/models/ultimate-monsters/Frog.gltf",
+      "res://assets3d/models/ultimate-monsters/Ghost.gltf",
+      "res://assets3d/models/ultimate-monsters/Ghost_Skull.gltf",
+      "res://assets3d/models/ultimate-monsters/Glub.gltf",
+      "res://assets3d/models/ultimate-monsters/Glub_Evolved.gltf",
+      "res://assets3d/models/ultimate-monsters/Goleling.gltf",
+      "res://assets3d/models/ultimate-monsters/Goleling_Evolved.gltf",
+      "res://assets3d/models/ultimate-monsters/GreenBlob.gltf",
+      "res://assets3d/models/ultimate-monsters/GreenSpikyBlob.gltf",
+      "res://assets3d/models/ultimate-monsters/Hywirl.gltf",
+      "res://assets3d/models/ultimate-monsters/Monkroose.gltf",
+      "res://assets3d/models/ultimate-monsters/Mushnub.gltf",
+      "res://assets3d/models/ultimate-monsters/Mushnub_Evolved.gltf",
+      "res://assets3d/models/ultimate-monsters/MushroomKing.gltf",
+      "res://assets3d/models/ultimate-monsters/Ninja.gltf",
+      "res://assets3d/models/ultimate-monsters/Orc.gltf",
+      "res://assets3d/models/ultimate-monsters/Orc_Skull.gltf",
+      "res://assets3d/models/ultimate-monsters/Pigeon.gltf",
+      "res://assets3d/models/ultimate-monsters/PinkBlob.gltf",
+      "res://assets3d/models/ultimate-monsters/Squidle.gltf",
+      "res://assets3d/models/ultimate-monsters/Tribal.gltf",
+      "res://assets3d/models/ultimate-monsters/Wizard.gltf",
+      "res://assets3d/models/ultimate-monsters/Yeti.gltf"
     ]
   },
-  "catalog_note": "설치된 .glb 목록. 여기서 경로를 골라 player/enemies/props 에 붙인다.",
+  "catalog_note": "설치된 모델 목록. 여기서 경로를 골라 player/enemies/props 에 붙인다. tools/install_3d_assets.py 가 자동으로 채운다.",
   "landmark_parts": {
     "note": "랜드마크 아키타입에 얹을 던전 키트 조각 (LandmarkPrefab 이 참조).",
     "gate": "res://assets3d/models/modular-dungeon-kit/gate.glb",
@@ -192,5 +497,65 @@
     "stairs": "res://assets3d/models/modular-dungeon-kit/stairs.glb",
     "wall": "res://assets3d/models/modular-dungeon-kit/template-wall.glb",
     "wall_corner": "res://assets3d/models/modular-dungeon-kit/template-wall-corner.glb"
+  },
+  "weapons": {
+    "note": "무기 계열별 등급 순 모델. ItemData.skin 이 그대로 키가 된다.",
+    "blade_rust": "res://assets3d/models/medieval-weapons-pack/Sword.obj",
+    "blade_steel": "res://assets3d/models/medieval-weapons-pack/Sword_2.obj",
+    "blade_fang": "res://assets3d/models/medieval-weapons-pack/Claymore.obj",
+    "blade_crystal": "res://assets3d/models/medieval-weapons-pack/Sword_Big.obj",
+    "blade_dragon": "res://assets3d/models/medieval-weapons-pack/Sword_Golden.obj",
+    "blade_divine": "res://assets3d/models/medieval-weapons-pack/Sword_Golden.obj",
+    "spear_rust": "res://assets3d/models/medieval-weapons-pack/Spear.obj",
+    "spear_steel": "res://assets3d/models/medieval-weapons-pack/Spear.obj",
+    "spear_fang": "res://assets3d/models/medieval-weapons-pack/Scythe.obj",
+    "spear_crystal": "res://assets3d/models/medieval-weapons-pack/Scythe.obj",
+    "spear_dragon": "res://assets3d/models/medieval-weapons-pack/Spear.obj",
+    "spear_divine": "res://assets3d/models/medieval-weapons-pack/Scythe.obj",
+    "saber_rust": "res://assets3d/models/medieval-weapons-pack/Axe_Small.obj",
+    "saber_steel": "res://assets3d/models/medieval-weapons-pack/Axe.obj",
+    "saber_fang": "res://assets3d/models/medieval-weapons-pack/Axe_Double.obj",
+    "saber_crystal": "res://assets3d/models/medieval-weapons-pack/Axe_Double.obj",
+    "saber_dragon": "res://assets3d/models/medieval-weapons-pack/Axe.obj",
+    "saber_divine": "res://assets3d/models/medieval-weapons-pack/Axe_Double.obj",
+    "mace_rust": "res://assets3d/models/medieval-weapons-pack/Hammer_Small.obj",
+    "mace_steel": "res://assets3d/models/medieval-weapons-pack/Hammer_Small.obj",
+    "mace_fang": "res://assets3d/models/medieval-weapons-pack/Hammer_Double.obj",
+    "mace_crystal": "res://assets3d/models/medieval-weapons-pack/Hammer_Double.obj",
+    "mace_dragon": "res://assets3d/models/medieval-weapons-pack/Hammer_Double.obj",
+    "mace_divine": "res://assets3d/models/medieval-weapons-pack/Hammer_Double.obj",
+    "dagger_rust": "res://assets3d/models/medieval-weapons-pack/Dagger.obj",
+    "dagger_steel": "res://assets3d/models/medieval-weapons-pack/Dagger.obj",
+    "dagger_fang": "res://assets3d/models/medieval-weapons-pack/Dagger_2.obj",
+    "dagger_crystal": "res://assets3d/models/medieval-weapons-pack/Dagger_2.obj",
+    "dagger_dragon": "res://assets3d/models/medieval-weapons-pack/Dagger_2.obj",
+    "dagger_divine": "res://assets3d/models/medieval-weapons-pack/Dagger_2.obj",
+    "bow_rust": "res://assets3d/models/medieval-weapons-pack/Bow_Wooden.obj",
+    "bow_steel": "res://assets3d/models/medieval-weapons-pack/Bow_Wooden2.obj",
+    "bow_fang": "res://assets3d/models/medieval-weapons-pack/Bow_Evil.obj",
+    "bow_crystal": "res://assets3d/models/medieval-weapons-pack/Bow_Evil.obj",
+    "bow_dragon": "res://assets3d/models/medieval-weapons-pack/Bow_Golden.obj",
+    "bow_divine": "res://assets3d/models/medieval-weapons-pack/Bow_Golden.obj",
+    "_scale": 0.55,
+    "_rot_y": 0.0,
+    "_note_scale": "무기는 길이 1m 기준으로 자동 정규화된다.",
+    "_target_len": 1.0
+  },
+  "props_note": "MultiMesh 는 메시 1개만 받는다 — 모델 안의 첫 MeshInstance3D 를 꺼내 쓴다.",
+  "props_size": {
+    "note": "모델을 이 높이(미터)에 맞춰 자동으로 줄이거나 키운다. 원본 크기가 제각각이라 필요하다.",
+    "tree": 5.0,
+    "palm": 5.0,
+    "pine": 6.0,
+    "dead_tree": 4.5,
+    "cactus": 2.4,
+    "rock": 1.6,
+    "boulder": 2.6,
+    "bush": 1.0,
+    "grass": 0.6,
+    "fern": 0.8,
+    "flower": 0.5,
+    "mushroom": 0.5,
+    "pebble": 0.4
   }
 }

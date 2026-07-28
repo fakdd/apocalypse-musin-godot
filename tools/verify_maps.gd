@@ -36,6 +36,8 @@ func _run() -> void:
 		w.hud.menu_ui.close()
 	get_tree().paused = false
 	print("MAP| ══ 챕터별 스모크 ══")
+	_check_models()
+	_check_applied()
 
 	var host := Node3D.new()
 	w.add_child(host)
@@ -141,3 +143,104 @@ func _fail(msg: String) -> void:
 	bad += 1
 	_errors.append(msg)
 	print("MAP|  ✘ %s" % msg)
+
+## data/models.json 의 경로가 실제로 열리는가 (파일 존재 + PackedScene 인스턴스화)
+func _check_models() -> void:
+	var m := VfxPool.models()
+	var sections := {"enemies": m.get("enemies", {}), "props": m.get("props", {}),
+		"weapons": m.get("weapons", {})}
+	var total := 0
+	var okc := 0
+	var fails := []
+	for sec in sections:
+		for key in sections[sec]:
+			var v = sections[sec][key]
+			var path := ""
+			if typeof(v) == TYPE_DICTIONARY:
+				path = String(v.get("model", ""))
+			elif typeof(v) == TYPE_STRING:
+				path = String(v)
+			if not path.begins_with("res://"):
+				continue
+			total += 1
+			if not ResourceLoader.exists(path):
+				fails.append("%s/%s 파일없음" % [sec, key])
+				continue
+			# .glb/.gltf 는 PackedScene, .obj 는 Mesh 로 들어온다 — 둘 다 받는다
+			var node := VfxPool.load_model_node(path)
+			if node == null:
+				fails.append("%s/%s 로드실패" % [sec, key])
+				continue
+			node.queue_free()
+			okc += 1
+	if fails.is_empty():
+		print("MAP|  ✔ 모델 매핑 %d개 전부 로드 성공" % okc)
+	else:
+		bad += 1
+		print("MAP|  ✘ 모델 %d/%d 실패" % [fails.size(), total])
+		for f in fails.slice(0, 8):
+			print("MAP|      %s" % f)
+
+## "다운로드한 것이 실제로 게임에 붙었는가" 를 확인한다.
+## 경로가 있는 것과 화면에 나오는 것은 다르다 — 실제 생성 경로를 태워 본다.
+func _check_applied() -> void:
+	var probs := []
+
+	# 1) 적 — 소환한 개체가 교체 모델을 쓰는가
+	var w = get_tree().current_scene
+	var host := Node3D.new()
+	w.add_child(host)
+	var swapped := 0
+	var checked := 0
+	for t in ["hound", "dire_wolf", "abyss_lord", "knight"]:
+		var conf := VfxPool.model_conf("enemy", t)
+		if String(conf.get("model", "")) == "":
+			continue
+		checked += 1
+		var n := VfxPool.spawn_model(conf)
+		if n != null:
+			swapped += 1
+			n.queue_free()
+	if checked > 0 and swapped == checked:
+		print("MAP|  ✔ 적 모델 교체 — 표본 %d종 전부 인스턴스 생성" % swapped)
+	else:
+		probs.append("적 모델 %d/%d" % [swapped, checked])
+
+	# 2) 소품 — MultiMesh 가 쓸 Mesh 를 꺼낼 수 있는가
+	var pm := 0
+	var pt := 0
+	for k in ["tree", "pine", "rock", "bush", "dead_tree"]:
+		var path := String(VfxPool.models().get("props", {}).get(k, ""))
+		if path == "":
+			continue
+		pt += 1
+		if VfxPool.mesh_of(path).size() >= 2:
+			pm += 1
+	if pt > 0 and pm == pt:
+		print("MAP|  ✔ 소품 모델 — %d종 전부 Mesh 추출 성공 (MultiMesh 사용 가능)" % pm)
+	else:
+		probs.append("소품 %d/%d" % [pm, pt])
+
+	# 3) 무기 — 6계열 대표 스킨이 손에 붙을 Mesh 를 갖는가
+	var wm := 0
+	var wt := 0
+	for k in ["blade_steel", "spear_rust", "saber_fang", "mace_steel",
+			"dagger_rust", "bow_wooden" if false else "bow_steel"]:
+		var path2 := String(VfxPool.models().get("weapons", {}).get(k, ""))
+		if path2 == "":
+			probs.append("무기 %s 매핑없음" % k)
+			continue
+		wt += 1
+		if VfxPool.mesh_of(path2).size() >= 2:
+			wm += 1
+	if wt > 0 and wm == wt:
+		print("MAP|  ✔ 무기 모델 — 6계열 전부 Mesh 추출 성공")
+	else:
+		probs.append("무기 %d/%d" % [wm, wt])
+
+	host.queue_free()
+	if probs.is_empty():
+		print("MAP|  ✔ 다운로드 에셋이 실제 생성 경로까지 연결됨")
+	else:
+		bad += 1
+		print("MAP|  ✘ 미연결: %s" % str(probs))

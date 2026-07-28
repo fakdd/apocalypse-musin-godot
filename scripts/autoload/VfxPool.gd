@@ -229,19 +229,71 @@ func spawn_model(conf: Dictionary) -> Node3D:
 	var path := String(conf.get("model", ""))
 	if path == "" or not ResourceLoader.exists(path):
 		return null
-	var packed = ResourceLoader.load(path)
-	if packed == null or not (packed is PackedScene):
-		push_warning("[Model] PackedScene 이 아니다: %s" % path)
+	var n: Node3D = load_model_node(path)
+	if n == null:
 		return null
-	var inst = packed.instantiate()
-	if inst == null or not (inst is Node3D):
-		return null
-	var n: Node3D = inst
 	var sc := float(conf.get("scale", 1.0))
 	n.scale = Vector3(sc, sc, sc)
 	n.position.y += float(conf.get("y_offset", 0.0))
 	n.rotation_degrees.y += float(conf.get("rot_y", 0.0))
 	return n
+
+## 경로 하나를 Node3D 로 만든다.
+##   .glb / .gltf → PackedScene 이라 instantiate
+##   .obj         → ArrayMesh 로 들어온다. MeshInstance3D 에 얹어 준다.
+## 두 형식을 같이 쓰기 때문에 이 분기가 필요하다.
+func load_model_node(path: String) -> Node3D:
+	if path == "" or not ResourceLoader.exists(path):
+		return null
+	var res = ResourceLoader.load(path)
+	if res == null:
+		return null
+	if res is PackedScene:
+		var inst = res.instantiate()
+		return inst if inst is Node3D else null
+	if res is Mesh:
+		var mi := MeshInstance3D.new()
+		mi.mesh = res
+		return mi
+	push_warning("[Model] 쓸 수 없는 형식: %s" % path)
+	return null
+
+## 모델 안의 첫 MeshInstance3D 에서 Mesh 와 머티리얼을 꺼낸다.
+## MultiMesh 는 메시 하나만 받으므로, 소품을 MultiMesh 로 뿌리려면 이 형태가 필요하다.
+## 못 찾으면 null — 호출부는 기존 기본 도형을 쓰면 된다.
+func mesh_of(path: String) -> Array:
+	var n := load_model_node(path)
+	if n == null:
+		return []
+	var found := _find_mesh(n, 0)
+	n.queue_free()
+	return found
+
+func _find_mesh(node: Node, depth: int) -> Array:
+	if node == null or depth > 8:
+		return []
+	if node is MeshInstance3D and node.mesh != null:
+		var mat: Material = node.material_override
+		if mat == null and node.mesh.get_surface_count() > 0:
+			mat = node.mesh.surface_get_material(0)
+		return [node.mesh, mat]
+	for c in node.get_children():
+		var r := _find_mesh(c, depth + 1)
+		if not r.is_empty():
+			return r
+	return []
+
+## 메시를 목표 크기에 맞추는 배율.
+## 받아 온 모델은 팩마다 단위가 달라(0.1m ~ 20m) 그대로 쓰면 화면을 가리거나 안 보인다.
+## AABB 로 재서 지정한 높이(또는 최장변)에 맞춘다.
+func fit_scale(mesh: Mesh, target: float, use_height: bool = true) -> float:
+	if mesh == null or target <= 0.0:
+		return 1.0
+	var box := mesh.get_aabb()
+	var cur: float = box.size.y if use_height else maxf(box.size.x, maxf(box.size.y, box.size.z))
+	if cur <= 0.0001:
+		return 1.0
+	return target / cur
 
 ## 모델 안에서 AnimationPlayer 를 찾는다 (.glb 는 보통 한 단계 아래에 있다)
 func find_anim(root: Node, depth: int = 0) -> AnimationPlayer:

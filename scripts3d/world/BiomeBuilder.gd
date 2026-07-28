@@ -66,7 +66,25 @@ func _scatter(spec: Array) -> void:
 	var hi: float = float(spec[3])
 	var col: Color = spec[4]
 
-	var mesh := _mesh_for(kind)
+	# data/models.json 의 props 에 실제 모델이 있으면 그것을 쓴다.
+	# 없으면 아래 기본 도형으로 돌아간다 — 일부만 교체해도 된다.
+	var mesh: Mesh = null
+	var model_mat: Material = null
+	var mpath := String(VfxPool.models().get("props", {}).get(kind, ""))
+	if mpath != "":
+		var got := VfxPool.mesh_of(mpath)
+		if got.size() >= 2:
+			mesh = got[0]
+			model_mat = got[1]
+	# 받아 온 모델은 팩마다 단위가 달라 그대로 쓰면 거대한 검은 덩어리가 된다.
+	# AABB 로 재서 목표 높이에 맞춘다.
+	var fit := 1.0
+	if mesh != null:
+		var tgt := float(VfxPool.models().get("props_size", {}).get(kind, 0.0))
+		if tgt > 0.0:
+			fit = VfxPool.fit_scale(mesh, tgt)
+	if mesh == null:
+		mesh = _mesh_for(kind)
 	if mesh == null:
 		return
 
@@ -79,7 +97,7 @@ func _scatter(spec: Array) -> void:
 			randf_range(EDGE, ARENA_H - EDGE))
 		if _blocked(pos):
 			continue
-		var s: float = randf_range(lo, hi)
+		var s: float = randf_range(lo, hi) * fit
 		var t := Transform3D(Basis(), pos)
 		t = t.rotated_local(Vector3.UP, randf_range(0.0, TAU))
 		# 가로세로를 살짝 다르게 줘 복제 티를 줄인다
@@ -92,7 +110,10 @@ func _scatter(spec: Array) -> void:
 
 	if xforms.is_empty():
 		return
-	_commit(mesh, _mat(col), xforms, colors, "Biome_" + kind)
+	# 모델에 딸린 머티리얼이 있으면 그것을 쓴다 (색이 통짜로 죽지 않게).
+	# 기본 도형일 때만 색 지정 머티리얼을 덮어쓴다.
+	_commit(mesh, model_mat if model_mat != null else _mat(col),
+		xforms, colors, "Biome_" + kind)
 
 ## 프리미티브를 조합해 종류별 메시를 만든다.
 ## ArrayMesh 로 합치지 않고 대표 형태 하나만 쓴다 — MultiMesh 는 메시 1개만 받는다.
@@ -177,6 +198,8 @@ func _commit(mesh: Mesh, mat: Material, xforms: Array, colors: Array,
 	var node := MultiMeshInstance3D.new()
 	node.name = node_name
 	node.multimesh = mm
+	# 모델에 딸린 머티리얼이 있으면 그것을 쓴다 (색이 통짜로 죽지 않게).
+	# 기본 도형일 때만 색 지정 머티리얼을 덮어쓴다.
 	node.material_override = mat
 	# 그림자를 끄면 수천 그루도 부담이 적다 (기존 소품과 같은 선택)
 	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
