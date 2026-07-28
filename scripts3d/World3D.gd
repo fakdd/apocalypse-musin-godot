@@ -86,7 +86,9 @@ func _ready() -> void:
 
 	# 첫 실행(세이브 없음)이면 타이틀부터 보여준다.
 	# 세이브가 있으면 예전처럼 바로 이어서 시작한다 — 기존 흐름 유지.
-	if not SaveGame.has_save and not SaveGame.exists():
+	# 이번 실행에서 아직 슬롯을 고르지 않았고 세이브도 없을 때만 타이틀을 띄운다.
+	# session_started 를 안 보면 새 게임 직후 재로드에서 또 타이틀이 떠 무한 반복된다.
+	if not SaveGame.session_started and not SaveGame.has_save and not SaveGame.exists():
 		hud.call_deferred("show_title")
 
 	# ── 캠페인 ──

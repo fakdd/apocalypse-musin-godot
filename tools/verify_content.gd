@@ -646,6 +646,7 @@ func _run_projectile_tests() -> void:
 	await _t_aim()
 	await _t_pet()
 	await _t_boot()
+	await _t_new_game_flow()
 
 	host.queue_free()
 	if _pt_bad > 0:
@@ -902,7 +903,16 @@ func _t_new_game_reset() -> void:
 	if int(SaveGame.counter("chest")) != 0: dirty.append("카운터")
 	if UpgradeManager.level("hp") != 0: dirty.append("강화 %d" % UpgradeManager.level("hp"))
 	if not PlayerStats.inventory.is_empty(): dirty.append("인벤 %d" % PlayerStats.inventory.size())
-	if not SaveGame.slot_info(2)["empty"]: dirty.append("슬롯 파일 남음")
+	# 새 게임은 슬롯 파일을 새로 만든다 (타이틀 무한 반복 방지).
+	# 파일이 있는 것은 정상이고, 그 안의 값이 초기값이어야 한다.
+	var fresh := SaveGame.slot_info(2)
+	if not bool(fresh.get("empty", true)):
+		if int(fresh.get("chapter", 1)) != ChapterConfig.FIRST:
+			dirty.append("슬롯 챕터 %d" % int(fresh.get("chapter", 0)))
+		if int(fresh.get("level", 1)) != 1:
+			dirty.append("슬롯 레벨 %d" % int(fresh.get("level", 0)))
+		if int(fresh.get("ng_plus", 0)) != 0:
+			dirty.append("슬롯 NG+ %d" % int(fresh.get("ng_plus", 0)))
 
 	if dirty.is_empty():
 		print("CT|  ✔ 새 게임 슬롯 리셋 — SaveGame·GameManager·PlayerStats 전부 초기값")
@@ -1315,3 +1325,37 @@ func _t_boot() -> void:
 		print("CT|  ✔ 제단 프롬프트에 [G] 안내")
 	else:
 		print("CT|  ✘ 제단 프롬프트에 [G] 가 없다"); _pt_bad += 1
+
+## [새 게임 흐름] 슬롯을 고른 뒤 다시 타이틀로 돌아가지 않는가
+func _t_new_game_flow() -> void:
+	var keep_slot := SaveGame.slot
+	var keep_sess := SaveGame.session_started
+
+	# 새 게임 — 슬롯 파일이 생기고 세션이 시작으로 표시돼야 한다
+	SaveGame.session_started = false
+	SaveGame.start_new_game(2)
+	var file_ok: bool = not bool(SaveGame.slot_info(2)["empty"])
+	var sess_ok: bool = SaveGame.session_started
+
+	# World3D 의 타이틀 조건을 그대로 평가한다
+	var would_show: bool = not SaveGame.session_started 		and not SaveGame.has_save and not SaveGame.exists()
+
+	if file_ok and sess_ok and not would_show:
+		print("CT|  ✔ 새 게임 — 슬롯 파일 생성 · 타이틀로 되돌아가지 않는다")
+	else:
+		print("CT|  ✘ 새 게임 흐름 (파일 %s · 세션 %s · 타이틀재표시 %s)"
+			% [str(file_ok), str(sess_ok), str(would_show)])
+		_pt_bad += 1
+
+	# 이어하기도 같은 보장
+	SaveGame.session_started = false
+	SaveGame.use_slot(2)
+	if SaveGame.session_started:
+		print("CT|  ✔ 이어하기도 세션 시작으로 표시")
+	else:
+		print("CT|  ✘ use_slot 이 세션을 표시하지 않는다"); _pt_bad += 1
+
+	SaveGame.slot = 2
+	SaveGame.wipe()
+	SaveGame.slot = keep_slot
+	SaveGame.session_started = keep_sess

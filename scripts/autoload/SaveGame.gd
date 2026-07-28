@@ -48,6 +48,7 @@ func slot_info(i: int) -> Dictionary:
 ## 슬롯을 고르고 그 내용을 읽는다. 비어 있으면 새 게임 상태로 둔다.
 func use_slot(i: int) -> bool:
 	slot = clampi(i, 0, SLOT_COUNT - 1)
+	session_started = true
 	has_save = false
 	if not FileAccess.file_exists(slot_path()):
 		return false
@@ -86,6 +87,12 @@ var graphics := 1                 ## 0 Low / 1 Medium / 2 High
 var master_db := 0.0
 ## ── 보스 러시 ──
 var rush_index := -1              ## -1 이면 진행 중이 아니다
+
+## 이번 실행에서 슬롯을 골랐는가.
+## 저장하지 않는다 — 게임을 껐다 켜면 다시 타이틀부터다.
+## 이게 없으면 "새 게임 → 세이브 삭제 → 씬 재로드 → 세이브 없음 → 타이틀"
+## 이 끝없이 반복돼 게임에 들어갈 수 없었다.
+var session_started := false
 
 func _ready() -> void:
 	# 저장은 게임을 끌 때도 되어야 한다
@@ -470,6 +477,7 @@ func boss_rush_unlocked() -> bool:
 ## wipe() 는 세이브 데이터만 지우므로, 오토로드에 남은 진행 상태까지 함께 비운다.
 func start_new_game(i: int) -> void:
 	slot = clampi(i, 0, SLOT_COUNT - 1)
+	session_started = true
 	wipe()
 	GameManager.reset_all()
 	TraitManager.reset()
@@ -482,6 +490,9 @@ func start_new_game(i: int) -> void:
 	Battlefield.reset()
 	UpgradeManager.reset()
 	rush_index = -1
+	# 새 게임을 시작한 그 순간 슬롯 파일을 만든다.
+	# 파일이 있어야 슬롯 목록에 뜨고, 부팅 시 타이틀로 되돌아가지 않는다.
+	save()
 
 ## 보스 러시 기록 갱신 (최고 기록만 남긴다)
 func note_boss_rush(cleared: int) -> void:
