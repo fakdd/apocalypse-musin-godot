@@ -97,10 +97,17 @@ func _ready() -> void:
 	inventory_ui = load("res://scripts3d/InventoryUI.gd").new()
 	add_child(inventory_ui)
 
-## 창이 열려 있는 동안에는 마우스를 쓸 수 있어야 한다.
-## 평소에는 카메라 조작 때문에 마우스를 잡아 두는데, 창이 뜨면 놓아준다.
+## 마우스 모드.
+##
+## 예전에는 전투 중에 MOUSE_MODE_CAPTURED 를 걸었다. 이게 조준이 안 되던 진짜 원인이다.
+## CAPTURED 는 커서를 창 한가운데에 **못 박아 두고** 상대 이동만 넘긴다.
+## 그래서 get_mouse_position() 이 항상 화면 중앙을 돌려줬고,
+## 아래로 아무리 내려도 조준점이 캐릭터 근처에서 벗어나지 못했다.
+##
+## 이 게임은 커서 위치로 조준한다 — 커서가 실제로 움직여야 한다.
+## CONFINED 로 창 밖으로만 못 나가게 막고, 보이는 커서를 그대로 쓴다.
 func sync_mouse_mode() -> void:
-	var want := Input.MOUSE_MODE_VISIBLE if windows_open() else Input.MOUSE_MODE_CAPTURED
+	var want := Input.MOUSE_MODE_VISIBLE if windows_open() 		else Input.MOUSE_MODE_CONFINED
 	if Input.mouse_mode != want:
 		Input.mouse_mode = want
 

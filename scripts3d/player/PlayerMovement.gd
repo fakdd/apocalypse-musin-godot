@@ -36,7 +36,14 @@ func _aim_at_mouse() -> void:
 	var cam: Camera3D = owner_player.camera
 	if vp == null or cam == null or not is_instance_valid(cam):
 		return
-	var mouse := vp.get_mouse_position()
+	_aim_at_mouse_at(vp.get_mouse_position())
+
+## 지정한 화면 좌표를 향해 돈다 (검증에서 임의 좌표로 시험할 수 있게 분리)
+func _aim_at_mouse_at(mouse: Vector2) -> void:
+	var cam2: Camera3D = owner_player.camera
+	if cam2 == null or not is_instance_valid(cam2):
+		return
+	var cam := cam2
 	var origin := cam.unproject_position(owner_player.global_position)
 	var d := mouse - origin
 	if d.length() < 6.0:          ## 캐릭터 위를 가리키면 방향을 바꾸지 않는다

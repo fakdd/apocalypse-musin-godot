@@ -643,6 +643,7 @@ func _run_projectile_tests() -> void:
 	await _t_audio_scan()
 	await _t_freeze_guard()
 	await _t_qol()
+	await _t_aim()
 
 	host.queue_free()
 	if _pt_bad > 0:
@@ -1153,3 +1154,40 @@ func _t_qol() -> void:
 	PlayerStats.reset()
 	if _pt_bad == bad0:
 		pass
+
+## [마우스 조준] 커서가 실제로 움직일 수 있는 모드인가 + 화면 아래쪽 조준이 되는가
+func _t_aim() -> void:
+	var w = get_tree().current_scene
+	if w == null or w.get("hud") == null:
+		print("CT|  ✘ HUD 없음"); _pt_bad += 1
+		return
+	w.hud.close_windows()
+	w.hud.sync_mouse_mode()
+	# CAPTURED 면 커서가 창 중앙에 못 박혀 get_mouse_position 이 안 움직인다
+	var mode_ok: bool = Input.mouse_mode != Input.MOUSE_MODE_CAPTURED
+
+	var pl := Battlefield.live_player()
+	var cam: Camera3D = pl.camera if pl else null
+	var aim_ok := false
+	var down_ok := false
+	if pl and cam:
+		var origin := cam.unproject_position(pl.global_position)
+		# 화면 위쪽을 가리키면 전방, 아래쪽을 가리키면 후방을 봐야 한다
+		var keep: float = float(pl.facing_angle)
+		pl.movement._aim_at_mouse_at(origin + Vector2(0, -200))
+		var up_angle: float = float(pl.facing_angle)
+		pl.movement._aim_at_mouse_at(origin + Vector2(0, 200))
+		var down_angle: float = float(pl.facing_angle)
+		aim_ok = absf(angle_difference(up_angle, down_angle)) > 2.5   ## 거의 정반대
+		# 화면 맨 아래(스킬 UI 자리)에서도 각도가 나와야 한다
+		pl.movement._aim_at_mouse_at(Vector2(origin.x, 700))
+		down_ok = absf(angle_difference(pl.facing_angle, up_angle)) > 1.5
+		pl.facing_angle = keep
+
+	if mode_ok and aim_ok and down_ok:
+		print("CT|  ✔ 마우스 조준 — 모드 %d(비CAPTURED) · 위/아래 반대 방향 · 최하단 조준 가능"
+			% Input.mouse_mode)
+	else:
+		print("CT|  ✘ 마우스 조준 (모드 %s / 상하반전 %s / 최하단 %s)"
+			% [str(mode_ok), str(aim_ok), str(down_ok)])
+		_pt_bad += 1
