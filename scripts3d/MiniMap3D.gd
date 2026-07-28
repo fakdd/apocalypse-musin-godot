@@ -100,7 +100,7 @@ func _draw() -> void:
 			_dot(rf.global_position, ppos, yaw, 4.0, Color(0.35, 0.6, 0.9, 0.7))
 
 	# 아이템 / 생존자 / 펫
-	for it in get_tree().get_nodes_in_group("item_drops"):
+	for it in Battlefield.item_drops:
 		if is_instance_valid(it) and it.item:
 			_dot(it.global_position, ppos, yaw, 3.0, it.item.get_color())
 	for sv in get_tree().get_nodes_in_group("survivor_nodes"):
@@ -111,8 +111,10 @@ func _draw() -> void:
 			_dot(pet.global_position, ppos, yaw, 2.5, Color(1.0, 0.9, 0.5))
 
 	# 적 (보스는 크게)
+	# 시체는 그리지 않는다 — 사망 연출 동안 캐시에 남아 있어, 다 정리한 구역이
+	# 아직 붉은 점으로 보이면 "여기 클리어됐나?" 판단이 흐려진다.
 	for e in Battlefield.enemies:
-		if not is_instance_valid(e):
+		if not is_instance_valid(e) or e.dead:
 			continue
 		if e.is_in_group("boss"):
 			_dot(e.global_position, ppos, yaw, 6.0, Color(1.0, 0.2, 0.15))

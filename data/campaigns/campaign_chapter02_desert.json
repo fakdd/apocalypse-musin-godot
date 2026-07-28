@@ -1,0 +1,678 @@
+{
+  "version": 2,
+  "schema": 2,
+  "name": "메마른 사막",
+  "author": "AI Asset Factory",
+  "modified": "2026-07-27T17:23:44",
+  "id": "chapter02_desert",
+  "description": "",
+  "arena": {
+    "w": 80.0,
+    "h": 80.0
+  },
+  "start": "oasis",
+  "nodes": [
+    {
+      "id": "oasis",
+      "order": 0,
+      "pos": {
+        "x": 67.0,
+        "z": 40.0
+      },
+      "zone": 1,
+      "name": "오아시스",
+      "locked_until": "",
+      "events": [],
+      "stages": [
+        {
+          "id": "well",
+          "area_id": "oasis",
+          "name": "오아시스 — 우물가",
+          "subtitle": "물이 아직 마르지 않았다",
+          "desc": "야자수 그늘 아래 천막이 몇 개 남았다. 사람은 없다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 67.0,
+            "z": 40.0
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 1,
+          "level": 16,
+          "bgm": "explore",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "mummy": 2
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            }
+          ],
+          "npcs": [
+            {
+              "id": "merchant_sand",
+              "name": "상인",
+              "role": "상인",
+              "dialogue": "물은 팔지 않소. 대신 길을 알려주지.",
+              "reward": "item",
+              "state": "quest",
+              "dialogue_completed": "살아 돌아왔군. 값을 쳐주겠소."
+            }
+          ],
+          "story": [
+            "물동이가 엎어진 채 모래에 반쯤 묻혔다."
+          ],
+          "ambient": {
+            "mummy": 2
+          },
+          "quest": {
+            "id": "q_oasis",
+            "title": "우물을 지키다",
+            "objective": "clear",
+            "target": 1,
+            "essence": 38,
+            "rarity": "E",
+            "next": ""
+          },
+          "items": 2,
+          "luck": 14.0,
+          "kind": "combat"
+        }
+      ]
+    },
+    {
+      "id": "bazaar",
+      "order": 1,
+      "pos": {
+        "x": 48.3,
+        "z": 65.7
+      },
+      "zone": 1,
+      "name": "사막 시장",
+      "locked_until": "q_oasis",
+      "events": [],
+      "stages": [
+        {
+          "id": "row",
+          "area_id": "bazaar",
+          "name": "시장 거리",
+          "subtitle": "차양이 바람에 찢겼다",
+          "desc": "좌판이 그대로다. 값을 치르지 않은 물건들이 널려 있다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 48.3,
+            "z": 65.7
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 2,
+          "level": 18,
+          "bgm": "explore",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "bandit": 3
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "mummy": 3,
+                "bandit": 1
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            }
+          ],
+          "npcs": [
+            {
+              "id": "archaeo",
+              "name": "고고학자",
+              "role": "정보원",
+              "dialogue": "왕의 무덤은 열면 안 되는 거였소. 이미 늦었지만.",
+              "reward": "essence",
+              "state": "quest",
+              "dialogue_completed": "기록은 남겨야 하오. 누군가는 읽을 테니."
+            }
+          ],
+          "ambient": {
+            "bandit": 2
+          },
+          "quest": {
+            "id": "q_bazaar",
+            "title": "시장을 되찾다",
+            "objective": "clear",
+            "target": 1,
+            "essence": 56,
+            "rarity": "E",
+            "next": "q_bazaar_vault"
+          },
+          "items": 4,
+          "luck": 28.0,
+          "kind": "treasure"
+        },
+        {
+          "id": "vault",
+          "area_id": "bazaar_vault",
+          "name": "시장 지하 창고",
+          "subtitle": "자물쇠가 안쪽에서 걸렸다",
+          "desc": "지하로 내려가는 계단이 모래에 반쯤 묻혔다.",
+          "offset": {
+            "x": -12.4,
+            "z": 4.0
+          },
+          "pos": {
+            "x": 35.9,
+            "z": 69.7
+          },
+          "zone": 2,
+          "radius": 5.5,
+          "danger": 3,
+          "level": 20,
+          "bgm": "tense",
+          "locked_until": "q_bazaar",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "bandit": 4
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "scorpion": 4,
+                "bandit": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": "bandit"
+            }
+          ],
+          "ambient": {
+            "bandit": 2
+          },
+          "boss": "bandit",
+          "boss_hp_mult": 2.0,
+          "quest": {
+            "id": "q_bazaar_vault",
+            "title": "창고를 열다",
+            "objective": "boss",
+            "target": 1,
+            "essence": 74,
+            "rarity": "D",
+            "next": ""
+          },
+          "items": 6,
+          "luck": 42.0,
+          "guaranteed": "D",
+          "puzzle": {
+            "id": "pz_desert_vault",
+            "kind": "sigil",
+            "count": 4,
+            "reward": "chest",
+            "order": [
+              2,
+              0,
+              3,
+              1
+            ],
+            "rarity": "C",
+            "achievement": "ach_pz_desert",
+            "hint": "문양에 순서가 새겨져 있다"
+          },
+          "kind": "combat"
+        }
+      ]
+    },
+    {
+      "id": "canyon",
+      "order": 2,
+      "pos": {
+        "x": 18.2,
+        "z": 55.9
+      },
+      "zone": 1,
+      "name": "모래협곡",
+      "locked_until": "q_bazaar_vault",
+      "events": [],
+      "stages": [
+        {
+          "id": "mouth",
+          "area_id": "canyon",
+          "name": "협곡 입구",
+          "subtitle": "바람이 비명처럼 지난다",
+          "desc": "협곡이 좁아지는 곳마다 모래가 소용돌이친다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 18.2,
+            "z": 55.9
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 3,
+          "level": 21,
+          "bgm": "explore",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "scorpion": 4
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "bandit": 4,
+                "scorpion": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            }
+          ],
+          "npcs": [
+            {
+              "id": "swordsman",
+              "name": "방랑 검사",
+              "role": "생존자",
+              "dialogue": "협곡 안에서 모래가 위로 솟는 걸 봤다. 밑에 뭔가 있어.",
+              "reward": "heal",
+              "state": "quest",
+              "dialogue_completed": "그놈을 봤나. 그럼 이제 알겠군."
+            }
+          ],
+          "story": [
+            "절벽에 손잡이가 박혀 있다. 누군가 기어오르려 했다."
+          ],
+          "ambient": {
+            "scorpion": 2
+          },
+          "quest": {
+            "id": "q_canyon",
+            "title": "협곡을 지나다",
+            "objective": "clear",
+            "target": 1,
+            "essence": 74,
+            "rarity": "E",
+            "next": "q_canyon_floor"
+          },
+          "items": 6,
+          "luck": 42.0,
+          "kind": "treasure"
+        },
+        {
+          "id": "floor",
+          "area_id": "canyon_floor",
+          "name": "협곡 바닥",
+          "subtitle": "발밑이 계속 흘러내린다",
+          "desc": "바닥이 단단하지 않다. 밟을 때마다 조금씩 꺼진다.",
+          "offset": {
+            "x": -7.6,
+            "z": -10.5
+          },
+          "pos": {
+            "x": 10.6,
+            "z": 45.4
+          },
+          "zone": 2,
+          "radius": 5.5,
+          "danger": 4,
+          "level": 23,
+          "bgm": "tense",
+          "locked_until": "q_canyon",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "scorpion": 5
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "mummy": 5,
+                "scorpion": 3
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": "scorpion"
+            },
+            {
+              "index": 3,
+              "composition": {
+                "mummy": 6,
+                "scorpion": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.3,
+              "boss": "scorpion"
+            }
+          ],
+          "ambient": {
+            "scorpion": 2
+          },
+          "boss": "scorpion",
+          "boss_hp_mult": 2.15,
+          "quest": {
+            "id": "q_canyon_floor",
+            "title": "바닥을 건너다",
+            "objective": "boss",
+            "target": 1,
+            "essence": 92,
+            "rarity": "C",
+            "next": ""
+          },
+          "items": 8,
+          "luck": 56.0,
+          "guaranteed": "C",
+          "kind": "combat"
+        }
+      ]
+    },
+    {
+      "id": "sun_temple",
+      "order": 3,
+      "pos": {
+        "x": 18.2,
+        "z": 24.1
+      },
+      "zone": 1,
+      "name": "태양신전",
+      "locked_until": "q_bazaar_vault",
+      "events": [],
+      "stages": [
+        {
+          "id": "shrine",
+          "area_id": "sun_temple",
+          "name": "태양신전",
+          "subtitle": "정오에도 그늘이 진다",
+          "desc": "기둥이 해를 가리도록 세워졌다. 신전 안은 항상 어둡다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 18.2,
+            "z": 24.1
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 4,
+          "level": 24,
+          "bgm": "tense",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "mummy": 5
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "bandit": 5,
+                "mummy": 3
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": "bandit"
+            },
+            {
+              "index": 3,
+              "composition": {
+                "bandit": 6,
+                "mummy": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.3,
+              "boss": "bandit"
+            }
+          ],
+          "story": [
+            "제단에 동전이 쌓여 있다. 아무도 가져가지 않았다."
+          ],
+          "ambient": {
+            "mummy": 2
+          },
+          "boss": "bandit",
+          "boss_hp_mult": 2.2,
+          "quest": {
+            "id": "q_sun_temple",
+            "title": "신전의 그늘",
+            "objective": "boss",
+            "target": 1,
+            "essence": 92,
+            "rarity": "B",
+            "next": ""
+          },
+          "items": 12,
+          "luck": 56.0,
+          "guaranteed": "B",
+          "puzzle": {
+            "id": "pz_desert_shrine",
+            "kind": "torch",
+            "count": 5,
+            "reward": "passage",
+            "rarity": "A",
+            "achievement": "ach_pz_secret_desert",
+            "hint": "횃불 다섯이 꺼져 있다"
+          },
+          "kind": "combat"
+        }
+      ]
+    },
+    {
+      "id": "kings_tomb",
+      "order": 4,
+      "pos": {
+        "x": 48.3,
+        "z": 14.3
+      },
+      "zone": 1,
+      "name": "왕의 무덤",
+      "locked_until": "q_canyon_floor",
+      "events": [],
+      "stages": [
+        {
+          "id": "door",
+          "area_id": "kings_tomb",
+          "name": "무덤 입구",
+          "subtitle": "봉인석이 부서져 있다",
+          "desc": "봉인석 조각이 바깥으로 흩어져 있다. 안에서 밀어낸 것이다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 48.3,
+            "z": 14.3
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 3,
+          "level": 25,
+          "bgm": "tense",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "mummy": 4
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "scorpion": 4,
+                "mummy": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            }
+          ],
+          "ambient": {
+            "mummy": 2
+          },
+          "quest": {
+            "id": "q_kings_tomb",
+            "title": "봉인을 지나다",
+            "objective": "clear",
+            "target": 1,
+            "essence": 74,
+            "rarity": "E",
+            "next": "q_kings_tomb_hall"
+          },
+          "items": 6,
+          "luck": 42.0,
+          "kind": "combat"
+        },
+        {
+          "id": "hall",
+          "area_id": "kings_tomb_hall",
+          "name": "왕의 관실",
+          "subtitle": "모래가 천장에서 흘러내린다",
+          "desc": "관은 비어 있다. 대신 방 전체가 천천히 움직인다.",
+          "offset": {
+            "x": 12.4,
+            "z": 4.0
+          },
+          "pos": {
+            "x": 60.7,
+            "z": 18.3
+          },
+          "zone": 1,
+          "radius": 5.5,
+          "danger": 5,
+          "level": 27,
+          "bgm": "boss",
+          "locked_until": "q_kings_tomb",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "mummy": 6
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "scorpion": 6,
+                "mummy": 4
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            },
+            {
+              "index": 3,
+              "composition": {
+                "scorpion": 7,
+                "mummy": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.3,
+              "boss": "sandworm"
+            }
+          ],
+          "story": [
+            "벽화에 거대한 무언가가 도시를 삼키는 장면이 있다."
+          ],
+          "ambient": {
+            "mummy": 2
+          },
+          "boss": "sandworm",
+          "boss_hp_mult": 2.35,
+          "quest": {
+            "id": "q_kings_tomb_hall",
+            "title": "샌드웜을 쓰러뜨려라",
+            "objective": "boss",
+            "target": 1,
+            "essence": 110,
+            "rarity": "A",
+            "next": ""
+          },
+          "items": 10,
+          "luck": 70.0,
+          "guaranteed": "A",
+          "kind": "combat"
+        }
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "from": "oasis",
+      "to": "bazaar",
+      "kind": "main",
+      "locked_until": ""
+    },
+    {
+      "from": "bazaar",
+      "to": "canyon",
+      "kind": "main",
+      "locked_until": ""
+    },
+    {
+      "from": "canyon",
+      "to": "kings_tomb",
+      "kind": "main",
+      "locked_until": ""
+    },
+    {
+      "from": "bazaar",
+      "to": "sun_temple",
+      "kind": "branch",
+      "locked_until": ""
+    }
+  ],
+  "events": []
+}

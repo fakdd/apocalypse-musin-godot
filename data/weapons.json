@@ -1,0 +1,242 @@
+{
+  "version": 1,
+  "note": "무기 계열별 플레이 스타일. 기존 검격 판정(PlayerCombat._slash)에 계수와 상태이상만 얹는다. 새 스킬은 만들지 않는다.",
+  "rules": {
+    "match": "ItemData.skin 이 prefix 로 시작하면 그 계열이다. 무기가 없으면 default.",
+    "reach/arc/rate": "사거리·부채꼴 각도·공격속도 배율. 1.0 = 기존과 동일.",
+    "pierce": "true 면 정면 관통 — 각도 안의 모든 적을 때린다 (기존과 동일 판정, 히트 수 제한 없음)",
+    "status": "적중 시 거는 상태. bleed(지속 피해) / stun(경직) / poison(지속 피해+둔화) / knock(넉백)",
+    "on_parry": "패링 성공 시 추가 효과 배율",
+    "affix_affinity": "이 계열이 특히 잘 받는 접사 — 툴팁과 빌드 안내에 쓴다",
+    "ranged": "true 면 근접 판정 대신 화살을 쏜다 (VfxPool.take_projectile 재사용)"
+  },
+  "default": {
+    "name": "맨손",
+    "reach": 1.0,
+    "arc": 1.0,
+    "rate": 1.0,
+    "damage": 1.0,
+    "pierce": false,
+    "status": "",
+    "on_parry": 1.0,
+    "crit_bonus": 0.0
+  },
+  "families": {
+    "blade": {
+      "prefix": "blade_",
+      "name": "검",
+      "tagline": "안정적 · 패링 중심",
+      "desc": "빈틈이 적고 반로환동 성공 시 반격이 강하다.",
+      "reach": 1.0,
+      "arc": 1.0,
+      "rate": 1.0,
+      "damage": 1.0,
+      "pierce": false,
+      "status": "",
+      "on_parry": 1.8,
+      "crit_bonus": 0.0,
+      "parry_window": 1.35,
+      "affix_affinity": [
+        "sturdy",
+        "eternal",
+        "of_stone"
+      ]
+    },
+    "spear": {
+      "prefix": "spear_",
+      "name": "창",
+      "tagline": "긴 사거리 · 관통",
+      "desc": "멀리서 찌른다. 일직선 위의 적을 모두 꿰뚫는다.",
+      "reach": 1.55,
+      "arc": 0.5,
+      "rate": 0.85,
+      "damage": 1.05,
+      "pierce": true,
+      "status": "",
+      "on_parry": 1.0,
+      "crit_bonus": 0.0,
+      "affix_affinity": [
+        "heavy",
+        "savage",
+        "of_abyss"
+      ]
+    },
+    "saber": {
+      "prefix": "saber_",
+      "name": "도",
+      "tagline": "빠른 공격 · 출혈",
+      "desc": "짧게 여러 번 벤다. 상처가 계속 벌어진다.",
+      "reach": 0.9,
+      "arc": 1.1,
+      "rate": 1.45,
+      "damage": 0.72,
+      "pierce": false,
+      "status": "bleed",
+      "on_parry": 1.0,
+      "crit_bonus": 0.02,
+      "affix_affinity": [
+        "sharp",
+        "swift",
+        "of_wind"
+      ]
+    },
+    "mace": {
+      "prefix": "mace_",
+      "name": "둔기",
+      "tagline": "스턴 · 넉백",
+      "desc": "느리지만 한 대가 무겁다. 맞은 적은 휘청인다.",
+      "reach": 1.05,
+      "arc": 1.25,
+      "rate": 0.65,
+      "damage": 1.55,
+      "pierce": false,
+      "status": "stun",
+      "on_parry": 1.2,
+      "crit_bonus": 0.0,
+      "knockback": 2.4,
+      "affix_affinity": [
+        "heavy",
+        "sturdy",
+        "of_stone"
+      ]
+    },
+    "dagger": {
+      "prefix": "dagger_",
+      "name": "암기",
+      "tagline": "독 · 치명타",
+      "desc": "약하지만 빠르고, 독이 남는다. 치명타가 자주 터진다.",
+      "reach": 0.75,
+      "arc": 0.85,
+      "rate": 1.6,
+      "damage": 0.6,
+      "pierce": false,
+      "status": "poison",
+      "on_parry": 1.0,
+      "crit_bonus": 0.1,
+      "affix_affinity": [
+        "cruel",
+        "lucky",
+        "of_hunter"
+      ]
+    },
+    "bow": {
+      "prefix": "bow_",
+      "name": "활",
+      "tagline": "원거리 · 관통",
+      "desc": "거리를 두고 쏜다. 화살은 적을 꿰뚫고 지나간다.",
+      "reach": 1.0,
+      "arc": 0.45,
+      "rate": 0.9,
+      "damage": 0.85,
+      "pierce": true,
+      "status": "",
+      "on_parry": 0.8,
+      "crit_bonus": 0.04,
+      "ranged": true,
+      "arrow_speed": 26.0,
+      "arrow_life": 1.6,
+      "arrow_count": 1,
+      "affix_affinity": [
+        "sharp",
+        "lucky",
+        "of_hunter"
+      ]
+    }
+  },
+  "status_effects": {
+    "note": "기존 Enemy3D.take_damage / stun 을 재사용한다. 새 상태 시스템을 만들지 않는다.",
+    "bleed": {
+      "name": "출혈",
+      "ticks": 4,
+      "interval": 0.5,
+      "damage_pct": 0.22,
+      "color": [
+        1.0,
+        0.3,
+        0.3
+      ]
+    },
+    "poison": {
+      "name": "중독",
+      "ticks": 6,
+      "interval": 0.6,
+      "damage_pct": 0.16,
+      "slow": 0.7,
+      "color": [
+        0.55,
+        1.0,
+        0.4
+      ]
+    },
+    "stun": {
+      "name": "경직",
+      "duration": 0.55,
+      "chance": 0.35,
+      "color": [
+        1.0,
+        0.9,
+        0.4
+      ]
+    },
+    "knock": {
+      "name": "넉백",
+      "force": 2.0,
+      "color": [
+        0.8,
+        0.8,
+        1.0
+      ]
+    }
+  },
+  "skins": {
+    "note": "ItemData.SKINS 의 weapon 목록을 계열별로 나눈 것. 등급이 오를수록 뒤쪽이 나온다.",
+    "blade": [
+      "blade_rust",
+      "blade_steel",
+      "blade_fang",
+      "blade_crystal",
+      "blade_dragon",
+      "blade_divine"
+    ],
+    "spear": [
+      "spear_rust",
+      "spear_steel",
+      "spear_fang",
+      "spear_crystal",
+      "spear_dragon",
+      "spear_divine"
+    ],
+    "saber": [
+      "saber_rust",
+      "saber_steel",
+      "saber_fang",
+      "saber_crystal",
+      "saber_dragon",
+      "saber_divine"
+    ],
+    "mace": [
+      "mace_rust",
+      "mace_steel",
+      "mace_fang",
+      "mace_crystal",
+      "mace_dragon",
+      "mace_divine"
+    ],
+    "dagger": [
+      "dagger_rust",
+      "dagger_steel",
+      "dagger_fang",
+      "dagger_crystal",
+      "dagger_dragon",
+      "dagger_divine"
+    ],
+    "bow": [
+      "bow_rust",
+      "bow_steel",
+      "bow_fang",
+      "bow_crystal",
+      "bow_dragon",
+      "bow_divine"
+    ]
+  }
+}

@@ -246,6 +246,17 @@ func notify_wave(id: String, index: int, total: int) -> void:
 		campaign_manager.fire_event(id, "on_wave_start")
 
 ## 랜드마크 소속 적이 죽었음을 알린다 (Enemy3D._die 에서 호출)
+## 비전투 영역(보물·쉼터·상인·퍼즐)은 싸울 적이 없다.
+## 진입 즉시 클리어로 처리해 잠금 사슬이 막히지 않게 한다.
+func force_clear(id: String) -> void:
+	_pending_kills.erase(id)
+	_waves_left[id] = 0
+	var d: LandmarkData = by_id.get(id, null)
+	if d == null or d.cleared:
+		return
+	_pending_kills[id] = 1
+	notify_kill(id)
+
 func notify_kill(id: String) -> void:
 	if not _pending_kills.has(id):
 		return

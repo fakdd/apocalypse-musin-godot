@@ -210,3 +210,29 @@ func _gui_input(event: InputEvent) -> void:
 		elif event.button_index == MOUSE_BUTTON_RIGHT and is_equip_slot and item != null:
 			request_unequip.emit(equip_slot_key)
 			accept_event()
+
+## 마우스를 올리면 옵션이 뜬다. Control 의 기본 툴팁 경로를 그대로 쓴다.
+func _get_tooltip(_pos: Vector2) -> String:
+	if item == null:
+		return ""
+	return item.get_display_name()
+
+func _make_custom_tooltip(_for_text: String) -> Object:
+	if item == null:
+		return null
+	var pan := PanelContainer.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.05, 0.045, 0.06, 0.97)
+	sb.border_color = item.get_color()
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(4)
+	sb.set_content_margin_all(10)
+	pan.add_theme_stylebox_override("panel", sb)
+	var rt := RichTextLabel.new()
+	rt.bbcode_enabled = true
+	rt.fit_content = true
+	rt.custom_minimum_size = Vector2(240, 0)
+	rt.add_theme_font_size_override("normal_font_size", 13)
+	rt.text = item.tooltip()
+	pan.add_child(rt)
+	return pan

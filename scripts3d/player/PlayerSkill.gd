@@ -18,6 +18,13 @@ func tick() -> void:
 	var p := owner_player
 	var inp: PlayerInput = p.input
 
+	# 대화창·제단 화면이 떠 있으면 스킬 키를 무시한다.
+	# E 는 대화·줍기·기공파가, F 는 제단 재주사·반로환동이 함께 물려 있고
+	# 이 둘은 폴링이라 set_input_as_handled 로는 막히지 않는다.
+	if _windows_open():
+		inp.clear_queue()
+		return
+
 	# ── 검기 (어택 버퍼) ──
 	if p.atk_cd <= 0.0 and inp.consume_attack():
 		p.combat._slash()
@@ -36,3 +43,10 @@ func tick() -> void:
 	if inp.check_skill("parry", Input.is_key_pressed(KEY_F),
 			p.parry_cd <= 0.0, is_busy()):
 		p.combat._start_parry()
+
+## 전체 화면 창이 떠 있는지 HUD 에 물어본다 (없으면 막지 않는다 — 회귀 방지)
+func _windows_open() -> bool:
+	var world = owner_player.get_tree().current_scene
+	if world == null or world.get("hud") == null:
+		return false
+	return world.hud.windows_open()

@@ -59,9 +59,31 @@ func _end_wave() -> void:
 		return
 
 	GameManager.set_night_state(GameManager.NightState.REST)
-	world.night_timer = DemoDirector.rest_duration()
+	# 힘들었던 웨이브일수록 숨돌릴 시간을 길게 준다.
+	# 매 웨이브 같은 간격이면 계속 밀리는 사람은 계속 밀리고, 여유 있는 사람은 지루하다.
+	world.night_timer = maxf(DemoDirector.rest_duration(), _breather())
 	GameManager.phase_timer = world.night_timer
-	world.hud.show_banner("정비 시간 — N 으로 다음 웨이브 즉시 시작")
+
+	# 체력이 거의 없이 웨이브를 넘긴 순간은 따로 기억시켜 준다
+	var pl := Battlefield.live_player()
+	if pl and pl.hp / maxf(pl.max_hp, 1.0) <= CombatFeel.pace("moments", "clutch_hp", 0.18):
+		CombatFeel.impact("crit")
+		world.hud.show_banner(CombatFeel.pace_text("clutch_text", "◈ 아슬아슬했다"))
+	else:
+		world.hud.show_banner("정비 시간 — N 으로 다음 웨이브 즉시 시작")
+	CombatFeel.reset_streak()
+
+## 직전 웨이브에서 잃은 체력에 비례해 정비 시간을 늘린다 (data/pacing.json)
+func _breather() -> float:
+	var pl := Battlefield.live_player()
+	if pl == null:
+		return 0.0
+	var lost: float = clampf(1.0 - pl.hp / maxf(pl.max_hp, 1.0), 0.0, 1.0)
+	# 챕터가 올라갈수록 쉬는 시간이 짧아진다 (tempo.rest)
+	return minf((CombatFeel.pace("breather", "base", 3.0)
+		+ lost * CombatFeel.pace("breather", "per_hp_lost", 6.0))
+		* CombatFeel.tempo("rest", 1.0),
+		CombatFeel.pace("breather", "max", 9.0))
 
 ## 정비 시간을 건너뛰고 바로 다음 웨이브로 (편의 기능)
 func skip_rest() -> void:

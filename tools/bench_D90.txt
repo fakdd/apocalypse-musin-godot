@@ -1,0 +1,17 @@
+== D90 ==
+fps_avg=102.1
+frame_ms_median=9.50
+frame_ms_p95=11.57
+draw_calls=1216
+primitives=3480230
+render_objects=1535
+nodes=2851
+objects=7104
+mem_static_mb=177.7
+video_mem_mb=988.3
+enemies=43
+world_children=729
+multimesh_nodes=25
+shared_mats=3
+CLASSCOUNT AnimationPlayer=45 Area3D=32 CharacterBody3D=44 CollisionShape3D=121 Control=53 Label=154 MeshInstance3D=947 Node3D=588 Node=197 OmniLight3D=138 Panel=56 Skeleton3D=45 Sprite3D=86 StaticBody3D=45 TextureRect=44
+pool={ "damage_pooled": 0, "damage_created": 0, "damage_reused": 0, "proj_pooled": 0, "proj_created": 7, "proj_reused": 0 }

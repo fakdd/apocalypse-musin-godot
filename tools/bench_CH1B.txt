@@ -1,0 +1,17 @@
+== CH1B ==
+fps_avg=75.0
+frame_ms_median=13.30
+frame_ms_p95=16.23
+draw_calls=1746
+primitives=8010237
+render_objects=1974
+nodes=1801
+objects=5539
+mem_static_mb=162.5
+video_mem_mb=973.7
+enemies=44
+world_children=177
+multimesh_nodes=10
+shared_mats=3
+CLASSCOUNT AnimationPlayer=46 Area3D=30 CharacterBody3D=45 CollisionShape3D=82 Control=53 Label=154 MeshInstance3D=487 Node3D=115 Node=201 OmniLight3D=117 Panel=56 Skeleton3D=46 Sprite3D=88 TextureRect=44
+pool={ "damage_pooled": 0, "damage_created": 0, "damage_reused": 0, "proj_pooled": 0, "proj_created": 10, "proj_reused": 0 }

@@ -47,6 +47,15 @@ func _run() -> void:
 		var r := 12.0 + (i % 5) * 3.0
 		w._make_enemy(["hound","stalker","ravager","screecher","juggernaut"][i % 5],
 			c + Vector3(cos(a)*r, 0, sin(a)*r))
+	if OS.get_environment("BENCH_NOVSYNC") == "1":
+		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+		Engine.max_fps = 0
+	var sd := OS.get_environment("BENCH_SHDIST")
+	if sd != "" and w and w.sun:
+		w.sun.directional_shadow_max_distance = float(sd)
+		w.sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
+	if OS.get_environment("BENCH_NOSHADOW") == "1" and w and w.sun:
+		w.sun.shadow_enabled = false
 	await get_tree().create_timer(2.0).timeout
 
 	# 측정 중에는 히트스톱/슬로모션을 끈다 — time_scale 이 CPU 지표를 왜곡한다
@@ -81,6 +90,20 @@ func _run() -> void:
 	out.append("world_children=%d" % (w.get_child_count() if w else 0))
 	out.append("multimesh_nodes=%d" % _count_mm(w))
 	out.append("shared_mats=%d" % SharedMaterials.cached_count())
+	var cc := {}
+	var stack: Array = [w]
+	while not stack.is_empty():
+		var n2: Node = stack.pop_back()
+		for ch in n2.get_children():
+			stack.append(ch)
+			var k: String = ch.get_class()
+			cc[k] = int(cc.get(k, 0)) + 1
+	var rows := []
+	for k in cc:
+		if int(cc[k]) >= 30:
+			rows.append("%s=%d" % [k, int(cc[k])])
+	rows.sort()
+	out.append("CLASSCOUNT " + " ".join(rows))
 	out.append("pool=%s" % str(VfxPool.stats()))
 	var txt := "\n".join(out)
 	print(txt)

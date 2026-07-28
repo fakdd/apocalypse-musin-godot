@@ -1,0 +1,678 @@
+{
+  "version": 2,
+  "schema": 2,
+  "name": "잊혀진 숲",
+  "author": "AI Asset Factory",
+  "modified": "2026-07-27T17:23:44",
+  "id": "chapter01_forest",
+  "description": "",
+  "arena": {
+    "w": 80.0,
+    "h": 80.0
+  },
+  "start": "guard_wood",
+  "nodes": [
+    {
+      "id": "guard_wood",
+      "order": 0,
+      "pos": {
+        "x": 67.0,
+        "z": 40.0
+      },
+      "zone": 1,
+      "name": "수호자의 숲",
+      "locked_until": "",
+      "events": [],
+      "stages": [
+        {
+          "id": "edge",
+          "area_id": "guard_wood",
+          "name": "수호자의 숲 — 어귀",
+          "subtitle": "이끼가 길을 덮었다",
+          "desc": "사람이 다닌 흔적이 이끼 밑으로 사라졌다.\n나무들이 안쪽으로 갈수록 굵어진다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 67.0,
+            "z": 40.0
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 1,
+          "level": 2,
+          "bgm": "explore",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "wolf": 2
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            }
+          ],
+          "npcs": [
+            {
+              "id": "hunter_old",
+              "name": "노인 사냥꾼",
+              "role": "생존자",
+              "dialogue": "숲이 변했어. 짐승이 사람을 피하질 않아.",
+              "reward": "heal",
+              "state": "quest",
+              "dialogue_completed": "자네, 아직 살아 있었군."
+            }
+          ],
+          "story": [
+            "나무껍질에 손톱자국이 나란히 세 줄 나 있다."
+          ],
+          "ambient": {
+            "wolf": 2
+          },
+          "quest": {
+            "id": "q_guard_wood",
+            "title": "숲 어귀를 트다",
+            "objective": "clear",
+            "target": 1,
+            "essence": 38,
+            "rarity": "E",
+            "next": ""
+          },
+          "items": 2,
+          "luck": 14.0,
+          "kind": "shop"
+        }
+      ]
+    },
+    {
+      "id": "hunter_town",
+      "order": 1,
+      "pos": {
+        "x": 48.3,
+        "z": 65.7
+      },
+      "zone": 1,
+      "name": "버려진 사냥꾼 마을",
+      "locked_until": "q_guard_wood",
+      "events": [],
+      "stages": [
+        {
+          "id": "gate",
+          "area_id": "hunter_town",
+          "name": "사냥꾼 마을 — 목책",
+          "subtitle": "문이 안쪽에서 잠겼다",
+          "desc": "목책 위에 덫이 그대로 걸려 있다. 짐승 것이 아니다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 48.3,
+            "z": 65.7
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 2,
+          "level": 5,
+          "bgm": "explore",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "wolf": 3
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "goblin": 3,
+                "wolf": 1
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            }
+          ],
+          "npcs": [
+            {
+              "id": "herb_wanderer",
+              "name": "떠돌이 약초상",
+              "role": "상인",
+              "dialogue": "안쪽 창고에 약초가 남았을 거요. 나눠 갑시다.",
+              "reward": "item",
+              "state": "quest",
+              "dialogue_completed": "덕분에 짐이 무거워졌소."
+            }
+          ],
+          "story": [
+            "빨래가 널린 채 말라붙어 있다."
+          ],
+          "ambient": {
+            "wolf": 2
+          },
+          "quest": {
+            "id": "q_hunter_town",
+            "title": "목책을 넘다",
+            "objective": "clear",
+            "target": 1,
+            "essence": 56,
+            "rarity": "E",
+            "next": "q_hunter_town_hall"
+          },
+          "items": 4,
+          "luck": 28.0,
+          "kind": "combat"
+        },
+        {
+          "id": "hall",
+          "area_id": "hunter_town_hall",
+          "name": "마을 회관",
+          "subtitle": "탁자에 식사가 그대로 있다",
+          "desc": "의자가 전부 뒤로 밀려 있다. 급히 일어선 자세 그대로.",
+          "offset": {
+            "x": -12.4,
+            "z": 4.0
+          },
+          "pos": {
+            "x": 35.9,
+            "z": 69.7
+          },
+          "zone": 2,
+          "radius": 5.5,
+          "danger": 3,
+          "level": 7,
+          "bgm": "tense",
+          "locked_until": "q_hunter_town",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "goblin": 4
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "orc": 4,
+                "goblin": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": "orc"
+            }
+          ],
+          "story": [
+            "벽에 사냥 기록이 적혀 있다. 마지막 줄은 '늑대 — 셀 수 없음'."
+          ],
+          "ambient": {
+            "goblin": 2
+          },
+          "boss": "orc",
+          "boss_hp_mult": 1.35,
+          "quest": {
+            "id": "q_hunter_town_hall",
+            "title": "회관을 되찾다",
+            "objective": "boss",
+            "target": 1,
+            "essence": 74,
+            "rarity": "D",
+            "next": ""
+          },
+          "items": 6,
+          "luck": 42.0,
+          "guaranteed": "D",
+          "puzzle": {
+            "id": "pz_forest_hall",
+            "kind": "plate",
+            "count": 4,
+            "reward": "chest",
+            "rarity": "C",
+            "achievement": "ach_pz_forest",
+            "hint": "바닥 돌 넷이 눌려 있지 않다"
+          },
+          "kind": "combat"
+        }
+      ]
+    },
+    {
+      "id": "elder_altar",
+      "order": 2,
+      "pos": {
+        "x": 18.2,
+        "z": 55.9
+      },
+      "zone": 1,
+      "name": "고목 제단",
+      "locked_until": "q_hunter_town_hall",
+      "events": [],
+      "stages": [
+        {
+          "id": "path",
+          "area_id": "elder_altar",
+          "name": "제단으로 가는 길",
+          "subtitle": "돌계단이 뿌리에 들렸다",
+          "desc": "뿌리가 계단을 밀어 올려 길이 비틀렸다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 18.2,
+            "z": 55.9
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 2,
+          "level": 8,
+          "bgm": "explore",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "goblin": 3
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "wolf": 3,
+                "goblin": 1
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            }
+          ],
+          "npcs": [
+            {
+              "id": "forest_ward",
+              "name": "숲의 수호자",
+              "role": "은둔자",
+              "dialogue": "제단이 깨졌다. 그날부터 짐승이 미쳤지.",
+              "reward": "essence",
+              "state": "quest",
+              "dialogue_completed": "제단은… 아직 숨을 쉬는군."
+            }
+          ],
+          "ambient": {
+            "goblin": 2
+          },
+          "quest": {
+            "id": "q_elder_altar",
+            "title": "제단 길을 열다",
+            "objective": "clear",
+            "target": 1,
+            "essence": 56,
+            "rarity": "E",
+            "next": "q_elder_altar_altar"
+          },
+          "items": 4,
+          "luck": 28.0,
+          "kind": "rest"
+        },
+        {
+          "id": "altar",
+          "area_id": "elder_altar_altar",
+          "name": "고목 제단",
+          "subtitle": "제물대가 갈라져 있다",
+          "desc": "이끼 낀 제단 한가운데가 세로로 갈라졌다. 안쪽은 비어 있다.",
+          "offset": {
+            "x": -7.6,
+            "z": -10.5
+          },
+          "pos": {
+            "x": 10.6,
+            "z": 45.4
+          },
+          "zone": 2,
+          "radius": 5.5,
+          "danger": 4,
+          "level": 11,
+          "bgm": "tense",
+          "locked_until": "q_elder_altar",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "orc": 5
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "goblin": 5,
+                "orc": 3
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": "orc"
+            },
+            {
+              "index": 3,
+              "composition": {
+                "goblin": 6,
+                "orc": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.3,
+              "boss": "orc"
+            }
+          ],
+          "story": [
+            "갈라진 틈에서 아직 온기가 올라온다."
+          ],
+          "ambient": {
+            "orc": 2
+          },
+          "boss": "orc",
+          "boss_hp_mult": 1.55,
+          "quest": {
+            "id": "q_elder_altar_altar",
+            "title": "제단을 정화하다",
+            "objective": "boss",
+            "target": 1,
+            "essence": 92,
+            "rarity": "C",
+            "next": ""
+          },
+          "items": 8,
+          "luck": 56.0,
+          "guaranteed": "C",
+          "kind": "combat"
+        }
+      ]
+    },
+    {
+      "id": "spirit_lake",
+      "order": 3,
+      "pos": {
+        "x": 18.2,
+        "z": 24.1
+      },
+      "zone": 1,
+      "name": "정령의 호수",
+      "locked_until": "q_hunter_town_hall",
+      "events": [],
+      "stages": [
+        {
+          "id": "lake",
+          "area_id": "spirit_lake",
+          "name": "정령의 호수",
+          "subtitle": "물이 소리를 삼킨다",
+          "desc": "수면이 유리처럼 굳어 있다. 발소리가 되돌아오지 않는다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 18.2,
+            "z": 24.1
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 4,
+          "level": 12,
+          "bgm": "tense",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "wolf": 5
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "orc": 5,
+                "wolf": 3
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": "orc"
+            },
+            {
+              "index": 3,
+              "composition": {
+                "orc": 6,
+                "wolf": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.3,
+              "boss": "orc"
+            }
+          ],
+          "story": [
+            "호수 바닥에 무언가 하얗게 깔려 있다."
+          ],
+          "ambient": {
+            "wolf": 2
+          },
+          "boss": "orc",
+          "boss_hp_mult": 1.6,
+          "quest": {
+            "id": "q_spirit_lake",
+            "title": "호수의 침묵",
+            "objective": "boss",
+            "target": 1,
+            "essence": 92,
+            "rarity": "B",
+            "next": ""
+          },
+          "items": 12,
+          "luck": 56.0,
+          "guaranteed": "B",
+          "puzzle": {
+            "id": "pz_forest_lake",
+            "kind": "crystal",
+            "count": 5,
+            "reward": "passage",
+            "rarity": "A",
+            "achievement": "ach_pz_secret_forest",
+            "hint": "수정 다섯이 빛을 기다린다"
+          },
+          "kind": "combat"
+        }
+      ]
+    },
+    {
+      "id": "world_tree",
+      "order": 4,
+      "pos": {
+        "x": 48.3,
+        "z": 14.3
+      },
+      "zone": 1,
+      "name": "거대 세계수",
+      "locked_until": "q_elder_altar_altar",
+      "events": [],
+      "stages": [
+        {
+          "id": "root",
+          "area_id": "world_tree",
+          "name": "세계수 뿌리",
+          "subtitle": "뿌리가 사람 키를 넘는다",
+          "desc": "뿌리 사이가 통로처럼 벌어져 있다. 안에서 바람이 나온다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 48.3,
+            "z": 14.3
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 3,
+          "level": 13,
+          "bgm": "tense",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "orc": 4
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "wolf": 4,
+                "orc": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            }
+          ],
+          "ambient": {
+            "orc": 2
+          },
+          "quest": {
+            "id": "q_world_tree",
+            "title": "뿌리를 지나다",
+            "objective": "clear",
+            "target": 1,
+            "essence": 74,
+            "rarity": "E",
+            "next": "q_world_tree_crown"
+          },
+          "items": 6,
+          "luck": 42.0,
+          "kind": "treasure"
+        },
+        {
+          "id": "crown",
+          "area_id": "world_tree_crown",
+          "name": "세계수 꼭대기",
+          "subtitle": "가지 끝에 무언가 앉아 있다",
+          "desc": "가지가 하늘을 가려 낮인지 밤인지 알 수 없다.\n숨소리가 위에서 들린다.",
+          "offset": {
+            "x": 12.4,
+            "z": 4.0
+          },
+          "pos": {
+            "x": 60.7,
+            "z": 18.3
+          },
+          "zone": 1,
+          "radius": 5.5,
+          "danger": 5,
+          "level": 15,
+          "bgm": "boss",
+          "locked_until": "q_world_tree",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "orc": 6
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "wolf": 6,
+                "orc": 4
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            },
+            {
+              "index": 3,
+              "composition": {
+                "wolf": 7,
+                "orc": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.3,
+              "boss": "dire_wolf"
+            }
+          ],
+          "story": [
+            "가지에 짐승 뼈가 걸려 있다. 사람 것도 섞여 있다."
+          ],
+          "ambient": {
+            "orc": 2
+          },
+          "boss": "dire_wolf",
+          "boss_hp_mult": 1.75,
+          "quest": {
+            "id": "q_world_tree_crown",
+            "title": "펜리르를 쓰러뜨려라",
+            "objective": "boss",
+            "target": 1,
+            "essence": 110,
+            "rarity": "A",
+            "next": ""
+          },
+          "items": 10,
+          "luck": 70.0,
+          "guaranteed": "A",
+          "kind": "combat"
+        }
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "from": "guard_wood",
+      "to": "hunter_town",
+      "kind": "main",
+      "locked_until": ""
+    },
+    {
+      "from": "hunter_town",
+      "to": "elder_altar",
+      "kind": "main",
+      "locked_until": ""
+    },
+    {
+      "from": "elder_altar",
+      "to": "world_tree",
+      "kind": "main",
+      "locked_until": ""
+    },
+    {
+      "from": "hunter_town",
+      "to": "spirit_lake",
+      "kind": "branch",
+      "locked_until": ""
+    }
+  ],
+  "events": []
+}

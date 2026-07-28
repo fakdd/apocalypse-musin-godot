@@ -1,0 +1,16 @@
+== CH1 ==
+fps_avg=75.0
+frame_ms_median=13.42
+frame_ms_p95=16.61
+draw_calls=1665
+primitives=7938419
+render_objects=1895
+nodes=1763
+objects=5429
+mem_static_mb=162.0
+video_mem_mb=974.4
+enemies=44
+world_children=174
+multimesh_nodes=10
+shared_mats=3
+pool={ "damage_pooled": 0, "damage_created": 0, "damage_reused": 0, "proj_pooled": 0, "proj_created": 10, "proj_reused": 0 }

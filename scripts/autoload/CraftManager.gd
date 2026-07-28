@@ -26,13 +26,19 @@ const MERGE_COST := 3          ## 필요한 동일 등급 아이템 수
 const MAX_ENHANCE := 10
 
 func add_essence(n: int) -> void:
+	# 획득에만 배율을 건다 (소모는 그대로여야 가격이 흔들리지 않는다)
+	if n > 0:
+		n = int(round(float(n) * UpgradeManager.mult("resource_gain")))
 	essence = maxi(0, essence + n)
 	essence_changed.emit(essence)
 
 ## 몬스터가 떨어뜨리는 마석 (등급이 높은 몹일수록 많이)
 func roll_essence_drop(tier_bonus: int = 0) -> int:
 	var n := 1 + randi() % 2 + tier_bonus
-	return n
+	# 월드 티어 · 자원 획득 강화 — 후반 챕터에서 수입이 늘지 않던 문제
+	# 후반 챕터는 몹이 두꺼워지므로 보상도 같이 커진다 (pacing.json tempo.reward)
+	return maxi(1, int(round(float(n) * SaveGame.tier_mult("essence")
+		* UpgradeManager.mult("resource_gain") * CombatFeel.tempo("reward", 1.0))))
 
 ## ── 합성 ──
 ## 인벤토리에서 지정 등급의 아이템 3개를 소모해 상위 등급 1개를 시도한다.

@@ -1,0 +1,715 @@
+{
+  "version": 2,
+  "schema": 2,
+  "name": "심연",
+  "author": "AI Asset Factory",
+  "modified": "2026-07-27T17:23:44",
+  "id": "chapter07_abyss",
+  "description": "",
+  "arena": {
+    "w": 80.0,
+    "h": 80.0
+  },
+  "start": "soul_river",
+  "nodes": [
+    {
+      "id": "soul_river",
+      "order": 0,
+      "pos": {
+        "x": 67.0,
+        "z": 40.0
+      },
+      "zone": 1,
+      "name": "영혼의 강",
+      "locked_until": "",
+      "events": [],
+      "stages": [
+        {
+          "id": "ford",
+          "area_id": "soul_river",
+          "name": "영혼의 강 나루",
+          "subtitle": "물이 검고 소리가 없다",
+          "desc": "강물이 빛을 삼킨다. 건너는 배는 저쪽에 묶여 있다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 67.0,
+            "z": 40.0
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 3,
+          "level": 88,
+          "bgm": "explore",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "demon": 4
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "demon": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            }
+          ],
+          "npcs": [
+            {
+              "id": "lost_soul",
+              "name": "잃어버린 영혼",
+              "role": "은둔자",
+              "dialogue": "이름이… 기억나지 않아요. 당신은 기억하나요?",
+              "reward": "essence",
+              "state": "quest",
+              "dialogue_completed": "이름이 떠올랐어요. 이제 갈 수 있겠어요."
+            }
+          ],
+          "story": [
+            "강가에 신발이 짝을 맞춰 놓여 있다. 수백 켤레."
+          ],
+          "ambient": {
+            "demon": 2
+          },
+          "quest": {
+            "id": "q_soul_river",
+            "title": "강을 건너다",
+            "objective": "clear",
+            "target": 1,
+            "essence": 74,
+            "rarity": "E",
+            "next": ""
+          },
+          "items": 6,
+          "luck": 42.0,
+          "kind": "rest"
+        }
+      ]
+    },
+    {
+      "id": "demon_altar",
+      "order": 1,
+      "pos": {
+        "x": 48.3,
+        "z": 65.7
+      },
+      "zone": 1,
+      "name": "악마제단",
+      "locked_until": "q_soul_river",
+      "events": [],
+      "stages": [
+        {
+          "id": "ring",
+          "area_id": "demon_altar",
+          "name": "제단 외곽",
+          "subtitle": "돌이 안쪽을 향해 기울었다",
+          "desc": "돌기둥이 전부 제단 쪽으로 넘어져 있다. 끌려간 것처럼.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 48.3,
+            "z": 65.7
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 4,
+          "level": 90,
+          "bgm": "explore",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "demon": 5
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "fallen_knight": 5,
+                "demon": 3
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            },
+            {
+              "index": 3,
+              "composition": {
+                "fallen_knight": 6,
+                "demon": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.3,
+              "boss": ""
+            }
+          ],
+          "npcs": [
+            {
+              "id": "fallen_paladin",
+              "name": "타락한 기사",
+              "role": "정보원",
+              "dialogue": "나도 한때는 당신 쪽이었소. 문을 닫으려 했지.",
+              "reward": "item",
+              "state": "quest",
+              "dialogue_completed": "당신은 나보다 멀리 갔군."
+            }
+          ],
+          "ambient": {
+            "demon": 2
+          },
+          "quest": {
+            "id": "q_demon_altar",
+            "title": "외곽을 돌파하다",
+            "objective": "clear",
+            "target": 1,
+            "essence": 92,
+            "rarity": "E",
+            "next": "q_demon_altar_core"
+          },
+          "items": 8,
+          "luck": 56.0,
+          "puzzle": {
+            "id": "pz_abyss_ring",
+            "kind": "sigil",
+            "count": 6,
+            "reward": "chest",
+            "order": [
+              3,
+              5,
+              0,
+              4,
+              1,
+              2
+            ],
+            "rarity": "B",
+            "achievement": "ach_pz_abyss",
+            "hint": "돌기둥에 새겨진 순서가 있다"
+          },
+          "kind": "puzzle"
+        },
+        {
+          "id": "core",
+          "area_id": "demon_altar_core",
+          "name": "악마제단",
+          "subtitle": "제물대가 아직 젖어 있다",
+          "desc": "제단이 마르지 않았다. 최근까지 쓰였다는 뜻이다.",
+          "offset": {
+            "x": -12.4,
+            "z": 4.0
+          },
+          "pos": {
+            "x": 35.9,
+            "z": 69.7
+          },
+          "zone": 2,
+          "radius": 5.5,
+          "danger": 5,
+          "level": 92,
+          "bgm": "tense",
+          "locked_until": "q_demon_altar",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "fallen_knight": 6
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "demon": 6,
+                "fallen_knight": 4
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            },
+            {
+              "index": 3,
+              "composition": {
+                "demon": 7,
+                "fallen_knight": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.3,
+              "boss": "fallen_knight"
+            }
+          ],
+          "ambient": {
+            "fallen_knight": 2
+          },
+          "boss": "fallen_knight",
+          "boss_hp_mult": 5.6,
+          "quest": {
+            "id": "q_demon_altar_core",
+            "title": "제단을 부수다",
+            "objective": "boss",
+            "target": 1,
+            "essence": 110,
+            "rarity": "B",
+            "next": ""
+          },
+          "items": 10,
+          "luck": 70.0,
+          "guaranteed": "B",
+          "kind": "combat"
+        }
+      ]
+    },
+    {
+      "id": "abyss_keep",
+      "order": 2,
+      "pos": {
+        "x": 18.2,
+        "z": 55.9
+      },
+      "zone": 1,
+      "name": "심연성",
+      "locked_until": "q_demon_altar_core",
+      "events": [],
+      "stages": [
+        {
+          "id": "gate",
+          "area_id": "abyss_keep",
+          "name": "심연성 성문",
+          "subtitle": "문이 스스로 열린다",
+          "desc": "다가가자 문이 소리 없이 열린다. 기다리고 있었던 것 같다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 18.2,
+            "z": 55.9
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 4,
+          "level": 94,
+          "bgm": "tense",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "fallen_knight": 5
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "demon": 5,
+                "fallen_knight": 3
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            },
+            {
+              "index": 3,
+              "composition": {
+                "demon": 6,
+                "fallen_knight": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.3,
+              "boss": ""
+            }
+          ],
+          "ambient": {
+            "fallen_knight": 2
+          },
+          "quest": {
+            "id": "q_abyss_keep",
+            "title": "성문을 지나다",
+            "objective": "clear",
+            "target": 1,
+            "essence": 92,
+            "rarity": "E",
+            "next": "q_abyss_keep_hall"
+          },
+          "items": 8,
+          "luck": 56.0,
+          "kind": "shop"
+        },
+        {
+          "id": "hall",
+          "area_id": "abyss_keep_hall",
+          "name": "심연성 대회랑",
+          "subtitle": "발소리가 되돌아오지 않는다",
+          "desc": "회랑이 끝없이 이어진다. 걸어온 만큼 뒤가 사라진다.",
+          "offset": {
+            "x": -7.6,
+            "z": -10.5
+          },
+          "pos": {
+            "x": 10.6,
+            "z": 45.4
+          },
+          "zone": 2,
+          "radius": 5.5,
+          "danger": 5,
+          "level": 96,
+          "bgm": "tense",
+          "locked_until": "q_abyss_keep",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "demon": 6
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "fallen_knight": 6,
+                "demon": 4
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            },
+            {
+              "index": 3,
+              "composition": {
+                "fallen_knight": 7,
+                "demon": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.3,
+              "boss": "fallen_knight"
+            }
+          ],
+          "story": [
+            "벽에 걸린 초상화의 얼굴이 전부 지워져 있다."
+          ],
+          "ambient": {
+            "demon": 2
+          },
+          "boss": "fallen_knight",
+          "boss_hp_mult": 5.8,
+          "quest": {
+            "id": "q_abyss_keep_hall",
+            "title": "회랑을 지나다",
+            "objective": "boss",
+            "target": 1,
+            "essence": 110,
+            "rarity": "A",
+            "next": ""
+          },
+          "items": 10,
+          "luck": 70.0,
+          "guaranteed": "A",
+          "kind": "combat"
+        }
+      ]
+    },
+    {
+      "id": "void_cache",
+      "order": 3,
+      "pos": {
+        "x": 18.2,
+        "z": 24.1
+      },
+      "zone": 1,
+      "name": "잊힌 금고",
+      "locked_until": "q_demon_altar_core",
+      "events": [],
+      "stages": [
+        {
+          "id": "cache",
+          "area_id": "void_cache",
+          "name": "잊힌 금고",
+          "subtitle": "여기만 시간이 멈췄다",
+          "desc": "먼지가 공중에 떠서 움직이지 않는다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 18.2,
+            "z": 24.1
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 5,
+          "level": 97,
+          "bgm": "tense",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "demon": 6
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "fallen_knight": 6,
+                "demon": 4
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            },
+            {
+              "index": 3,
+              "composition": {
+                "fallen_knight": 7,
+                "demon": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.3,
+              "boss": "fallen_knight"
+            }
+          ],
+          "ambient": {
+            "demon": 2
+          },
+          "boss": "fallen_knight",
+          "boss_hp_mult": 5.85,
+          "quest": {
+            "id": "q_void_cache",
+            "title": "금고를 열다",
+            "objective": "boss",
+            "target": 1,
+            "essence": 110,
+            "rarity": "A",
+            "next": ""
+          },
+          "items": 16,
+          "luck": 70.0,
+          "guaranteed": "A",
+          "puzzle": {
+            "id": "pz_abyss_cache",
+            "kind": "lever",
+            "count": 5,
+            "reward": "passage",
+            "rarity": "A",
+            "achievement": "ach_pz_secret_abyss",
+            "hint": "멈춘 시간 속에 레버가 다섯"
+          },
+          "kind": "combat"
+        }
+      ]
+    },
+    {
+      "id": "end_gate",
+      "order": 4,
+      "pos": {
+        "x": 48.3,
+        "z": 14.3
+      },
+      "zone": 1,
+      "name": "종말의 문",
+      "locked_until": "q_abyss_keep_hall",
+      "events": [],
+      "stages": [
+        {
+          "id": "approach",
+          "area_id": "end_gate",
+          "name": "문 앞",
+          "subtitle": "문이 하늘까지 닿아 있다",
+          "desc": "문의 끝이 보이지 않는다. 그 앞에 무언가 앉아 있다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 48.3,
+            "z": 14.3
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 5,
+          "level": 98,
+          "bgm": "boss",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "fallen_knight": 6
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "demon": 6,
+                "fallen_knight": 4
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            },
+            {
+              "index": 3,
+              "composition": {
+                "demon": 7,
+                "fallen_knight": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.3,
+              "boss": ""
+            }
+          ],
+          "ambient": {
+            "fallen_knight": 2
+          },
+          "quest": {
+            "id": "q_end_gate",
+            "title": "문 앞에 서다",
+            "objective": "clear",
+            "target": 1,
+            "essence": 110,
+            "rarity": "E",
+            "next": "q_end_gate_gate"
+          },
+          "items": 10,
+          "luck": 70.0,
+          "kind": "treasure"
+        },
+        {
+          "id": "gate",
+          "area_id": "end_gate_gate",
+          "name": "종말의 문",
+          "subtitle": "여기서 끝난다",
+          "desc": "문이 열리고 있다. 그리고 그것이 일어선다.",
+          "offset": {
+            "x": 12.4,
+            "z": 4.0
+          },
+          "pos": {
+            "x": 60.7,
+            "z": 18.3
+          },
+          "zone": 1,
+          "radius": 5.5,
+          "danger": 5,
+          "level": 100,
+          "bgm": "boss",
+          "locked_until": "q_end_gate",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "demon": 6
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "fallen_knight": 6,
+                "demon": 4
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            },
+            {
+              "index": 3,
+              "composition": {
+                "fallen_knight": 7,
+                "demon": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.3,
+              "boss": "abyss_lord"
+            }
+          ],
+          "story": [
+            "문 너머에는 아무것도 없다. 정말로 아무것도."
+          ],
+          "ambient": {
+            "demon": 2
+          },
+          "boss": "abyss_lord",
+          "boss_hp_mult": 6.0,
+          "quest": {
+            "id": "q_end_gate_gate",
+            "title": "심연의 군주를 쓰러뜨려라",
+            "objective": "boss",
+            "target": 1,
+            "essence": 110,
+            "rarity": "A",
+            "next": ""
+          },
+          "items": 10,
+          "luck": 70.0,
+          "guaranteed": "A",
+          "kind": "combat"
+        }
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "from": "soul_river",
+      "to": "demon_altar",
+      "kind": "main",
+      "locked_until": ""
+    },
+    {
+      "from": "demon_altar",
+      "to": "abyss_keep",
+      "kind": "main",
+      "locked_until": ""
+    },
+    {
+      "from": "abyss_keep",
+      "to": "end_gate",
+      "kind": "main",
+      "locked_until": ""
+    },
+    {
+      "from": "demon_altar",
+      "to": "void_cache",
+      "kind": "branch",
+      "locked_until": ""
+    }
+  ],
+  "events": []
+}

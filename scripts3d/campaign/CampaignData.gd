@@ -110,6 +110,11 @@ class Stage extends RefCounted:
 	var npcs: Array = []        ## NPC
 	var events: Array = []      ## Event
 	var quest: Quest = null
+	## 퍼즐 정의 (없으면 빈 딕셔너리). PuzzleSet 이 읽는다
+	var puzzle := {}
+	## 영역 유형 (data/area_kinds.json) — combat / treasure / puzzle / shop / rest
+	## 없으면 combat 로 본다. 옛 캠페인 JSON 이 그대로 열린다.
+	var area_kind := "combat"
 
 	func world_pos() -> Vector3:
 		return Vector3(x, 0.0, z)
@@ -447,6 +452,8 @@ static func _parse_stage(raw: Dictionary) -> Stage:
 	st.item_count = int(raw.get("items", -1))
 	st.item_luck = float(raw.get("luck", -1.0))
 	st.guaranteed = String(raw.get("guaranteed", ""))
+	st.puzzle = raw.get("puzzle", {})
+	st.area_kind = String(raw.get("kind", "combat"))
 	st.ambient = _int_counts(raw.get("ambient", {}))
 	for sline in raw.get("story", []):
 		st.story.append(String(sline))

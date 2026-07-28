@@ -87,6 +87,9 @@ func physics_step(delta: float) -> void:
 				_charge_hit_landed = true
 				pl.take_damage(e.contact_damage * EnemyConfig.CHARGE_HIT_MULT, e.global_position)
 		# 돌진이 끝났는데 아무것도 못 맞혔다 → 브레인에 알려 재배치하게 한다
+		if e.charge_dash <= 0.0 and e.is_boss_type():
+			# 돌진 직후는 보스가 굳는 구간 — 여기서 크게 아프다 (약점 창구)
+			e.brain.open_weakness()
 		if e.charge_dash <= 0.0 and not _charge_hit_landed:
 			e.brain.report_whiff()
 		return
@@ -363,4 +366,4 @@ func _contact_damage() -> void:
 		flat2.y = 0
 		if flat2.length() < e.hit_radius + 2.4:
 			e.attack._attack()
-			base_node.take_damage(e.contact_damage)
+			base_node.take_damage(e.contact_damage * EnemyConfig.BASE_DAMAGE_MULT)

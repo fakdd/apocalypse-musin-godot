@@ -1,0 +1,855 @@
+{
+  "version": 2,
+  "schema": 2,
+  "name": "폐허 도시",
+  "author": "AI Asset Factory",
+  "modified": "2026-07-27T17:23:44",
+  "id": "chapter05_city",
+  "description": "",
+  "arena": {
+    "w": 80.0,
+    "h": 80.0
+  },
+  "start": "park",
+  "nodes": [
+    {
+      "id": "park",
+      "order": 0,
+      "pos": {
+        "x": 66.0,
+        "z": 40.0
+      },
+      "zone": 1,
+      "name": "중앙 공원",
+      "locked_until": "",
+      "events": [],
+      "stages": [
+        {
+          "id": "lawn",
+          "area_id": "park",
+          "name": "중앙 공원",
+          "subtitle": "벤치가 전부 한쪽을 보고 있다",
+          "desc": "사람들이 무언가를 보려고 벤치를 돌려 놓았다. 그 방향은 도심이다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 66.0,
+            "z": 40.0
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 1,
+          "level": 55,
+          "bgm": "explore",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "hound": 2
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            }
+          ],
+          "npcs": [
+            {
+              "id": "park_keeper",
+              "name": "공원 관리인",
+              "role": "생존자",
+              "dialogue": "여기 사람들이 다 저쪽으로 뛰어갔어요. 아무도 안 돌아왔고요.",
+              "reward": "heal",
+              "state": "quest",
+              "dialogue_completed": "돌아온 사람은 당신이 처음이에요."
+            }
+          ],
+          "ambient": {
+            "hound": 2
+          },
+          "quest": {
+            "id": "q_park",
+            "title": "공원을 확보하다",
+            "objective": "clear",
+            "target": 1,
+            "essence": 38,
+            "rarity": "E",
+            "next": ""
+          },
+          "items": 2,
+          "luck": 14.0,
+          "kind": "rest"
+        }
+      ]
+    },
+    {
+      "id": "subway",
+      "order": 1,
+      "pos": {
+        "x": 59.9,
+        "z": 56.7
+      },
+      "zone": 1,
+      "name": "지하철 환승역",
+      "locked_until": "q_park",
+      "events": [],
+      "stages": [
+        {
+          "id": "hall",
+          "area_id": "subway",
+          "name": "환승 통로",
+          "subtitle": "개찰구가 전부 열려 있다",
+          "desc": "누군가 개찰구를 전부 개방했다. 대피시키려 한 것 같다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 59.9,
+            "z": 56.7
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 2,
+          "level": 57,
+          "bgm": "explore",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "hound": 3
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "mutant_m": 3,
+                "hound": 1
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            }
+          ],
+          "npcs": [
+            {
+              "id": "station_master",
+              "name": "역무원",
+              "role": "정보원",
+              "dialogue": "3번 승강장은 막았습니다. 아직도 소리가 나요.",
+              "reward": "essence",
+              "state": "quest",
+              "dialogue_completed": "이제 조용하네요. 감사합니다."
+            }
+          ],
+          "ambient": {
+            "hound": 2
+          },
+          "quest": {
+            "id": "q_subway",
+            "title": "환승 통로를 열다",
+            "objective": "clear",
+            "target": 1,
+            "essence": 56,
+            "rarity": "E",
+            "next": ""
+          },
+          "items": 4,
+          "luck": 28.0,
+          "kind": "rest"
+        }
+      ]
+    },
+    {
+      "id": "hospital",
+      "order": 2,
+      "pos": {
+        "x": 44.5,
+        "z": 65.6
+      },
+      "zone": 1,
+      "name": "성모 종합병원",
+      "locked_until": "q_subway",
+      "events": [],
+      "stages": [
+        {
+          "id": "gate",
+          "area_id": "hospital",
+          "name": "병원 정문",
+          "subtitle": "구급차가 문을 막고 있다",
+          "desc": "구급차 두 대가 정문을 가로막은 채 멈춰 있다. 문은 안쪽에서 잠겼다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 44.5,
+            "z": 65.6
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 3,
+          "level": 58,
+          "bgm": "explore",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "hound": 4
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "mutant_m": 4,
+                "hound": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": "soldier"
+            }
+          ],
+          "npcs": [
+            {
+              "id": "nurse_yoon",
+              "name": "간호사 윤",
+              "role": "생존자",
+              "dialogue": "안쪽에 아직 사람이 있어요. 3층 병동… 제발 확인해 주세요.",
+              "reward": "heal",
+              "state": "quest",
+              "dialogue_completed": "정문은… 이제 괜찮은 거죠?"
+            }
+          ],
+          "story": [
+            "접수대 진료 순번표가 137번에서 멈춰 있다."
+          ],
+          "ambient": {
+            "hound": 2
+          },
+          "boss": "soldier",
+          "boss_hp_mult": 3.9,
+          "quest": {
+            "id": "q_hospital",
+            "title": "정문을 열다",
+            "objective": "boss",
+            "target": 1,
+            "essence": 74,
+            "rarity": "E",
+            "next": ""
+          },
+          "items": 6,
+          "luck": 42.0,
+          "kind": "combat"
+        }
+      ]
+    },
+    {
+      "id": "dept_store",
+      "order": 3,
+      "pos": {
+        "x": 27.0,
+        "z": 62.5
+      },
+      "zone": 1,
+      "name": "백화점",
+      "locked_until": "q_hospital",
+      "events": [],
+      "stages": [
+        {
+          "id": "shop",
+          "area_id": "dept_store",
+          "name": "백화점 1층",
+          "subtitle": "마네킹이 전부 문을 보고 있다",
+          "desc": "진열대는 그대로인데 마네킹만 방향이 돌아가 있다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 27.0,
+            "z": 62.5
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 3,
+          "level": 61,
+          "bgm": "explore",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "mutant_m": 4
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "soldier": 4,
+                "mutant_m": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            }
+          ],
+          "ambient": {
+            "mutant_m": 2
+          },
+          "quest": {
+            "id": "q_dept_store",
+            "title": "1층을 정리하다",
+            "objective": "clear",
+            "target": 1,
+            "essence": 74,
+            "rarity": "E",
+            "next": ""
+          },
+          "items": 10,
+          "luck": 42.0,
+          "puzzle": {
+            "id": "pz_city_store",
+            "kind": "plate",
+            "count": 5,
+            "reward": "chest",
+            "rarity": "C",
+            "achievement": "ach_pz_city",
+            "hint": "바닥 타일이 눌리는 소리가 난다"
+          },
+          "kind": "puzzle"
+        }
+      ]
+    },
+    {
+      "id": "police_hq",
+      "order": 4,
+      "pos": {
+        "x": 15.6,
+        "z": 48.9
+      },
+      "zone": 1,
+      "name": "경찰청",
+      "locked_until": "q_dept_store",
+      "events": [],
+      "stages": [
+        {
+          "id": "yard",
+          "area_id": "police_hq",
+          "name": "경찰청 앞마당",
+          "subtitle": "바리케이드가 안쪽을 향해 있다",
+          "desc": "바리케이드가 밖이 아니라 건물 쪽을 막고 있다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 15.6,
+            "z": 48.9
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 4,
+          "level": 62,
+          "bgm": "tense",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "soldier": 5
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "hound": 5,
+                "soldier": 3
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": "soldier"
+            },
+            {
+              "index": 3,
+              "composition": {
+                "hound": 6,
+                "soldier": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.3,
+              "boss": "soldier"
+            }
+          ],
+          "npcs": [
+            {
+              "id": "sgt_han",
+              "name": "한 경사",
+              "role": "생존자",
+              "dialogue": "무기고는 잠겼습니다. 열쇠는… 안에 있는 놈이 갖고 있어요.",
+              "reward": "item",
+              "state": "quest",
+              "dialogue_completed": "무기고를 열었군요. 이제 싸울 수 있겠습니다."
+            }
+          ],
+          "ambient": {
+            "soldier": 2
+          },
+          "boss": "soldier",
+          "boss_hp_mult": 4.1,
+          "quest": {
+            "id": "q_police_hq",
+            "title": "앞마당을 확보하다",
+            "objective": "boss",
+            "target": 1,
+            "essence": 92,
+            "rarity": "E",
+            "next": ""
+          },
+          "items": 8,
+          "luck": 56.0,
+          "kind": "combat"
+        }
+      ]
+    },
+    {
+      "id": "school",
+      "order": 5,
+      "pos": {
+        "x": 15.6,
+        "z": 31.1
+      },
+      "zone": 1,
+      "name": "제3고등학교",
+      "locked_until": "q_police_hq",
+      "events": [],
+      "stages": [
+        {
+          "id": "yard",
+          "area_id": "school",
+          "name": "학교 운동장",
+          "subtitle": "조회대에 확성기가 남았다",
+          "desc": "확성기에서 잡음이 규칙적으로 반복된다. 누가 켜 둔 걸까.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 15.6,
+            "z": 31.1
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 3,
+          "level": 65,
+          "bgm": "explore",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "hound": 4
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "mutant_m": 4,
+                "hound": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            }
+          ],
+          "ambient": {
+            "hound": 2
+          },
+          "quest": {
+            "id": "q_school",
+            "title": "운동장을 지나다",
+            "objective": "clear",
+            "target": 1,
+            "essence": 74,
+            "rarity": "E",
+            "next": ""
+          },
+          "items": 6,
+          "luck": 42.0,
+          "kind": "rest"
+        }
+      ]
+    },
+    {
+      "id": "broadcast",
+      "order": 6,
+      "pos": {
+        "x": 27.0,
+        "z": 17.5
+      },
+      "zone": 1,
+      "name": "방송국",
+      "locked_until": "q_subway",
+      "events": [],
+      "stages": [
+        {
+          "id": "studio",
+          "area_id": "broadcast",
+          "name": "방송국 스튜디오",
+          "subtitle": "온에어 등이 아직 켜져 있다",
+          "desc": "붉은 온에어 등이 꺼지지 않았다. 방송은 계속되고 있다는 뜻이다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 27.0,
+            "z": 17.5
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 4,
+          "level": 67,
+          "bgm": "tense",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "soldier": 5
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "mutant_m": 5,
+                "soldier": 3
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": "soldier"
+            },
+            {
+              "index": 3,
+              "composition": {
+                "mutant_m": 6,
+                "soldier": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.3,
+              "boss": "soldier"
+            }
+          ],
+          "npcs": [
+            {
+              "id": "anchor",
+              "name": "앵커",
+              "role": "정보원",
+              "dialogue": "송출은 살아 있어요. 뭔가가 계속 신호를 보내고 있습니다.",
+              "reward": "essence",
+              "state": "quest",
+              "dialogue_completed": "신호가 끊겼네요. 드디어."
+            }
+          ],
+          "story": [
+            "대본 마지막 장에 손글씨로 도망쳐 라고 적혀 있다."
+          ],
+          "ambient": {
+            "soldier": 2
+          },
+          "boss": "soldier",
+          "boss_hp_mult": 4.35,
+          "quest": {
+            "id": "q_broadcast",
+            "title": "송출을 끊다",
+            "objective": "boss",
+            "target": 1,
+            "essence": 92,
+            "rarity": "B",
+            "next": ""
+          },
+          "items": 11,
+          "luck": 56.0,
+          "guaranteed": "B",
+          "puzzle": {
+            "id": "pz_city_studio",
+            "kind": "sigil",
+            "count": 5,
+            "reward": "passage",
+            "order": [
+              4,
+              1,
+              0,
+              3,
+              2
+            ],
+            "rarity": "A",
+            "achievement": "ach_pz_secret_city",
+            "hint": "조명 순서가 대본에 적혀 있다"
+          },
+          "kind": "combat"
+        }
+      ]
+    },
+    {
+      "id": "highway",
+      "order": 7,
+      "pos": {
+        "x": 44.5,
+        "z": 14.4
+      },
+      "zone": 1,
+      "name": "고속도로 고가",
+      "locked_until": "q_school",
+      "events": [],
+      "stages": [
+        {
+          "id": "deck",
+          "area_id": "highway",
+          "name": "고가 상판",
+          "subtitle": "차가 한 방향으로만 서 있다",
+          "desc": "모든 차가 도심 반대편을 향해 멈췄다. 아무도 빠져나가지 못했다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 44.5,
+            "z": 14.4
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 4,
+          "level": 68,
+          "bgm": "explore",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "mutant_m": 5
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "soldier": 5,
+                "mutant_m": 3
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            },
+            {
+              "index": 3,
+              "composition": {
+                "soldier": 6,
+                "mutant_m": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.3,
+              "boss": ""
+            }
+          ],
+          "ambient": {
+            "mutant_m": 2
+          },
+          "quest": {
+            "id": "q_highway",
+            "title": "고가를 건너다",
+            "objective": "clear",
+            "target": 1,
+            "essence": 92,
+            "rarity": "E",
+            "next": ""
+          },
+          "items": 10,
+          "luck": 56.0,
+          "kind": "rest"
+        }
+      ]
+    },
+    {
+      "id": "power_plant",
+      "order": 8,
+      "pos": {
+        "x": 59.9,
+        "z": 23.3
+      },
+      "zone": 1,
+      "name": "제2발전소",
+      "locked_until": "q_highway",
+      "events": [],
+      "stages": [
+        {
+          "id": "core",
+          "area_id": "power_plant",
+          "name": "제2발전소 — 노심",
+          "subtitle": "빛이 아래에서 올라온다",
+          "desc": "경광등이 소리 없이 돌아간다. 노심 아래가 뚫려 있고 빛은 거기서 나온다.\n그리고 무언가가 그 빛을 등지고 서 있다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 59.9,
+            "z": 23.3
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 5,
+          "level": 73,
+          "bgm": "boss",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "soldier": 6
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "mutant_m": 6,
+                "soldier": 4
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            },
+            {
+              "index": 3,
+              "composition": {
+                "mutant_m": 7,
+                "soldier": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.3,
+              "boss": "fallen_lord"
+            }
+          ],
+          "npcs": [
+            {
+              "id": "eng_choi",
+              "name": "최 기사",
+              "role": "정보원",
+              "dialogue": "노심이 멈추지 않아요. 아니, 누가 멈추지 못하게 하고 있어요.",
+              "reward": "item",
+              "state": "quest",
+              "dialogue_completed": "이제 정말 멈췄군요."
+            }
+          ],
+          "story": [
+            "제어실 유리가 안쪽에서 깨져 있다."
+          ],
+          "ambient": {
+            "soldier": 2
+          },
+          "boss": "fallen_lord",
+          "boss_hp_mult": 4.65,
+          "quest": {
+            "id": "q_power_plant",
+            "title": "타락한 군주를 쓰러뜨려라",
+            "objective": "boss",
+            "target": 1,
+            "essence": 110,
+            "rarity": "A",
+            "next": ""
+          },
+          "items": 10,
+          "luck": 70.0,
+          "guaranteed": "A",
+          "kind": "combat"
+        }
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "from": "park",
+      "to": "subway",
+      "kind": "main",
+      "locked_until": ""
+    },
+    {
+      "from": "subway",
+      "to": "hospital",
+      "kind": "main",
+      "locked_until": ""
+    },
+    {
+      "from": "hospital",
+      "to": "dept_store",
+      "kind": "main",
+      "locked_until": ""
+    },
+    {
+      "from": "dept_store",
+      "to": "police_hq",
+      "kind": "main",
+      "locked_until": ""
+    },
+    {
+      "from": "police_hq",
+      "to": "school",
+      "kind": "main",
+      "locked_until": ""
+    },
+    {
+      "from": "school",
+      "to": "highway",
+      "kind": "main",
+      "locked_until": ""
+    },
+    {
+      "from": "highway",
+      "to": "power_plant",
+      "kind": "main",
+      "locked_until": ""
+    },
+    {
+      "from": "subway",
+      "to": "broadcast",
+      "kind": "branch",
+      "locked_until": ""
+    }
+  ],
+  "events": []
+}

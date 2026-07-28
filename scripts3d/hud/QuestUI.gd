@@ -56,7 +56,7 @@ func update_phase_status() -> void:
 	if GameManager.phase == GameManager.Phase.DAY:
 		hud.phase_label.text = "☀  낮 — 탐험"
 		hud.phase_label.add_theme_color_override("font_color", Color(1, 0.75, 0.45))
-		var drops := get_tree().get_nodes_in_group("item_drops").size()
+		var drops := Battlefield.item_drops.size()
 		hud.wave_label.text = "필드 아이템 %d" % drops
 		hud.timer_label.text = "밤까지 %ds        [J] 바로 밤으로" % int(maxf(0.0, GameManager.phase_timer))
 	else:
@@ -66,7 +66,7 @@ func update_phase_status() -> void:
 			GameManager.NightState.WAVE:
 				hud.wave_label.text = "WAVE %d / %d   (적 %d)" % [
 					GameManager.wave_index + 1, GameManager.waves_tonight,
-					Battlefield.enemies.size()]
+					Battlefield.live_enemy_count()]
 				hud.timer_label.text = "웨이브 종료까지 %ds        [K] 밤 넘기기" % int(maxf(0.0, GameManager.phase_timer))
 			GameManager.NightState.REST:
 				hud.wave_label.text = "정비 시간"

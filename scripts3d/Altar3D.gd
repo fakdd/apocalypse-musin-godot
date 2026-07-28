@@ -115,6 +115,24 @@ func _process(delta: float) -> void:
 	if Input.is_key_pressed(KEY_F) and cooldown <= 0.0:
 		_try_reroll()
 
+## 영구 강화 화면은 이벤트로 연다.
+## 폴링으로 열면 같은 프레임에 UpgradeUI 가 G 를 닫기용으로 또 받아 즉시 닫힌다.
+## 창이 열려 있으면 HUD 가 먼저 G 를 먹으므로 여기까지 오지 않는다.
+func _unhandled_input(event: InputEvent) -> void:
+	if not (event is InputEventKey and event.pressed and not event.echo):
+		return
+	if event.keycode != KEY_G:
+		return
+	var player := Battlefield.player
+	if player == null or not is_instance_valid(player):
+		return
+	if global_position.distance_to(player.global_position) >= 4.0:
+		return
+	var world = get_tree().current_scene
+	if world and world.get("hud") != null and world.hud.get("upgrade_ui") != null:
+		world.hud.upgrade_ui.toggle()
+		get_viewport().set_input_as_handled()
+
 func _try_reroll() -> void:
 	cooldown = 0.6
 	if CraftManager.essence < REROLL_COST:

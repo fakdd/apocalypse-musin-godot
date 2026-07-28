@@ -1,0 +1,309 @@
+{
+  "version": 1,
+  "note": "아이템 접두사·접미사·세트·고유. 코드에는 옵션 id 가 없다 — 여기만 고치면 늘어난다.",
+  "rules": {
+    "min_rarity": "이 등급 이상에서만 붙는다 (0=일반 … 6=SSS)",
+    "stats": "atk / speed / hp / luck / crit / cdr 중 하나 이상. power 배율로 곱해진다.",
+    "affix_count": "등급별로 붙는 접사 개수. rarity 를 인덱스로 쓴다.",
+    "unique": "chance 확률로 일반 생성 대신 나온다. 옵션이 고정된 고유 아이템.",
+    "set": "같은 set id 를 2개 이상 장착하면 bonus 가 붙는다."
+  },
+  "affix_count": [
+    0,
+    1,
+    2,
+    2,
+    3,
+    3,
+    4
+  ],
+  "prefixes": [
+    {
+      "id": "sharp",
+      "name": "예리한",
+      "min_rarity": 1,
+      "stats": {
+        "atk": 0.35
+      }
+    },
+    {
+      "id": "heavy",
+      "name": "묵직한",
+      "min_rarity": 1,
+      "stats": {
+        "atk": 0.55,
+        "speed": -0.02
+      }
+    },
+    {
+      "id": "swift",
+      "name": "날렵한",
+      "min_rarity": 1,
+      "stats": {
+        "speed": 0.05
+      }
+    },
+    {
+      "id": "sturdy",
+      "name": "단단한",
+      "min_rarity": 2,
+      "stats": {
+        "hp": 10.0
+      }
+    },
+    {
+      "id": "lucky",
+      "name": "운좋은",
+      "min_rarity": 2,
+      "stats": {
+        "luck": 8.0
+      }
+    },
+    {
+      "id": "cruel",
+      "name": "잔혹한",
+      "min_rarity": 3,
+      "stats": {
+        "crit": 0.03
+      }
+    },
+    {
+      "id": "flowing",
+      "name": "흐르는",
+      "min_rarity": 3,
+      "stats": {
+        "cdr": 0.04
+      }
+    },
+    {
+      "id": "savage",
+      "name": "야만의",
+      "min_rarity": 4,
+      "stats": {
+        "atk": 0.8,
+        "crit": 0.02
+      }
+    },
+    {
+      "id": "eternal",
+      "name": "영원의",
+      "min_rarity": 5,
+      "stats": {
+        "hp": 24.0,
+        "cdr": 0.05
+      }
+    }
+  ],
+  "suffixes": [
+    {
+      "id": "of_beast",
+      "name": "야수의",
+      "min_rarity": 1,
+      "stats": {
+        "atk": 0.4
+      }
+    },
+    {
+      "id": "of_wind",
+      "name": "바람의",
+      "min_rarity": 1,
+      "stats": {
+        "speed": 0.06
+      }
+    },
+    {
+      "id": "of_stone",
+      "name": "바위의",
+      "min_rarity": 2,
+      "stats": {
+        "hp": 14.0
+      }
+    },
+    {
+      "id": "of_hunter",
+      "name": "사냥꾼의",
+      "min_rarity": 2,
+      "stats": {
+        "luck": 10.0
+      }
+    },
+    {
+      "id": "of_flame",
+      "name": "불꽃의",
+      "min_rarity": 3,
+      "stats": {
+        "atk": 0.6,
+        "crit": 0.02
+      }
+    },
+    {
+      "id": "of_abyss",
+      "name": "심연의",
+      "min_rarity": 4,
+      "stats": {
+        "atk": 0.9,
+        "cdr": 0.03
+      }
+    },
+    {
+      "id": "of_dawn",
+      "name": "여명의",
+      "min_rarity": 5,
+      "stats": {
+        "hp": 20.0,
+        "crit": 0.04,
+        "speed": 0.04
+      }
+    }
+  ],
+  "legendary": {
+    "min_rarity": 5,
+    "note": "SS 이상에 하나 더 붙는 전설 옵션",
+    "options": [
+      {
+        "id": "leg_bloodthirst",
+        "name": "흡혈",
+        "desc": "처치 시 체력 회복",
+        "stats": {
+          "atk": 1.5
+        },
+        "flag": "lifesteal"
+      },
+      {
+        "id": "leg_overflow",
+        "name": "폭주",
+        "desc": "치명타 피해 대폭 증가",
+        "stats": {
+          "crit": 0.075
+        },
+        "flag": "overflow"
+      },
+      {
+        "id": "leg_echo",
+        "name": "잔향",
+        "desc": "스킬 쿨다운 대폭 감소",
+        "stats": {
+          "cdr": 0.125
+        },
+        "flag": "echo"
+      },
+      {
+        "id": "leg_fortress",
+        "name": "성채",
+        "desc": "최대 체력 대폭 증가",
+        "stats": {
+          "hp": 75.0
+        },
+        "flag": "fortress"
+      }
+    ]
+  },
+  "uniques": [
+    {
+      "id": "uq_wolf_fang",
+      "name": "굶주린 송곳니",
+      "slot": "weapon",
+      "rarity": 5,
+      "chance": 0.01,
+      "skin": "blade_fang",
+      "set": "",
+      "desc": "늑대왕의 이빨을 갈아 만든 검.",
+      "stats": {
+        "atk": 14.0,
+        "speed": 0.06,
+        "crit": 0.05
+      }
+    },
+    {
+      "id": "uq_sand_crown",
+      "name": "모래의 왕관",
+      "slot": "relic",
+      "rarity": 5,
+      "chance": 0.01,
+      "skin": "relic_key",
+      "set": "",
+      "desc": "지평선 아래에서 건져 올린 것.",
+      "stats": {
+        "atk": 6.0,
+        "luck": 40.0,
+        "cdr": 0.08
+      }
+    },
+    {
+      "id": "uq_frost_plate",
+      "name": "얼어붙은 흉갑",
+      "slot": "armor",
+      "rarity": 6,
+      "chance": 0.006,
+      "skin": "armor_aegis",
+      "set": "",
+      "desc": "파수꾼의 몸에서 떼어낸 얼음판.",
+      "stats": {
+        "atk": 4.0,
+        "hp": 90.0,
+        "speed": 0.04
+      }
+    },
+    {
+      "id": "uq_abyss_eye",
+      "name": "심연의 눈",
+      "slot": "relic",
+      "rarity": 6,
+      "chance": 0.005,
+      "skin": "relic_seal",
+      "set": "",
+      "desc": "들여다보면 이쪽을 마주 본다.",
+      "stats": {
+        "atk": 10.0,
+        "crit": 0.12,
+        "cdr": 0.12,
+        "luck": 30.0
+      }
+    }
+  ],
+  "sets": [
+    {
+      "id": "set_ash",
+      "name": "잿더미",
+      "min_rarity": 4,
+      "pieces": [
+        "weapon",
+        "armor",
+        "relic"
+      ],
+      "bonus": {
+        "2": {
+          "atk": 6.0,
+          "crit": 0.04
+        },
+        "3": {
+          "atk": 14.0,
+          "crit": 0.08,
+          "cdr": 0.08
+        }
+      }
+    },
+    {
+      "id": "set_dawn",
+      "name": "여명",
+      "min_rarity": 4,
+      "pieces": [
+        "weapon",
+        "armor",
+        "relic"
+      ],
+      "bonus": {
+        "2": {
+          "hp": 30.0,
+          "speed": 0.05
+        },
+        "3": {
+          "hp": 80.0,
+          "speed": 0.1,
+          "luck": 40.0
+        }
+      }
+    }
+  ],
+  "set_chance": 0.16
+}

@@ -1,0 +1,178 @@
+{
+  "version": 1,
+  "note": "업그레이드 제단. 코드에는 강화 id 가 하나도 없다 — 여기만 고치면 늘어난다.",
+  "formula": {
+    "vars": "level (구매 후 단계). cost_formula 는 '다음 1단계' 비용을 낸다.",
+    "funcs": "Godot Expression 이 지원하는 함수 사용 가능 (pow, round, floor, min, max…)"
+  },
+  "categories": [
+    {
+      "id": "combat",
+      "name": "전투"
+    },
+    {
+      "id": "body",
+      "name": "육체"
+    },
+    {
+      "id": "fortune",
+      "name": "운"
+    }
+  ],
+  "upgrades": [
+    {
+      "id": "attack",
+      "name": "공격력",
+      "category": "combat",
+      "icon": "⚔",
+      "desc": "검기 피해가 늘어난다.",
+      "rarity": "C",
+      "max_level": 10,
+      "cost_formula": "round(45 * pow(1.44, level))",
+      "value_formula": "level * 0.08",
+      "unit": "pct"
+    },
+    {
+      "id": "attack_speed",
+      "name": "공격 속도",
+      "category": "combat",
+      "icon": "⚡",
+      "desc": "검기 쿨다운이 줄어든다.",
+      "rarity": "C",
+      "max_level": 8,
+      "cost_formula": "round(80 * pow(1.5, level))",
+      "value_formula": "level * 0.04",
+      "unit": "pct"
+    },
+    {
+      "id": "critical_rate",
+      "name": "치명타 확률",
+      "category": "combat",
+      "icon": "✶",
+      "desc": "치명타가 터질 확률이 늘어난다.",
+      "rarity": "B",
+      "max_level": 10,
+      "cost_formula": "round(75 * pow(1.48, level))",
+      "value_formula": "level * 0.04",
+      "unit": "pct"
+    },
+    {
+      "id": "critical_damage",
+      "name": "치명타 피해",
+      "category": "combat",
+      "icon": "✷",
+      "desc": "치명타 배율이 커진다.",
+      "rarity": "B",
+      "max_level": 10,
+      "cost_formula": "round(110 * pow(1.5, level))",
+      "value_formula": "level * 0.09",
+      "unit": "pct",
+      "unlock_condition": {
+        "kind": "upgrade",
+        "id": "critical_rate",
+        "level": 1
+      }
+    },
+    {
+      "id": "cooldown",
+      "name": "스킬 쿨다운",
+      "category": "combat",
+      "icon": "◷",
+      "desc": "신법·기공파·반로환동 쿨다운이 줄어든다.",
+      "rarity": "B",
+      "max_level": 6,
+      "cost_formula": "round(120 * pow(1.52, level))",
+      "value_formula": "level * 0.05",
+      "unit": "pct"
+    },
+    {
+      "id": "pet_damage",
+      "name": "동행 강화",
+      "category": "combat",
+      "icon": "🐾",
+      "desc": "펫의 피해가 늘어난다.",
+      "rarity": "C",
+      "max_level": 8,
+      "cost_formula": "round(70 * pow(1.5, level))",
+      "value_formula": "level * 0.10",
+      "unit": "pct"
+    },
+    {
+      "id": "hp",
+      "name": "최대 체력",
+      "category": "body",
+      "icon": "♥",
+      "desc": "최대 체력이 늘어난다.",
+      "rarity": "C",
+      "max_level": 12,
+      "cost_formula": "round(45 * pow(1.54, level))",
+      "value_formula": "level * 12",
+      "unit": "flat"
+    },
+    {
+      "id": "move_speed",
+      "name": "이동 속도",
+      "category": "body",
+      "icon": "≫",
+      "desc": "이동이 빨라진다.",
+      "rarity": "C",
+      "max_level": 8,
+      "cost_formula": "round(60 * pow(1.46, level))",
+      "value_formula": "level * 0.05",
+      "unit": "pct"
+    },
+    {
+      "id": "healing",
+      "name": "회복량",
+      "category": "body",
+      "icon": "✚",
+      "desc": "받는 회복이 늘어난다.",
+      "rarity": "D",
+      "max_level": 6,
+      "cost_formula": "round(60 * pow(1.42, level))",
+      "value_formula": "level * 0.22",
+      "unit": "pct"
+    },
+    {
+      "id": "exp_gain",
+      "name": "경험치 획득",
+      "category": "fortune",
+      "icon": "✦",
+      "desc": "얻는 경험치가 늘어난다.",
+      "rarity": "B",
+      "max_level": 8,
+      "cost_formula": "round(85 * pow(1.46, level))",
+      "value_formula": "level * 0.10",
+      "unit": "pct"
+    },
+    {
+      "id": "drop_rate",
+      "name": "드랍률",
+      "category": "fortune",
+      "icon": "◆",
+      "desc": "유물이 더 자주, 더 좋게 나온다.",
+      "rarity": "A",
+      "max_level": 9,
+      "cost_formula": "round(100 * pow(1.46, level))",
+      "value_formula": "level * 16",
+      "unit": "flat"
+    },
+    {
+      "id": "resource_gain",
+      "name": "마석 획득",
+      "category": "fortune",
+      "icon": "◇",
+      "desc": "얻는 마석이 늘어난다.",
+      "rarity": "B",
+      "max_level": 8,
+      "cost_formula": "round(75 * pow(1.42, level))",
+      "value_formula": "level * 0.18",
+      "unit": "pct",
+      "unlock_condition": {
+        "kind": "counter",
+        "id": "clear",
+        "level": 3
+      }
+    }
+  ]
+}

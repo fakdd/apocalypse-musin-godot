@@ -17,9 +17,13 @@ var building_spots: Array[Vector3] = []
 ## (순서가 중요: 도시가 점유 칸을 등록해야 보도/소품이 그 위를 피한다)
 func build_all() -> void:
 	_build_ground()
-	_build_city()
-	_build_skyline()
-	_build_sidewalks()
+	# 도로·건물·스카이라인은 **폐허 도시 챕터에서만** 만든다.
+	# 숲/사막/설원에 아스팔트와 빌딩이 서 있으면 지역이 전부 같아 보인다.
+	# 자연 챕터의 지형은 BiomeBuilder 가 담당한다.
+	if ChapterConfig.is_city(GameManager.chapter):
+		_build_city()
+		_build_skyline()
+		_build_sidewalks()
 	_build_boundary()
 	# 지형/건물/스카이라인의 정적 메시를 MultiMesh 로 확정한다.
 	# (드로우콜 2만 → 수백 대로 줄어드는 지점)
@@ -49,18 +53,25 @@ func _build_ground() -> void:
 	pm.subdivide_width = 24
 	pm.subdivide_depth = 24
 	plane.mesh = pm
+	# 바닥 색조는 챕터 테마를 따른다 (텍스처는 그대로, 틴트만 바뀐다).
+	# 숲은 초록빛, 사막은 모래빛, 설원은 흰빛으로 읽히게 하는 최소 수단이다.
+	var tint: Color = ChapterConfig.theme_of(GameManager.chapter).get(
+		"ground", Color(0.56, 0.54, 0.53))
 	plane.material_override = _make_pbr_material(
 		"res://assets3d/textures/asphalt_albedo.jpg",
 		"res://assets3d/textures/asphalt_normal.jpg",
 		"res://assets3d/textures/asphalt_rough.jpg",
 		"res://assets3d/textures/asphalt_ao.jpg",
-		Vector3(26, 26, 1), Color(0.56, 0.54, 0.53))
+		Vector3(26, 26, 1), tint)
 	var gm: StandardMaterial3D = plane.material_override
 	gm.metallic = 0.12
 	gm.metallic_specular = 0.35
 	plane.position = Vector3(ARENA_W * 0.5, -0.02, ARENA_H * 0.5)
 	world.add_child(plane)
 
+	# 아스팔트 도로 타일도 도시 챕터에서만 깐다
+	if not ChapterConfig.is_city(GameManager.chapter):
+		return
 	for x in range(COLS):
 		for z in range(ROWS):
 			if not _is_road(x, z):
@@ -299,13 +310,55 @@ func _build_base_and_spots() -> void:
 	world.add_child(border)
 
 	# 안전지대 횃불 (항상 켜짐)
+	# 도시에서는 가로등, 그 밖에서는 돌기둥 화톳불을 세운다.
+	# 숲이나 심연에 현대식 가로등이 서 있으면 지역 분위기가 통째로 깨진다.
+	var city: bool = ChapterConfig.is_city(GameManager.chapter)
+	var flame: Color = ChapterConfig.theme_of(GameManager.chapter).get(
+		"sun", Color(1.0, 0.7, 0.38))
 	for i in range(8):
 		var a := TAU * i / 8.0
 		var tpos := center + Vector3(cos(a) * (SAFE_RADIUS - 1.5), 0, sin(a) * (SAFE_RADIUS - 1.5))
-		_add_model("res://assets3d/models/detail-light-single.glb", tpos, -a, 1.7)
+		if city:
+			_add_model("res://assets3d/models/detail-light-single.glb", tpos, -a, 1.7)
+		else:
+			_brazier(tpos, flame)
 		var tl := OmniLight3D.new()
-		tl.position = tpos + Vector3(0, 4.2, 0)
-		tl.light_color = Color(1.0, 0.7, 0.38)
+		tl.position = tpos + Vector3(0, 4.2 if city else 2.4, 0)
+		tl.light_color = flame if not city else Color(1.0, 0.7, 0.38)
 		tl.light_energy = 2.6
 		tl.omni_range = 12.0
 		world.add_child(tl)
+
+## 돌기둥 화톳불 — 자연 챕터의 안전지대 조명
+func _brazier(pos: Vector3, flame: Color) -> void:
+	var stone := StandardMaterial3D.new()
+	stone.albedo_color = Color(0.30, 0.28, 0.26)
+	stone.roughness = 0.95
+
+	var post := MeshInstance3D.new()
+	var pc := CylinderMesh.new()
+	pc.top_radius = 0.42
+	pc.bottom_radius = 0.30
+	pc.height = 1.8
+	pc.radial_segments = 6
+	post.mesh = pc
+	post.material_override = stone
+	post.position = pos + Vector3(0, 0.9, 0)
+	world.add_child(post)
+
+	var fire := MeshInstance3D.new()
+	var fs := SphereMesh.new()
+	fs.radius = 0.42
+	fs.height = 0.9
+	fs.radial_segments = 6
+	fs.rings = 4
+	fire.mesh = fs
+	var fm := StandardMaterial3D.new()
+	fm.albedo_color = flame
+	fm.emission_enabled = true
+	fm.emission = flame
+	fm.emission_energy_multiplier = 5.0
+	fm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	fire.material_override = fm
+	fire.position = pos + Vector3(0, 2.1, 0)
+	world.add_child(fire)

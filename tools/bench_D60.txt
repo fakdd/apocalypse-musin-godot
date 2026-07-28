@@ -1,0 +1,17 @@
+== D60 ==
+fps_avg=96.3
+frame_ms_median=9.90
+frame_ms_p95=12.98
+draw_calls=1141
+primitives=3262167
+render_objects=1469
+nodes=2850
+objects=7017
+mem_static_mb=177.1
+video_mem_mb=983.5
+enemies=43
+world_children=744
+multimesh_nodes=25
+shared_mats=3
+CLASSCOUNT AnimationPlayer=45 Area3D=33 CharacterBody3D=44 CollisionShape3D=125 Control=53 Label=154 MeshInstance3D=925 Node3D=597 Node=197 OmniLight3D=142 Panel=56 Skeleton3D=45 Sprite3D=86 StaticBody3D=48 TextureRect=44
+pool={ "damage_pooled": 0, "damage_created": 0, "damage_reused": 0, "proj_pooled": 0, "proj_created": 8, "proj_reused": 0 }

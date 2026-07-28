@@ -22,8 +22,11 @@ func _fire_projectile(dir: Vector3) -> void:
 	var proj := VfxPool.take_projectile(owner_enemy.get_parent())
 	proj.global_position = owner_enemy.global_position \
 		+ Vector3(0, owner_enemy.hover_height + owner_enemy.hit_radius, 0) + dir * 0.8
-	proj.launch(dir, EnemyConfig.PROJECTILE_SPEED,
-		owner_enemy.contact_damage * EnemyConfig.PROJECTILE_DMG_MULT, EnemyConfig.PROJECTILE_LIFE)
+	# 풀에서 꺼낸 탄은 직전 사용자가 플레이어의 화살이었을 수 있다.
+	# setup 으로 대상(플레이어)과 충돌 마스크를 매번 다시 잡는다.
+	proj.setup(dir, EnemyConfig.PROJECTILE_SPEED,
+		owner_enemy.contact_damage * EnemyConfig.PROJECTILE_DMG_MULT,
+		EnemyConfig.PROJECTILE_LIFE, true, false)
 
 ## 돌진 예고 표시 — 플레이어가 회피할 시간을 준다
 func _show_telegraph(dir: Vector3) -> void:

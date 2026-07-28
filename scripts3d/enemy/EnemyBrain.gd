@@ -56,7 +56,34 @@ var idle_next := 0.0
 var idle_face := 0.0
 
 ## ── 보스 페이즈 ──
-var boss_phase := 0              ## 0: HP>66%, 1: 66~33%, 2: <33%
+var boss_phase := 0              ## data/bosses.json 의 phases 인덱스
+var boss_def: Dictionary = {}    ## 이 보스의 전체 정의 (없으면 비어 있다)
+var phase_def: Dictionary = {}   ## 현재 페이즈 정의
+var nova_cd := 0.0
+var sweep_cd := 0.0
+var slam_cd := 0.0
+var summon_cd := 0.0
+var homing_cd := 0.0
+var field_cd := 0.0
+var boss_time := 0.0             ## 전투 시작 후 경과 (광폭화 판정)
+var enraged := false
+var weak_timer := 0.0            ## >0 이면 약점 노출 (받는 피해 증가)
+
+## ── 전술 (data/ai.json) ──
+var profile: Dictionary = {}     ## 이 몹의 최종 전술 프로필
+var dodge_cd := 0.0              ## 회피 재사용 대기
+var dodge_timer := 0.0           ## >0 이면 회피 중 (옆으로 빠지는 중)
+var dodge_dir := Vector3.ZERO
+var retreat_cd := 0.0
+var retreat_timer := 0.0         ## >0 이면 후퇴 중
+var pack_mult := 1.0             ## 같은 종류가 뭉칠수록 붙는 속도가 오른다
+var _pack_next := 0.0
+
+## ── 대표 행동 (data/monsters.json) ──
+var behavior: Dictionary = {}
+var sig_cd := 0.0
+var enraged_low := false      ## frenzy — 체력이 낮아 광폭화했는가
+var revived := false          ## revive_once — 이미 한 번 일어났는가
 
 ## 이번 프레임의 이동 의도. EnemyMovement 가 읽는다.
 var move_target := Vector3.ZERO
@@ -73,6 +100,41 @@ func setup(e: CharacterBody3D) -> void:
 ## setup() 은 Enemy3D._ready() 에서 불리는데, 그 시점에는 enemy_type 이 아직 "grunt" 이고
 ## is_siege 도 false 다. 실제 타입은 Enemy3D.setup(type, wave) 에서 정해지므로
 ## 거기서 이 함수를 다시 불러야 보스/엘리트가 올바른 티어를 받는다.
+## 전술 프로필을 읽어 둔다. 몬스터 종류가 정해진 뒤 한 번만 부르면 된다.
+func refresh_profile() -> void:
+	profile = EnemyConfig.ai_profile(owner_enemy.enemy_type, owner_enemy.pattern)
+	behavior = EnemyConfig.mon_behavior(owner_enemy.enemy_type)
+	_apply_signature()
+
+## 대표 행동 중 "항상 켜져 있는" 것들을 프로필에 녹인다.
+## 이렇게 하면 상태기계를 건드리지 않고도 몹마다 움직임이 달라진다.
+func _apply_signature() -> void:
+	if behavior.is_empty():
+		return
+	match String(behavior.get("kind", "")):
+		"pack":
+			profile["pack_bonus"] = float(behavior.get("speed", 0.05))
+			profile["pack_max"] = float(behavior.get("max", 1.3))
+		"retreat":
+			profile["retreat_hp"] = float(behavior.get("hp", 0.35))
+		"flank":
+			profile["flank_bias"] = float(behavior.get("bias", 0.8))
+			profile["dodge_chance"] = float(behavior.get("dodge", 0.5))
+		"keep":
+			profile["keep"] = float(behavior.get("distance", 12.0))
+			profile["cover"] = float(behavior.get("cover", 0.6))
+		"track":
+			profile["retreat_hp"] = 0.0
+			profile["aggression"] = float(behavior.get("speed", 1.1))
+		"immune":
+			profile["dodge_chance"] = 0.0
+			profile["flank_bias"] = 0.0
+
+func prof(key: String, fallback: float) -> float:
+	if profile.is_empty():
+		refresh_profile()
+	return float(profile.get(key, fallback))
+
 func refresh_tier() -> void:
 	tier = _resolve_tier()
 
@@ -99,6 +161,7 @@ func preferred_range() -> float:
 ##  매 물리 프레임 — EnemyMovement 가 호출한다
 ## ══════════════════════════════════════════════
 func think(delta: float) -> void:
+	_update_tactics(delta)
 	state_time += delta
 	_slot_timer -= delta
 	_los_timer -= delta
@@ -108,6 +171,14 @@ func think(delta: float) -> void:
 	_update_hearing(player, delta)
 	if tier == 2:
 		_update_boss_phase()
+		_update_enrage(delta)
+		nova_cd = maxf(0.0, nova_cd - delta)
+		sweep_cd = maxf(0.0, sweep_cd - delta)
+		slam_cd = maxf(0.0, slam_cd - delta)
+		summon_cd = maxf(0.0, summon_cd - delta)
+		homing_cd = maxf(0.0, homing_cd - delta)
+		field_cd = maxf(0.0, field_cd - delta)
+		weak_timer = maxf(0.0, weak_timer - delta)
 
 	_decide_state(player)
 	_run_state(player, delta)
@@ -204,14 +275,204 @@ func _update_hearing(player: Node3D, delta: float) -> void:
 	lost_sight_time = minf(lost_sight_time, EnemyConfig.MEMORY_TIME * 0.5)
 
 func _update_boss_phase() -> void:
+	var t: String = owner_enemy.enemy_type
+	if boss_def.is_empty():
+		boss_def = EnemyConfig.boss_def(t)
 	var r: float = owner_enemy.hp / maxf(owner_enemy.max_hp, 1.0)
-	var p := 0
-	if r < 0.33:
-		p = 2
-	elif r < 0.66:
-		p = 1
+	var p: int = EnemyConfig.boss_phase_index(t, r)
+	phase_def = EnemyConfig.boss_phase_def(t, r)
 	if p != boss_phase:
 		boss_phase = p
+		_announce_phase(p)
+
+## 페이즈 전환 연출 — 무적이나 기절 없이 화면과 소리로만 알린다.
+func _announce_phase(p: int) -> void:
+	if p <= 0:
+		return
+	CombatFeel.impact("boss_phase")
+	var world = owner_enemy.get_tree().current_scene
+	if world and world.get("hud") != null:
+		var nm: String = String(boss_def.get("name", ""))
+		world.hud.show_banner("%s — %d단계" % [nm if nm != "" else "보스", p + 1])
+
+## 광폭화 — 정해진 시간이 지나면 속도와 발사 빈도가 오른다.
+func _update_enrage(delta: float) -> void:
+	boss_time += delta
+	if enraged:
+		return
+	var e = EnemyConfig.boss_field(owner_enemy.enemy_type, "enrage")
+	if typeof(e) != TYPE_DICTIONARY:
+		return
+	if boss_time < float(e.get("at", 999.0)):
+		return
+	enraged = true
+	owner_enemy.speed *= float(e.get("speed", 1.25))
+	CombatFeel.impact("boss_enrage")
+	var world = owner_enemy.get_tree().current_scene
+	if world and world.get("hud") != null:
+		world.hud.show_banner("\u26a0 %s 광폭화" % String(boss_def.get("name", "보스")))
+
+## 약점 — 돌진이 끝난 직후 잠깐 크게 아프다. 플레이어가 노릴 창구.
+func open_weakness() -> void:
+	var w = EnemyConfig.boss_field(owner_enemy.enemy_type, "weakness")
+	if typeof(w) != TYPE_DICTIONARY:
+		return
+	weak_timer = float(w.get("window", 1.8))
+
+func weakness_mult() -> float:
+	if weak_timer <= 0.0:
+		return 1.0
+	var w = EnemyConfig.boss_field(owner_enemy.enemy_type, "weakness")
+	if typeof(w) != TYPE_DICTIONARY:
+		return 1.0
+	return float(w.get("mult", 1.0))
+
+# ══════════════════════════════════════════════
+#  전술 — 회피 · 후퇴 · 무리
+# ══════════════════════════════════════════════
+
+## 쿨다운·지속시간·무리 규모를 갱신한다. 매 프레임 그룹 검색을 하지 않으려고
+## 무리 규모는 0.5초에 한 번만 다시 센다 (Battlefield 캐시 배열을 훑는다).
+func _update_tactics(delta: float) -> void:
+	sig_cd = maxf(0.0, sig_cd - delta)
+	_tick_signature(delta)
+	dodge_cd = maxf(0.0, dodge_cd - delta)
+	retreat_cd = maxf(0.0, retreat_cd - delta)
+	dodge_timer = maxf(0.0, dodge_timer - delta)
+	retreat_timer = maxf(0.0, retreat_timer - delta)
+
+	_pack_next -= delta
+	if _pack_next <= 0.0:
+		_pack_next = 0.5
+		var bonus := prof("pack_bonus", 0.0)
+		if bonus <= 0.0:
+			pack_mult = 1.0
+		else:
+			var n := 0
+			for other in Battlefield.enemies:
+				if not is_instance_valid(other) or other == owner_enemy or other.dead:
+					continue
+				if other.enemy_type != owner_enemy.enemy_type:
+					continue
+				if other.global_position.distance_to(owner_enemy.global_position) < 12.0:
+					n += 1
+			pack_mult = minf(1.0 + bonus * float(n), prof("pack_max", 1.3))
+
+## 주기적으로 작동하는 대표 행동. 전부 기존 함수만 부른다.
+func _tick_signature(_delta: float) -> void:
+	if behavior.is_empty() or owner_enemy.dead:
+		return
+	var kind := String(behavior.get("kind", ""))
+
+	# 광폭화 — 체력이 낮아지면 빨라진다 (라비저)
+	if kind == "rage" and not enraged_low:
+		if owner_enemy.hp / maxf(owner_enemy.max_hp, 1.0) < float(behavior.get("hp", 0.5)):
+			enraged_low = true
+			owner_enemy.speed *= float(behavior.get("speed", 1.3))
+			owner_enemy.animation._flash()
+		return
+
+	if sig_cd > 0.0:
+		return
+
+	match kind:
+		"heal_allies":
+			sig_cd = float(behavior.get("cd", 3.5))
+			var r := float(behavior.get("radius", 10.0))
+			var pct := float(behavior.get("pct", 0.05))
+			for o in Battlefield.enemies:
+				if not is_instance_valid(o) or o.dead or o == owner_enemy:
+					continue
+				if o.global_position.distance_to(owner_enemy.global_position) > r:
+					continue
+				if o.hp < o.max_hp:
+					o.hp = minf(o.max_hp, o.hp + o.max_hp * pct)
+					o.animation._flash()
+		"buff_allies":
+			sig_cd = float(behavior.get("cd", 8.0))
+			var r2 := float(behavior.get("radius", 10.0))
+			var m := float(behavior.get("damage", 1.25))
+			for o in Battlefield.enemies:
+				if not is_instance_valid(o) or o.dead or o == owner_enemy:
+					continue
+				if o.global_position.distance_to(owner_enemy.global_position) > r2:
+					continue
+				if not o.get_meta("empowered", false):
+					o.set_meta("empowered", true)
+					o.contact_damage *= m
+					o.animation._flash()
+		"slam":
+			var pl := Battlefield.live_player()
+			if pl == null:
+				return
+			var rad := float(behavior.get("radius", 6.0))
+			if owner_enemy.global_position.distance_to(pl.global_position) > rad:
+				return
+			sig_cd = float(behavior.get("cd", 6.0))
+			owner_enemy.attack_anim_timer = maxf(owner_enemy.attack_anim_timer, 0.4)
+			CombatFeel.impact("slam")
+			pl.take_damage(owner_enemy.contact_damage * float(behavior.get("damage", 1.4)),
+				owner_enemy.global_position)
+		"summon":
+			sig_cd = float(behavior.get("cd", 16.0))
+			_summon(String(behavior.get("type", "hound")), int(behavior.get("count", 2)))
+		"homing":
+			var pl3 := Battlefield.live_player()
+			if pl3 == null:
+				return
+			var to3: Vector3 = pl3.global_position - owner_enemy.global_position
+			to3.y = 0.0
+			if to3.length() > float(behavior.get("range", 20.0)):
+				return
+			sig_cd = float(behavior.get("cd", 4.5))
+			fire_homing(int(behavior.get("count", 2)), to3.normalized())
+		"field":
+			var pl4 := Battlefield.live_player()
+			if pl4 == null:
+				return
+			if owner_enemy.global_position.distance_to(pl4.global_position) \
+					> float(behavior.get("range", 16.0)):
+				return
+			sig_cd = float(behavior.get("cd", 8.0))
+			spawn_field(float(behavior.get("radius", 4.0)),
+				float(behavior.get("life", 5.0)), pl4.global_position)
+		"pierce_guard":
+			# 방어 관통 — 예고 후 강하게 친다. 패링으로만 넘길 수 있다.
+			var pl2 := Battlefield.live_player()
+			if pl2 == null or owner_enemy.global_position.distance_to(pl2.global_position) > 4.5:
+				return
+			sig_cd = float(behavior.get("cd", 7.0))
+			var d2: Vector3 = pl2.global_position - owner_enemy.global_position
+			d2.y = 0.0
+			owner_enemy.charge_dir = d2.normalized()
+			owner_enemy.charge_windup = 0.7
+			owner_enemy.attack._show_telegraph(owner_enemy.charge_dir)
+
+## 플레이어가 큰 기술을 쓰려는 순간 옆으로 빠진다.
+## PlayerCombat 이 예고할 때 Battlefield 를 통해 전체에 알린다.
+func try_dodge(from: Vector3) -> void:
+	if dodge_cd > 0.0 or owner_enemy.dead or owner_enemy.is_siege:
+		return
+	var chance := prof("dodge_chance", 0.0) * EnemyConfig.ai_tier_scale("dodge", tier)
+	if randf() > chance:
+		return
+	dodge_cd = EnemyConfig.ai_num("dodge", "cooldown", 3.0)
+	dodge_timer = EnemyConfig.ai_num("dodge", "window", 0.55)
+	var away := owner_enemy.global_position - from
+	away.y = 0.0
+	if away.length_squared() < 0.001:
+		away = Vector3.FORWARD
+	# 뒤가 아니라 옆으로 빠진다 — 뒤로 빼면 그냥 도망처럼 보인다
+	dodge_dir = away.normalized().cross(Vector3.UP).normalized() \
+		* (1.0 if randf() < 0.5 else -1.0)
+
+## 체력이 낮으면 잠깐 물러나 거리를 벌린다. 회복 수단은 없지만
+## 플레이어에게 "몰아붙이는 맛"과 추격의 리듬을 준다.
+func _should_retreat() -> bool:
+	var th := prof("retreat_hp", 0.0) * EnemyConfig.ai_tier_scale("retreat", tier)
+	if th <= 0.0 or retreat_cd > 0.0:
+		return false
+	return owner_enemy.hp / maxf(owner_enemy.max_hp, 1.0) < th
 
 ## ── 상태 전이 ──
 func _decide_state(player: Node3D) -> void:
@@ -251,6 +512,30 @@ func _decide_combat_state(player: Node3D) -> void:
 		_set_state(State.WINDUP)
 		return
 
+	# 회피 중 — 옆으로 빠지는 동안은 다른 판단을 하지 않는다
+	if dodge_timer > 0.0:
+		move_target = e.global_position \
+			+ dodge_dir * EnemyConfig.ai_num("dodge", "distance", 4.5)
+		has_move = true
+		speed_mult = 1.6
+		_set_state(State.REPOSITION)
+		return
+
+	# 후퇴 — 체력이 바닥나면 잠깐 물러난다
+	if retreat_timer > 0.0:
+		var back := (e.global_position - player.global_position)
+		back.y = 0.0
+		move_target = e.global_position + back.normalized() \
+			* EnemyConfig.ai_num("retreat", "distance", 9.0)
+		has_move = true
+		speed_mult = 1.15
+		_set_state(State.SPACING)
+		return
+	if _should_retreat():
+		retreat_timer = EnemyConfig.ai_num("retreat", "duration", 2.2)
+		retreat_cd = EnemyConfig.ai_num("retreat", "cooldown", 8.0)
+		return
+
 	# 헛스윙 뒤에는 각도를 바꿔 다시 붙는다
 	if state == State.REPOSITION and state_time < _reposition_duration():
 		return
@@ -269,24 +554,28 @@ func _decide_combat_state(player: Node3D) -> void:
 			_set_state(State.IDLE)
 		return
 
-	var keep := preferred_range()
+	var keep := prof("keep", preferred_range())
 
 	# 너무 붙었다 — 원거리/보스는 물러난다
 	if dist < keep * EnemyConfig.SPACING_INNER and _wants_spacing():
 		_set_state(State.SPACING)
 		return
 
-	# 사거리 안 — 협공 슬롯을 받아 측면에서 접근한다
-	if dist < EnemyConfig.FLANK_RANGE:
+	# 사거리 안 — 협공 슬롯을 받아 측면에서 접근한다 (포위 거리는 프로필값)
+	if dist < prof("surround", EnemyConfig.FLANK_RANGE):
 		_ensure_slot()
 		if not is_nan(slot_angle):
 			_set_state(State.FLANK)
 			return
 
+	speed_mult = pack_mult * prof("aggression", 1.0)
 	_set_state(State.CHASE)
 
 ## 거리 유지를 하는 타입인가 (근접 몹은 무조건 붙는다 — 기존 위협도 유지)
 func _wants_spacing() -> bool:
+	# 프로필에 keep 이 크게 잡혀 있으면 거리를 유지하는 타입으로 본다
+	if prof("keep", 0.0) >= 5.0:
+		return true
 	return owner_enemy.pattern == "ranged" or owner_enemy.pattern == "boss" \
 		or (tier >= 1 and owner_enemy.pattern == "charge")
 
@@ -410,7 +699,7 @@ func _run_flank(player: Node3D) -> void:
 	if player == null:
 		_run_chase(player)
 		return
-	var keep := preferred_range()
+	var keep := prof("keep", preferred_range())
 	var slot_offset := Vector3(sin(slot_angle), 0, cos(slot_angle)) * keep
 	move_target = player.global_position + slot_offset
 	has_move = true
@@ -427,7 +716,7 @@ func _run_spacing(player: Node3D) -> void:
 	away.y = 0
 	if away.length() < 0.1:
 		away = Vector3(1, 0, 0)
-	var keep := preferred_range()
+	var keep := prof("keep", preferred_range())
 	move_target = player.global_position + away.normalized() * (keep * EnemyConfig.SPACING_TARGET)
 	has_move = true
 	speed_mult = EnemyConfig.SPACING_SPEED
@@ -505,23 +794,110 @@ func _try_pattern(player) -> void:
 
 ## 보스 AI 기반 구조 — HP 페이즈에 따라 탄막 밀도와 돌진 빈도가 달라진다.
 ## 페이즈 0 은 기존 수치와 동일하다. 후반 페이즈만 더 공격적으로 만든다.
+## 패턴은 전부 data/bosses.json 의 phases[n].patterns 에서 온다.
+## 정의가 없는 보스는 예전 수치를 그대로 쓴다 (회귀 방지).
 func _try_boss_pattern(dist: float, flat: Vector3) -> void:
 	var e := owner_enemy
-	var shoot_cd: float = [1.5, 1.25, 1.0][boss_phase]
-	var charge_cd: float = [6.0, 5.0, 4.0][boss_phase]
-	var extra_spread: int = boss_phase          ## 페이즈마다 탄이 1발씩 늘어난다
+	if phase_def.is_empty():
+		_legacy_boss_pattern(dist, flat)
+		return
 
+	var rate: float = 1.0
+	if enraged:
+		var en = EnemyConfig.boss_field(e.enemy_type, "enrage")
+		if typeof(en) == TYPE_DICTIONARY:
+			rate = float(en.get("rate", 1.0))
+
+	var pats: Array = phase_def.get("patterns", [])
+	var dir := flat.normalized()
+
+	if pats.has("volley") and dist < 22.0 and e.shoot_cd <= 0.0:
+		e.shoot_cd = float(phase_def.get("shoot_cd", 1.5)) / rate
+		var spread: int = int(phase_def.get("spread", 3))
+		for i in range(spread):
+			var a := (float(i) - (spread - 1) * 0.5) * 0.22
+			e.attack._fire_projectile(dir.rotated(Vector3.UP, a))
+
+	if pats.has("nova") and dist < 26.0 and nova_cd <= 0.0:
+		nova_cd = float(phase_def.get("nova_cd", 7.0)) / rate
+		var n: int = int(phase_def.get("nova_count", 12))
+		for i in range(n):
+			e.attack._fire_projectile(Vector3.FORWARD.rotated(Vector3.UP, TAU * float(i) / float(n)))
+
+	if pats.has("sweep") and dist < 26.0 and sweep_cd <= 0.0:
+		sweep_cd = float(phase_def.get("sweep_cd", 8.0)) / rate
+		_sweep(int(phase_def.get("sweep_count", 14)), dir)
+
+	if pats.has("slam") and dist < float(phase_def.get("slam_radius", 7.0)) and slam_cd <= 0.0:
+		slam_cd = float(phase_def.get("slam_cd", 5.0)) / rate
+		_slam(float(phase_def.get("slam_radius", 7.0)))
+
+	if pats.has("summon") and summon_cd <= 0.0:
+		var sm = phase_def.get("summon", null)
+		if typeof(sm) == TYPE_DICTIONARY:
+			summon_cd = float(sm.get("cd", 12.0))
+			_summon(String(sm.get("type", "hound")), int(sm.get("count", 2)))
+
+	if pats.has("homing") and dist < 24.0 and homing_cd <= 0.0:
+		homing_cd = float(phase_def.get("homing_cd", 6.0)) / rate
+		fire_homing(int(phase_def.get("homing_count", 2)), dir)
+
+	if pats.has("field") and dist < 22.0 and field_cd <= 0.0:
+		field_cd = float(phase_def.get("field_cd", 9.0)) / rate
+		spawn_field(float(phase_def.get("field_radius", 5.0)),
+			float(phase_def.get("field_life", 5.0)))
+
+	if pats.has("charge") and dist < 16.0 and dist > 4.0 and e.charge_cd <= 0.0:
+		e.charge_cd = float(phase_def.get("charge_cd", 6.0)) / rate
+		e.charge_dir = dir
+		e.charge_windup = 0.8
+		e.attack._show_telegraph(e.charge_dir)
+
+func _legacy_boss_pattern(dist: float, flat: Vector3) -> void:
+	var e := owner_enemy
+	var idx: int = clampi(boss_phase, 0, 2)
 	if dist < 22.0 and e.shoot_cd <= 0.0:
-		e.shoot_cd = shoot_cd
-		var spread: int = (5 if e.enemy_type == "warlord" else 3) + extra_spread
+		e.shoot_cd = [1.5, 1.25, 1.0][idx]
+		var spread: int = (5 if e.enemy_type == "warlord" else 3) + idx
 		for i in range(spread):
 			var a := (float(i) - (spread - 1) * 0.5) * 0.22
 			e.attack._fire_projectile(flat.normalized().rotated(Vector3.UP, a))
 	if dist < 16.0 and dist > 4.0 and e.charge_cd <= 0.0:
-		e.charge_cd = charge_cd
+		e.charge_cd = [6.0, 5.0, 4.0][idx]
 		e.charge_dir = flat.normalized()
 		e.charge_windup = 0.8
 		e.attack._show_telegraph(e.charge_dir)
+
+## 회전 탄막 — 한 발씩 각도를 돌려 시간차로 쏜다.
+func _sweep(count: int, base: Vector3) -> void:
+	var e := owner_enemy
+	var tree := e.get_tree()
+	for i in range(count):
+		if not is_instance_valid(e) or e.dead:
+			return
+		e.attack._fire_projectile(base.rotated(Vector3.UP, TAU * float(i) / float(count) * 0.9))
+		await tree.create_timer(0.06, true, false, true).timeout
+
+## 근접 충격파 — 반경 안의 플레이어만 때린다. 새 노드를 만들지 않는다.
+func _slam(radius: float) -> void:
+	var e := owner_enemy
+	e.attack_anim_timer = maxf(e.attack_anim_timer, 0.45)
+	CombatFeel.impact("slam")
+	SoundManager.play("wall_break", -6.0)
+	var pl := Battlefield.live_player()
+	if pl and e.global_position.distance_to(pl.global_position) <= radius:
+		pl.take_damage(e.contact_damage * 1.3, e.global_position)
+
+## 잡몹 소환 — 월드의 기존 생성 경로를 그대로 쓴다.
+func _summon(type: String, count: int) -> void:
+	var e := owner_enemy
+	var world = e.get_tree().current_scene
+	if world == null or not world.has_method("_make_enemy"):
+		return
+	for i in range(count):
+		var a := TAU * float(i) / float(maxi(1, count))
+		world._make_enemy(type, e.global_position + Vector3(cos(a) * 4.0, 0, sin(a) * 4.0))
+	SoundManager.play("night_start", -12.0)
 
 ## ── 하위 호환 ──
 ## 기존 EnemyMovement 가 쓰던 API. 새 FSM 의 판단 결과를 같은 형태로 돌려준다.
@@ -533,3 +909,78 @@ func _select_target(player: Node) -> Dictionary:
 ## 현재 상태 이름 (디버그)
 func state_name() -> String:
 	return STATE_NAMES[state]
+
+# ══════════════════════════════════════════════
+#  신규 기믹 — 유도탄 / 장판
+#  둘 다 기존 VfxPool · Projectile3D · take_damage 만 쓴다.
+# ══════════════════════════════════════════════
+
+## 유도탄 — 발사 후 플레이어 쪽으로 서서히 방향을 튼다.
+## Projectile3D 에 유도 필드가 있으면 켜고, 없으면 일반 탄으로 나간다(회귀 없음).
+func fire_homing(count: int, base_dir: Vector3) -> void:
+	var e := owner_enemy
+	var d := EnemyConfig.mon_behavior(e.enemy_type)
+	var turn: float = float(d.get("turn", 2.6))
+	var life: float = float(d.get("life", 3.2))
+	var dmg_mult: float = float(d.get("damage", 0.8))
+	for i in range(maxi(1, count)):
+		var a := (float(i) - (count - 1) * 0.5) * 0.18
+		var dir := base_dir.rotated(Vector3.UP, a)
+		var proj := VfxPool.take_projectile(e.get_parent())
+		if proj == null:
+			continue
+		proj.global_position = e.global_position + Vector3(0, 1.2, 0) + dir * 1.0
+		if proj.has_method("setup"):
+			proj.setup(dir, EnemyConfig.PROJECTILE_SPEED * 0.8,
+				e.contact_damage * dmg_mult, life)
+		if "homing_turn" in proj:
+			proj.homing_turn = turn
+		if "homing_target" in proj:
+			proj.homing_target = Battlefield.live_player()
+	SoundManager.play_pitched("turret_fire", -10.0, 0.85)
+
+## 장판 — 지정 위치에 원판을 깔고, 안에 있는 플레이어를 주기적으로 때린다.
+## 노드는 VfxPool 에서 빌려 쓰고 수명이 끝나면 돌려준다.
+func spawn_field(radius: float, life: float, at: Vector3 = Vector3.INF) -> void:
+	var e := owner_enemy
+	var parent := e.get_parent()
+	if parent == null:
+		return
+	var pos: Vector3 = at if at != Vector3.INF else e.global_position
+	var d := EnemyConfig.mon_behavior(e.enemy_type)
+	var col: Color = Color(0.9, 0.4, 0.3)
+	var cd = d.get("color", null)
+	if typeof(cd) == TYPE_ARRAY and cd.size() >= 3:
+		col = Color(float(cd[0]), float(cd[1]), float(cd[2]))
+
+	var disc := CylinderMesh.new()
+	disc.top_radius = radius
+	disc.bottom_radius = radius
+	disc.height = 0.08
+	disc.radial_segments = 16
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Color(col.r, col.g, col.b, 0.30)
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.emission_enabled = true
+	m.emission = col
+	m.emission_energy_multiplier = 2.0
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	var fx := VfxPool.take_fx(parent, disc, m)
+	fx.global_position = Vector3(pos.x, pos.y + 0.06, pos.z)
+
+	var tick: float = float(d.get("tick", 0.5))
+	var dmg: float = e.contact_damage * float(d.get("damage", 0.35))
+	var slow: float = float(d.get("slow", 1.0))
+	var tree := e.get_tree()
+	var elapsed := 0.0
+	while elapsed < life:
+		await tree.create_timer(tick, true, false, true).timeout
+		elapsed += tick
+		if not is_instance_valid(fx):
+			return
+		var pl := Battlefield.live_player()
+		if pl and pl.global_position.distance_to(fx.global_position) <= radius:
+			pl.take_damage(dmg, fx.global_position)
+			if slow < 1.0 and "slow_timer" in pl:
+				pl.slow_timer = maxf(pl.slow_timer, tick * 1.5)
+	VfxPool.give_fx(fx)

@@ -49,16 +49,24 @@ func _process(delta: float) -> void:
 	var ts: float = maxf(Engine.time_scale, 0.0001)
 	var real_delta: float = delta / ts
 
+	# 두 타이머를 항상 함께 흘린다.
+	# elif 로 두면 히트스톱이 도는 동안 슬로모션 타이머가 멈춰,
+	# 콤보 피니시(히트스톱) 직후 보스 페이즈(슬로모션)가 통째로 씹히거나
+	# 반대로 슬로모션이 예상보다 길게 남는 일이 생겼다.
+	var was_stop := _stop_remain > 0.0
+	var was_slow := _slowmo_remain > 0.0
 	if _stop_remain > 0.0:
 		_stop_remain -= real_delta
 		if _stop_remain <= 0.0:
+			_stop_remain = 0.0
 			_stop_weight = 0.0
-			_apply_time_scale()
-	elif _slowmo_remain > 0.0:
+	if _slowmo_remain > 0.0:
 		_slowmo_remain -= real_delta
 		if _slowmo_remain <= 0.0:
+			_slowmo_remain = 0.0
 			_slowmo_scale = 1.0
-			_apply_time_scale()
+	if was_stop != (_stop_remain > 0.0) or was_slow != (_slowmo_remain > 0.0):
+		_apply_time_scale()
 
 ## 히트스톱이 슬로모션보다 우선한다 (짧고 강한 것이 먼저)
 func _apply_time_scale() -> void:
@@ -81,11 +89,20 @@ func hit_stop(weight: float) -> void:
 	_apply_time_scale()
 
 ## 피니시 블로우 슬로모션 (보스 처치 / 웨이브 마지막 적)
+## 피니시 블로우 슬로모션 (보스 처치 / 웨이브 마지막 적 / 페이즈 전환)
+## 남은 시간이 더 길어도 **더 강한(느린) 요청은 받는다**.
+## 이전에는 duration 만 비교해서, 긴 약한 슬로모션이 도는 동안
+## 짧고 강한 보스 페이즈 연출이 통째로 버려졌다.
 func slow_motion(duration: float, scale: float = SLOWMO_SCALE) -> void:
-	if duration <= _slowmo_remain:
+	if duration <= 0.0:
 		return
-	_slowmo_remain = duration
-	_slowmo_scale = clampf(scale, 0.05, 1.0)
+	var s2 := clampf(scale, 0.05, 1.0)
+	var stronger := s2 < _slowmo_scale - 0.001
+	if duration <= _slowmo_remain and not stronger:
+		return
+	_slowmo_remain = maxf(_slowmo_remain, duration)
+	if stronger or _slowmo_scale >= 1.0:
+		_slowmo_scale = s2
 	_apply_time_scale()
 
 ## 화면 전체 플래시 — 크리티컬(콤보 피니셔·처치·궁극기) 순간의 "번쩍"
@@ -109,6 +126,164 @@ func shake(mag: float, dur: float, dir: Vector3 = Vector3.ZERO) -> void:
 		p.shake_from(mag, dur, dir)
 
 ## 씬 재시작 시 시간 배율이 남아 있지 않게 정리
+# ══════════════════════════════════════════════
+#  프리셋 (data/feel.json)
+# ══════════════════════════════════════════════
+## 코드에 흩어져 있던 수치를 이름으로 부른다. JSON 만 고치면 전 전투에 걸린다.
+## 정의가 없는 이름은 아무것도 하지 않는다 (호출부가 죽지 않게).
+const FEEL_PATH := "res://data/feel.json"
+var _feel: Dictionary = {}
+
+func feel() -> Dictionary:
+	if not _feel.is_empty():
+		return _feel
+	var f := FileAccess.open(FEEL_PATH, FileAccess.READ)
+	if f == null:
+		_feel = {"hitstop": {}, "shake": {}, "camera": {}, "slowmo": {}, "flash": {}, "sound": {}, "ui": {}}
+		return _feel
+	var j = JSON.parse_string(f.get_as_text())
+	f.close()
+	_feel = j if typeof(j) == TYPE_DICTIONARY else {}
+	return _feel
+
+func num(section: String, key: String, fallback: float) -> float:
+	var sec: Dictionary = feel().get(section, {})
+	return float(sec.get(key, fallback)) if sec.has(key) else fallback
+
+## 한 번에 히트스톱 + 흔들림 + 슬로모 + 플래시 + 사운드 레이어를 건다.
+## 이름 하나로 연출 한 벌이 나오므로 호출부가 짧아지고 톤이 일정해진다.
+func impact(name: String, dir: Vector3 = Vector3.ZERO) -> void:
+	var hs: Dictionary = feel().get("hitstop", {})
+	if hs.has(name):
+		hit_stop(float(hs[name]))
+
+	var sk: Dictionary = feel().get("shake", {})
+	if sk.has(name):
+		var v: Array = sk[name]
+		if v.size() >= 2:
+			shake(float(v[0]), float(v[1]), dir)
+
+	var sm: Dictionary = feel().get("slowmo", {})
+	if sm.has(name):
+		var v2: Array = sm[name]
+		if v2.size() >= 2:
+			slow_motion(float(v2[0]), float(v2[1]))
+
+	var fl: Dictionary = feel().get("flash", {})
+	if fl.has(name):
+		var v3: Array = fl[name]
+		if v3.size() >= 6:
+			screen_flash(Color(float(v3[0]), float(v3[1]), float(v3[2])),
+				float(v3[3]), float(v3[4]), float(v3[5]))
+
+	play_layers(name)
+	camera_punch(name)
+
+## 사운드 겹치기 — 한 타격에 2~3겹을 쌓아 두께를 만든다.
+func play_layers(name: String) -> void:
+	var layers: Dictionary = feel().get("sound", {}).get("layers", {})
+	if not layers.has(name):
+		return
+	for row in layers[name]:
+		if typeof(row) != TYPE_ARRAY or row.size() < 4:
+			continue
+		var key := String(row[0])
+		var vol := float(row[1])
+		var pit := float(row[2])
+		var delay := float(row[3])
+		if delay <= 0.0:
+			SoundManager.play_pitched(key, vol, pit)
+		else:
+			SoundManager.play_delayed(key, delay, vol)
+
+## 타격 순간 카메라가 살짝 파고든다 (FOV 를 순간적으로 좁힌다).
+func camera_punch(name: String) -> void:
+	var key := "punch_" + name
+	var cam: Dictionary = feel().get("camera", {})
+	if not cam.has(key):
+		return
+	var p := Battlefield.player
+	if p and is_instance_valid(p) and p.has_method("fov_punch"):
+		p.fov_punch(float(cam[key]))
+
+# ══════════════════════════════════════════════
+#  리듬 · 순간 (data/pacing.json)
+# ══════════════════════════════════════════════
+const PACING_PATH := "res://data/pacing.json"
+var _pacing: Dictionary = {}
+
+func pacing() -> Dictionary:
+	if not _pacing.is_empty():
+		return _pacing
+	var f := FileAccess.open(PACING_PATH, FileAccess.READ)
+	if f == null:
+		_pacing = {"breather": {}, "moments": {}, "drop_tease": {}, "legendary": {}}
+		return _pacing
+	var j = JSON.parse_string(f.get_as_text())
+	f.close()
+	_pacing = j if typeof(j) == TYPE_DICTIONARY else {}
+	return _pacing
+
+func pace(section: String, key: String, fallback: float) -> float:
+	return float(pacing().get(section, {}).get(key, fallback))
+
+func pace_text(key: String, fallback: String) -> String:
+	return String(pacing().get("moments", {}).get(key, fallback))
+
+## 임의의 [r,g,b,peak,hold,fade] 배열을 플래시로 재생한다.
+func flash_array(section: String, key: String) -> void:
+	var v = pacing().get(section, {}).get(key, null)
+	if typeof(v) != TYPE_ARRAY or v.size() < 6:
+		return
+	screen_flash(Color(float(v[0]), float(v[1]), float(v[2])),
+		float(v[3]), float(v[4]), float(v[5]))
+
+## 챕터 진행도에 따라 보간된 템포 값.
+## pacing.json 의 tempo 는 {"1":a,"4":b,"7":c} 형태의 구간점이다.
+func tempo(key: String, fallback: float) -> float:
+	var t = pacing().get("tempo", {}).get(key, null)
+	if typeof(t) != TYPE_DICTIONARY:
+		return fallback
+	var ch := float(GameManager.chapter)
+	var keys := []
+	for k in t:
+		keys.append(float(k))
+	keys.sort()
+	if keys.is_empty():
+		return fallback
+	if ch <= keys[0]:
+		return float(t[str(int(keys[0]))])
+	for i in range(keys.size() - 1):
+		var a: float = keys[i]
+		var b: float = keys[i + 1]
+		if ch <= b:
+			var u: float = (ch - a) / maxf(b - a, 0.001)
+			return lerpf(float(t[str(int(a))]), float(t[str(int(b))]), u)
+	return float(t[str(int(keys[keys.size() - 1]))])
+
+func tempo_num(key: String, fallback: float) -> float:
+	return float(pacing().get("tempo", {}).get(key, fallback))
+
+# ── 연속 처치 ──
+var _streak := 0
+var _streak_time := 0.0
+
+func note_kill() -> void:
+	var now := Time.get_ticks_msec() / 1000.0
+	var win := pace("moments", "streak_window", 6.0)
+	_streak = (_streak + 1) if (now - _streak_time) <= win else 1
+	_streak_time = now
+	var need := int(pace("moments", "streak_kills", 8))
+	if need > 0 and _streak > 0 and _streak % need == 0:
+		impact("crit")
+		var p := Battlefield.player
+		var world = p.get_tree().current_scene if p and is_instance_valid(p) else null
+		if world and world.get("hud") != null:
+			world.hud.show_banner(pace_text("streak_text", "◈ %d 연속 처치") % _streak)
+
+func reset_streak() -> void:
+	_streak = 0
+
 func reset() -> void:
 	_stop_weight = 0.0
 	_stop_remain = 0.0

@@ -1,0 +1,355 @@
+{
+  "version": 1,
+  "note": "일반 몬스터 개성. 역할·대표 행동·위험도·약점·상대법을 데이터로 둔다. 기존 EnemyBrain 이 이 값을 참조한다.",
+  "rules": {
+    "signature": "대표 행동 id. behaviors 에 정의된 것만 동작한다.",
+    "danger": "1~5. 이름표 색과 우선 처치 안내에 쓴다.",
+    "weak": "약점 태그. stun/bleed/poison/burn/burst/range/flank/charge",
+    "counter": "플레이어에게 보여줄 상대법 한 줄.",
+    "tell": "행동 직전에 보이는 신호."
+  },
+  "behaviors": {
+    "note": "전부 기존 EnemyBrain/Enemy3D 기능의 조합이다.",
+    "pack_howl": {
+      "kind": "pack",
+      "radius": 12.0,
+      "speed": 0.06,
+      "max": 1.45
+    },
+    "flee": {
+      "kind": "retreat",
+      "hp": 0.4,
+      "distance": 11.0
+    },
+    "blink_flank": {
+      "kind": "flank",
+      "bias": 0.9,
+      "dodge": 0.55
+    },
+    "venom": {
+      "kind": "status",
+      "status": "poison",
+      "chance": 0.5
+    },
+    "frenzy": {
+      "kind": "rage",
+      "hp": 0.5,
+      "speed": 1.35,
+      "rate": 1.3
+    },
+    "volley_air": {
+      "kind": "keep",
+      "distance": 14.0,
+      "cover": 0.7
+    },
+    "cover_fire": {
+      "kind": "keep",
+      "distance": 13.0,
+      "cover": 0.9
+    },
+    "chill": {
+      "kind": "status",
+      "status": "slow",
+      "chance": 0.45,
+      "mult": 0.7
+    },
+    "detonate": {
+      "kind": "death_blast",
+      "radius": 5.0,
+      "damage": 1.6
+    },
+    "revive_once": {
+      "kind": "revive",
+      "hp_pct": 0.35,
+      "delay": 1.2
+    },
+    "brace": {
+      "kind": "front_armor",
+      "reduce": 0.45,
+      "arc": 1.2
+    },
+    "relentless": {
+      "kind": "track",
+      "memory": 24.0,
+      "speed": 1.1
+    },
+    "formation": {
+      "kind": "pack",
+      "radius": 10.0,
+      "speed": 0.04,
+      "max": 1.2
+    },
+    "ground_slam": {
+      "kind": "slam",
+      "radius": 6.0,
+      "cd": 6.0,
+      "damage": 1.4
+    },
+    "split": {
+      "kind": "split",
+      "into": "goblin",
+      "count": 2,
+      "hp_pct": 0.3
+    },
+    "unstoppable": {
+      "kind": "immune",
+      "stun": true,
+      "knock": true
+    },
+    "siege": {
+      "kind": "siege"
+    },
+    "mend": {
+      "kind": "heal_allies",
+      "radius": 10.0,
+      "pct": 0.05,
+      "cd": 3.5
+    },
+    "empower": {
+      "kind": "buff_allies",
+      "radius": 10.0,
+      "damage": 1.25,
+      "cd": 8.0
+    },
+    "guard_break": {
+      "kind": "pierce_guard",
+      "mult": 1.5,
+      "cd": 7.0
+    },
+    "summon_guard": {
+      "kind": "summon",
+      "type": "knight",
+      "count": 2,
+      "cd": 16.0
+    },
+    "homing_shot": {
+      "kind": "homing",
+      "cd": 4.5,
+      "range": 20.0,
+      "count": 2,
+      "turn": 2.6,
+      "life": 3.2,
+      "damage": 0.8
+    },
+    "hazard_field": {
+      "kind": "field",
+      "cd": 8.0,
+      "range": 16.0,
+      "radius": 4.0,
+      "life": 5.0,
+      "tick": 0.5,
+      "damage": 0.35,
+      "slow": 0.75,
+      "color": [
+        0.45,
+        0.9,
+        0.55
+      ]
+    }
+  },
+  "danger_colors": {
+    "1": [
+      0.7,
+      0.75,
+      0.7
+    ],
+    "2": [
+      0.85,
+      0.85,
+      0.6
+    ],
+    "3": [
+      0.95,
+      0.7,
+      0.4
+    ],
+    "4": [
+      1.0,
+      0.45,
+      0.35
+    ],
+    "5": [
+      1.0,
+      0.3,
+      0.6
+    ]
+  },
+  "monsters": {
+    "hound": {
+      "role": "떼거리",
+      "signature": "pack_howl",
+      "danger": 1,
+      "weak": "stun",
+      "counter": "넓게 휘둘러 한꺼번에 정리한다",
+      "tell": "무리가 커질수록 빨라진다"
+    },
+    "wolf": {
+      "role": "떼거리",
+      "signature": "pack_howl",
+      "danger": 1,
+      "weak": "stun",
+      "counter": "뭉치기 전에 하나씩 끊는다",
+      "tell": "짖으면 근처 늑대가 붙는다"
+    },
+    "goblin": {
+      "role": "겁쟁이",
+      "signature": "flee",
+      "danger": 1,
+      "weak": "bleed",
+      "counter": "도망칠 때 쫓지 말고 다음 적을 본다",
+      "tell": "체력이 줄면 등을 돌린다"
+    },
+    "stalker": {
+      "role": "암살자",
+      "signature": "blink_flank",
+      "danger": 2,
+      "weak": "stun",
+      "counter": "측면을 등지고 벽을 낀다",
+      "tell": "옆으로 크게 돌면 곧 덮친다"
+    },
+    "scorpion": {
+      "role": "독충",
+      "signature": "venom",
+      "danger": 2,
+      "weak": "knock",
+      "counter": "찔린 뒤에는 거리를 벌린다",
+      "tell": "꼬리를 세우면 찌른다"
+    },
+    "ravager": {
+      "role": "돌격병",
+      "signature": "frenzy",
+      "danger": 2,
+      "weak": "stun",
+      "counter": "경직으로 끊는다",
+      "tell": "피가 줄수록 빨라진다"
+    },
+    "screecher": {
+      "role": "포격수",
+      "signature": "homing_shot",
+      "danger": 3,
+      "weak": "burst",
+      "counter": "탄이 따라온다 — 장애물을 끼고 크게 돌아 피한다",
+      "tell": "탄이 푸르게 빛나면 유도탄이다"
+    },
+    "bandit": {
+      "role": "저격수",
+      "signature": "cover_fire",
+      "danger": 2,
+      "weak": "charge",
+      "counter": "엄폐를 돌아 파고든다",
+      "tell": "엄폐물 뒤로 물러난다"
+    },
+    "ice_wisp": {
+      "role": "둔화술사",
+      "signature": "hazard_field",
+      "danger": 3,
+      "weak": "burst",
+      "counter": "장판 밖으로 나간 뒤 접근한다",
+      "tell": "바닥에 서리가 퍼지면 곧 장판이 깔린다"
+    },
+    "fire_wisp": {
+      "role": "폭발체",
+      "signature": "detonate",
+      "danger": 3,
+      "weak": "range",
+      "counter": "죽기 직전 물러난다",
+      "tell": "붉게 부풀면 터진다"
+    },
+    "mummy": {
+      "role": "완충재",
+      "signature": "revive_once",
+      "danger": 2,
+      "weak": "burn",
+      "counter": "한 번 더 일어나니 확인 사살한다",
+      "tell": "쓰러져도 손가락이 움직인다"
+    },
+    "orc": {
+      "role": "방벽",
+      "signature": "brace",
+      "danger": 2,
+      "weak": "flank",
+      "counter": "정면을 피해 옆에서 친다",
+      "tell": "방패를 세우면 정면 피해가 준다"
+    },
+    "lizardman": {
+      "role": "추적자",
+      "signature": "relentless",
+      "danger": 3,
+      "weak": "stun",
+      "counter": "거리를 벌려도 소용없다 — 정면 승부",
+      "tell": "시야를 잃어도 계속 온다"
+    },
+    "soldier": {
+      "role": "진형병",
+      "signature": "formation",
+      "danger": 3,
+      "weak": "flank",
+      "counter": "진형을 깨고 옆으로 돈다",
+      "tell": "서로 간격을 맞춘다"
+    },
+    "yeti": {
+      "role": "파쇄자",
+      "signature": "ground_slam",
+      "danger": 3,
+      "weak": "range",
+      "counter": "내려찍기 반경 밖으로 나간다",
+      "tell": "팔을 크게 들면 찍는다"
+    },
+    "mutant_m": {
+      "role": "분열체",
+      "signature": "split",
+      "danger": 3,
+      "weak": "burst",
+      "counter": "한 번에 크게 터뜨린다",
+      "tell": "죽으면 둘로 갈라진다"
+    },
+    "juggernaut": {
+      "role": "공성추",
+      "signature": "unstoppable",
+      "danger": 4,
+      "weak": "range",
+      "counter": "막지 말고 비켜선다",
+      "tell": "경직도 넉백도 통하지 않는다"
+    },
+    "destroyer": {
+      "role": "공성병",
+      "signature": "siege",
+      "danger": 4,
+      "weak": "flank",
+      "counter": "방주에 닿기 전에 끊는다",
+      "tell": "플레이어를 무시하고 방주로 간다"
+    },
+    "angel": {
+      "role": "치유사",
+      "signature": "mend",
+      "danger": 4,
+      "weak": "burst",
+      "counter": "가장 먼저 죽인다",
+      "tell": "빛줄기가 다른 적에게 이어진다"
+    },
+    "demon": {
+      "role": "광신도",
+      "signature": "empower",
+      "danger": 4,
+      "weak": "stun",
+      "counter": "버프를 받기 전에 끊는다",
+      "tell": "주변 적이 붉게 물든다"
+    },
+    "knight": {
+      "role": "수문장",
+      "signature": "guard_break",
+      "danger": 4,
+      "weak": "bleed",
+      "counter": "패링으로 반격 각을 만든다",
+      "tell": "크게 들어 올리면 방어 관통"
+    },
+    "fallen_knight": {
+      "role": "근위",
+      "signature": "summon_guard",
+      "danger": 5,
+      "weak": "poison",
+      "counter": "호위를 정리하고 본체를 친다",
+      "tell": "무릎 꿇으면 호위를 부른다"
+    }
+  }
+}

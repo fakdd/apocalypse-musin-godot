@@ -24,13 +24,14 @@ class_name LandmarkData
 
 ## ── 진입 이벤트 ──
 @export var bgm := ""                       ## SoundManager.set_bgm() 에 넘길 트랙 id ("" = 변경 없음)
-@export var ambient_color := Color(0, 0, 0, 0)   ## alpha>0 이면 진입 시 화면 색조를 살짝 물들인다
 @export var enter_stinger := ""             ## 진입 순간의 짧은 효과음 이름
 
 ## ── 몬스터 스폰 테이블 ──
 ## { "hound": 3, "ravager": 1 } 처럼 가중치를 넣는다. 비어 있으면 전역 기본 테이블을 쓴다.
 @export var spawn_table := {}
 @export var spawn_budget := 0               ## 최초 진입 시 소환할 마리 수 (0 = 소환 없음)
+## 영역 유형 (data/area_kinds.json). CampaignManager 가 Stage 에서 넣어 준다.
+@export var area_kind := "combat"
 @export var spawn_radius := 7.0
 
 ## ── 아이템 테이블 ──

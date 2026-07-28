@@ -1,0 +1,277 @@
+{
+  "version": 1,
+  "note": "업적 정의. 코드에는 업적 id 가 하나도 없다 — 여기만 고치면 늘어난다.",
+  "kinds": {
+    "event": "한 번 일어나면 바로 달성 (counter 를 쓰지 않는다)",
+    "counter": "counter 값이 target 이상이면 달성"
+  },
+  "counters": {
+    "boss": "챕터 보스 처치 수",
+    "puzzle": "푼 퍼즐 수",
+    "secret": "발견한 비밀 던전 수",
+    "explore": "탐험한 랜드마크 수",
+    "clear": "클리어한 랜드마크 수",
+    "chest": "주운 아이템 수",
+    "chapter": "클리어한 챕터 수",
+    "essence": "누적 마석",
+    "npc_talk": "대화한 NPC 수",
+    "npc_quest": "완료한 NPC 의뢰",
+    "npc_shop": "상점 구매 횟수"
+  },
+  "achievements": [
+    {
+      "id": "ach_first_boss",
+      "name": "첫 번째 왕관",
+      "desc": "지역 보스를 처음 쓰러뜨린다.",
+      "kind": "counter",
+      "counter": "boss",
+      "target": 1
+    },
+    {
+      "id": "ach_all_bosses",
+      "name": "일곱 왕을 넘어",
+      "desc": "모든 챕터의 보스를 쓰러뜨린다.",
+      "kind": "counter",
+      "counter": "boss",
+      "target": 7
+    },
+    {
+      "id": "ach_first_chapter",
+      "name": "첫 관문",
+      "desc": "챕터 하나를 넘어선다.",
+      "kind": "counter",
+      "counter": "chapter",
+      "target": 1
+    },
+    {
+      "id": "ach_all_chapters",
+      "name": "끝까지 간 자",
+      "desc": "일곱 지역을 모두 지난다.",
+      "kind": "counter",
+      "counter": "chapter",
+      "target": 7
+    },
+    {
+      "id": "ach_first_secret",
+      "name": "숨은 문",
+      "desc": "비밀 던전을 처음 발견한다.",
+      "kind": "counter",
+      "counter": "secret",
+      "target": 1
+    },
+    {
+      "id": "ach_all_secrets",
+      "name": "지도에 없는 곳",
+      "desc": "모든 비밀 던전을 발견한다.",
+      "kind": "counter",
+      "counter": "secret",
+      "target": 7,
+      "hidden": true
+    },
+    {
+      "id": "ach_first_puzzle",
+      "name": "손끝의 감각",
+      "desc": "수수께끼를 처음 푼다.",
+      "kind": "counter",
+      "counter": "puzzle",
+      "target": 1
+    },
+    {
+      "id": "ach_all_puzzles",
+      "name": "모든 문양을 읽다",
+      "desc": "모든 수수께끼를 푼다.",
+      "kind": "counter",
+      "counter": "puzzle",
+      "target": 12,
+      "hidden": true
+    },
+    {
+      "id": "ach_explore_10",
+      "name": "발이 닳도록",
+      "desc": "랜드마크 10곳을 탐험한다.",
+      "kind": "counter",
+      "counter": "explore",
+      "target": 10
+    },
+    {
+      "id": "ach_explore_30",
+      "name": "이 땅을 안다",
+      "desc": "랜드마크 30곳을 탐험한다.",
+      "kind": "counter",
+      "counter": "explore",
+      "target": 30
+    },
+    {
+      "id": "ach_clear_20",
+      "name": "정리하는 사람",
+      "desc": "랜드마크 20곳을 클리어한다.",
+      "kind": "counter",
+      "counter": "clear",
+      "target": 20
+    },
+    {
+      "id": "ach_chest_25",
+      "name": "주머니가 무겁다",
+      "desc": "유물 25개를 줍는다.",
+      "kind": "counter",
+      "counter": "chest",
+      "target": 25
+    },
+    {
+      "id": "ach_chest_100",
+      "name": "폐허의 수집가",
+      "desc": "유물 100개를 줍는다.",
+      "kind": "counter",
+      "counter": "chest",
+      "target": 100
+    },
+    {
+      "id": "ach_essence_2000",
+      "name": "마석왕",
+      "desc": "마석을 누적 2000 모은다.",
+      "kind": "counter",
+      "counter": "essence",
+      "target": 2000
+    },
+    {
+      "id": "ach_level_10",
+      "name": "단련",
+      "desc": "레벨 10 에 도달한다.",
+      "kind": "event"
+    },
+    {
+      "id": "ach_level_20",
+      "name": "경지",
+      "desc": "레벨 20 에 도달한다.",
+      "kind": "event"
+    },
+    {
+      "id": "ach_no_death_chapter",
+      "name": "무결",
+      "desc": "한 번도 쓰러지지 않고 챕터를 넘는다.",
+      "kind": "event",
+      "hidden": true
+    },
+    {
+      "id": "ach_ending",
+      "name": "멸망 이후",
+      "desc": "심연의 군주를 쓰러뜨린다.",
+      "kind": "event",
+      "hidden": true
+    },
+    {
+      "id": "ach_pz_forest",
+      "name": "숲의 바닥돌",
+      "desc": "사냥꾼 마을의 바닥돌을 맞춘다.",
+      "kind": "event"
+    },
+    {
+      "id": "ach_pz_secret_forest",
+      "name": "호수의 빛",
+      "desc": "정령의 호수 수정을 밝힌다.",
+      "kind": "event",
+      "hidden": true
+    },
+    {
+      "id": "ach_pz_desert",
+      "name": "문양의 순서",
+      "desc": "시장 창고의 문양을 읽는다.",
+      "kind": "event"
+    },
+    {
+      "id": "ach_pz_secret_desert",
+      "name": "태양의 횃불",
+      "desc": "태양신전의 횃불을 모두 밝힌다.",
+      "kind": "event",
+      "hidden": true
+    },
+    {
+      "id": "ach_pz_snow",
+      "name": "얼어붙은 레버",
+      "desc": "설산 요새의 레버를 올린다.",
+      "kind": "event"
+    },
+    {
+      "id": "ach_pz_secret_snow",
+      "name": "얼음 속의 빛",
+      "desc": "얼음동굴의 수정을 밝힌다.",
+      "kind": "event",
+      "hidden": true
+    },
+    {
+      "id": "ach_pz_volcano",
+      "name": "꺼지지 않는 화로",
+      "desc": "대장간의 화로에 불을 넣는다.",
+      "kind": "event"
+    },
+    {
+      "id": "ach_pz_city",
+      "name": "눌린 타일",
+      "desc": "백화점의 바닥 타일을 맞춘다.",
+      "kind": "event"
+    },
+    {
+      "id": "ach_pz_secret_city",
+      "name": "마지막 방송",
+      "desc": "방송국의 조명 순서를 맞춘다.",
+      "kind": "event",
+      "hidden": true
+    },
+    {
+      "id": "ach_pz_sky",
+      "name": "거꾸로 흐르는 물",
+      "desc": "정원 분수의 수정을 맞춘다.",
+      "kind": "event"
+    },
+    {
+      "id": "ach_pz_abyss",
+      "name": "돌기둥의 순서",
+      "desc": "악마제단의 문양을 읽는다.",
+      "kind": "event"
+    },
+    {
+      "id": "ach_pz_secret_abyss",
+      "name": "멈춘 시간",
+      "desc": "잊힌 금고의 레버를 올린다.",
+      "kind": "event",
+      "hidden": true
+    },
+    {
+      "id": "ach_npc_hunter",
+      "name": "사냥꾼의 부탁",
+      "desc": "노인 사냥꾼의 의뢰를 끝낸다.",
+      "kind": "event"
+    },
+    {
+      "id": "ach_npc_soul",
+      "name": "이름을 되찾다",
+      "desc": "잃어버린 영혼에게 마석을 나눠준다.",
+      "kind": "event",
+      "hidden": true
+    },
+    {
+      "id": "ach_npc_talk_5",
+      "name": "말을 트다",
+      "desc": "NPC 5명과 대화한다.",
+      "kind": "counter",
+      "counter": "npc_talk",
+      "target": 5
+    },
+    {
+      "id": "ach_npc_quest_3",
+      "name": "믿음직한 사람",
+      "desc": "NPC 의뢰 3건을 끝낸다.",
+      "kind": "counter",
+      "counter": "npc_quest",
+      "target": 3
+    },
+    {
+      "id": "ach_npc_shop_10",
+      "name": "단골",
+      "desc": "상점에서 10번 산다.",
+      "kind": "counter",
+      "counter": "npc_shop",
+      "target": 10
+    }
+  ]
+}

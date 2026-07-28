@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "note": "타이틀·일시정지·슬롯·옵션 화면 구성. MainMenuUI.gd 에는 문자열이 하나도 없다.",
+  "rules": {
+    "items": "id 는 MainMenuUI._activate() 가 아는 것만 동작한다 — continue/new/resume/options/title/back/vol_down/vol_up/quit",
+    "enabled": "continue 는 세이브가 하나라도 있어야, boss_rush 는 엔딩을 봐야 켜진다"
+  },
+  "screens": {
+    "title": {
+      "title": "아포칼립스 무신",
+      "subtitle": "균열 너머에서 온 것들과, 마지막 방주",
+      "hint": "↑↓ 선택      Enter 결정",
+      "items": [
+        {
+          "id": "continue",
+          "label": "이어하기"
+        },
+        {
+          "id": "new",
+          "label": "새 게임"
+        },
+        {
+          "id": "boss_rush",
+          "label": "보스 러시"
+        },
+        {
+          "id": "options",
+          "label": "설정"
+        },
+        {
+          "id": "quit",
+          "label": "종료"
+        }
+      ]
+    },
+    "pause": {
+      "title": "일시정지",
+      "subtitle": "진행 중",
+      "hint": "ESC 계속      ↑↓ 선택      Enter 결정",
+      "items": [
+        {
+          "id": "resume",
+          "label": "계속하기"
+        },
+        {
+          "id": "options",
+          "label": "설정"
+        },
+        {
+          "id": "boss_rush",
+          "label": "보스 러시"
+        },
+        {
+          "id": "title",
+          "label": "타이틀로"
+        },
+        {
+          "id": "quit",
+          "label": "게임 종료"
+        }
+      ]
+    },
+    "slots": {
+      "title": "세이브 슬롯",
+      "subtitle": "슬롯 1 은 기존 저장 파일을 그대로 씁니다",
+      "hint": "↑↓ 선택      Enter 결정      ESC 뒤로"
+    },
+    "options": {
+      "title": "설정",
+      "subtitle": "",
+      "hint": "↑↓ 선택   ←→/Enter 조절   마우스 클릭 가능   ESC 뒤로",
+      "items": [
+        {
+          "id": "vol_down",
+          "label": "◀  마스터 볼륨"
+        },
+        {
+          "id": "vol_up",
+          "label": "마스터 볼륨  ▶"
+        },
+        {
+          "id": "gfx_down",
+          "label": "◀  그래픽 품질"
+        },
+        {
+          "id": "gfx_up",
+          "label": "그래픽 품질  ▶"
+        },
+        {
+          "id": "back",
+          "label": "← 돌아가기"
+        }
+      ]
+    }
+  },
+  "text": {
+    "back": "← 돌아가기",
+    "slot_empty": "슬롯 %d — 비어 있음",
+    "slot_used": "슬롯 %d — %d장 · Lv%d · %d분%s",
+    "loading": "불러오는 중…",
+    "vol_fmt": "마스터 볼륨: %d%%",
+    "gfx_fmt": "그래픽 품질: %s",
+    "rush_locked": "보스 러시 — 엔딩 후 해금",
+    "rush_start": "보스 러시 시작",
+    "rush_progress": "보스 %d / %d",
+    "rush_next": "다음 보스까지 %d초",
+    "rush_clear": "◈ 보스 러시 완파 — %d / %d",
+    "rush_fail": "보스 러시 종료 — %d / %d"
+  }
+}

@@ -16,6 +16,8 @@ var hp := 1.0
 var max_hp := 1.0
 var speed := 3.0
 var contact_damage := 8.0
+var _boss_finish_shown := false
+var is_elite := false
 var hit_radius := 0.6
 var is_flying := false
 var hover_height := 0.0
@@ -60,7 +62,8 @@ var animation: EnemyAnimation
 ## 보스 계열인지 (overlord / warlord)
 func is_boss_type(t: String = "") -> bool:
 	var check: String = t if t != "" else enemy_type
-	return check == "overlord" or check == "warlord"
+	# 챕터 보스가 늘어나므로 목록을 본다 (예전에는 overlord/warlord 만 하드코딩)
+	return EnemyConfig.BOSS_TYPES.has(check)
 
 func _ready() -> void:
 	add_to_group("enemies")
@@ -94,14 +97,25 @@ func setup(type: String, wave: int) -> void:
 	is_siege = bool(cfg.get("siege", false))
 	pattern = String(cfg.get("pattern", "melee"))
 
-	max_hp = float(cfg["hp"]) + float(cfg["hp_per_wave"]) * maxf(0.0, wave - 1)
+	var w: float = minf(float(wave), float(EnemyConfig.HP_WAVE_CAP))
+	max_hp = (float(cfg["hp"]) 		+ float(cfg["hp_per_wave"]) * EnemyConfig.HP_PER_WAVE_MULT * maxf(0.0, w - 1.0)) 		* ChapterConfig.hp_mult_of(GameManager.chapter) * SaveGame.tier_mult("hp")
 	hp = max_hp
 	speed = float(cfg["speed"])
 	hit_radius = float(cfg["radius"])
-	contact_damage = float(cfg["damage"])
+	contact_damage = float(cfg["damage"]) * EnemyConfig.CONTACT_DAMAGE_MULT 		* ChapterConfig.dmg_mult_of(GameManager.chapter) * SaveGame.tier_mult("dmg")
 	is_flying = bool(cfg["flying"])
 
-	if type == "overlord" or type == "warlord":
+	# 엘리트 — 챕터가 올라갈수록 자주 섞인다. 새 몬스터를 만들지 않고
+	# 기존 몹의 체력·피해·보상만 올려 "저건 위험하다"는 인상을 만든다.
+	if not is_boss_type(type) and randf() < CombatFeel.tempo("elite", 0.0):
+		is_elite = true
+		max_hp *= CombatFeel.tempo_num("elite_hp", 1.9)
+		hp = max_hp
+		contact_damage *= CombatFeel.tempo_num("elite_dmg", 1.25)
+		scale *= 1.15
+		add_to_group("elite")
+
+	if is_boss_type(type):
 		add_to_group("boss")
 	if type == "warlord":
 		add_to_group("final_boss")
@@ -170,6 +184,32 @@ func _physics_process(delta: float) -> void:
 func take_damage(amount: float, knockback: Vector3 = Vector3.ZERO) -> bool:
 	if dead:
 		return false
+	# 보스 약점 창구 — data/bosses.json 의 weakness.mult
+	if is_boss_type() and brain and not _boss_finish_shown:
+		var fin := CombatFeel.pace("moments", "boss_finish_hp", 0.06)
+		if hp / maxf(max_hp, 1.0) <= fin and hp > 0.0:
+			_boss_finish_shown = true
+			CombatFeel.slow_motion(0.5, 0.4)
+			CombatFeel.impact("boss_phase")
+			var w2 = get_tree().current_scene
+			if w2 and w2.get("hud") != null:
+				w2.hud.show_banner(CombatFeel.pace_text("boss_finish_text", "◈ 조금만 더"))
+	# 정면 방어(오크) — 앞에서 맞으면 덜 아프다. 옆·뒤로 돌아야 한다.
+	var _bh := EnemyConfig.mon_behavior(enemy_type)
+	if String(_bh.get("kind", "")) == "front_armor":
+		var _pl2 := Battlefield.live_player()
+		if _pl2 and is_instance_valid(_pl2):
+			var _to: Vector3 = _pl2.global_position - global_position
+			_to.y = 0.0
+			var _fwd: Vector3 = -global_transform.basis.z
+			if _fwd.angle_to(_to.normalized()) < float(_bh.get("arc", 1.2)):
+				amount *= 1.0 - float(_bh.get("reduce", 0.45))
+
+	if is_boss_type() and brain:
+		var wm := brain.weakness_mult()
+		if wm > 1.0:
+			amount *= wm
+			CombatFeel.impact("weak_point")
 	hp -= amount
 
 	# 맞았으면 때린 쪽을 안다 — 시야각이 생긴 뒤로 이게 없으면
@@ -218,7 +258,11 @@ func _play_hurt_reaction(amount: float) -> void:
 		anim.speed_scale = 1.5
 		anim.play(anim_hit)
 
+## 경직 — 저거너트처럼 immune 로 표시된 몹은 흔들리지 않는다.
 func stun(duration: float) -> void:
+	var b := EnemyConfig.mon_behavior(enemy_type)
+	if String(b.get("kind", "")) == "immune" and bool(b.get("stun", false)):
+		return
 	if is_boss_type():
 		duration *= EnemyConfig.BOSS_STUN_MULT
 	stun_timer = maxf(stun_timer, duration)
@@ -260,10 +304,36 @@ func _die() -> void:
 		col.queue_free()
 	if hp_bar_bg: hp_bar_bg.visible = false
 	if hp_bar_fill: hp_bar_fill.visible = false
+	# 대표 행동 — 죽는 순간에 일어나는 것들 (폭발/분열/부활)
+	if _signature_on_death():
+		return
 	GameManager.kill_count += 1
+	CombatFeel.note_kill()
+	var _pl := Battlefield.live_player()
+	if _pl:
+		# 전설 '흡혈'
+		if PlayerStats.has_legendary("lifesteal"):
+			var pct := float(CombatFeel.pacing().get("legendary", {})
+				.get("lifesteal", {}).get("heal_pct", 0.0))
+			if pct > 0.0:
+				_pl.hp = minf(_pl.max_hp, _pl.hp + _pl.max_hp * pct)
+				_pl.hp_changed.emit()
+		# 죽기 직전에 낸 마지막 한 방은 크게 기억된다
+		if _pl.hp / maxf(_pl.max_hp, 1.0) <= CombatFeel.pace("moments", "last_hit_hp", 0.25):
+			CombatFeel.impact("crit")
+	# 처치 경험치 — 지금까지 add_exp 는 랜드마크 발견/클리어에서만 불렸다.
+	# 밤 웨이브를 아무리 잘 치러도 레벨이 오르지 않아 전투와 성장이 분리돼 있었다.
+	# 체력에 비례시켜 별도 데이터 없이 잡몹 2~4, 보스 78~480 이 되게 한다.
+	GameManager.add_exp(maxi(1, int(round(max_hp * 0.30))))
 	# 랜드마크 수호 몬스터였다면 클리어 판정에 반영한다
 	if landmark_id != "":
 		LandmarkRegistry.notify_kill(landmark_id)
+	# 종류별 처치 수 — NPC 퀘스트 목표가 이 값을 본다
+	AchievementManager.bump("kill_" + enemy_type)
+	# 지역 보스였다면 다음 챕터로 나가는 포탈이 열린다 (PortalManager 가 받는다)
+	if is_in_group("boss"):
+		_boss_death_sequence()
+		GameManager.mark_chapter_boss_defeated()
 	# 이동 속도에 맞춰 올려 둔 배속을 되돌린다 (안 하면 죽는 모션이 빨리 감긴다)
 	if anim:
 		anim.speed_scale = 1.0
@@ -277,7 +347,8 @@ func _die() -> void:
 		tier_bonus = 25
 	elif is_siege:
 		tier_bonus = 3
-	CraftManager.add_essence(CraftManager.roll_essence_drop(tier_bonus))
+	CraftManager.add_essence(CraftManager.roll_essence_drop(
+		tier_bonus + (int(CombatFeel.tempo_num("elite_essence", 3)) if is_elite else 0)))
 
 	# 파밍: 보스는 확정 고등급, 일반 몹은 확률 드랍
 	# 구역 보정 — 균열 구역에서 죽인 몹이 훨씬 좋은 것을 떨어뜨린다
@@ -305,3 +376,57 @@ func _die() -> void:
 	if model:
 		tw.tween_property(model, "scale", Vector3(0.01, 0.01, 0.01), 0.25)
 	tw.tween_callback(queue_free)
+
+## 보스 처치 연출 — 수치는 data/bosses.json 의 death 에서 온다.
+func _boss_death_sequence() -> void:
+	var d = EnemyConfig.boss_field(enemy_type, "death")
+	if typeof(d) != TYPE_DICTIONARY:
+		return
+	CombatFeel.impact("boss_death")
+	CombatFeel.slow_motion(float(d.get("slowmo", 0.9)), 0.22)
+	var fc = d.get("flash", null)
+	if typeof(fc) == TYPE_ARRAY and fc.size() >= 3:
+		CombatFeel.screen_flash(Color(float(fc[0]), float(fc[1]), float(fc[2])),
+			0.5, 0.1, float(d.get("hold", 1.4)))
+	var world = get_tree().current_scene
+	if world and world.get("hud") != null:
+		var nm := String(EnemyConfig.boss_def(enemy_type).get("name", enemy_type))
+		world.hud.show_banner("\u2620 %s 격파" % nm)
+
+## 죽는 순간의 대표 행동. true 를 돌려주면 이번 죽음은 취소된다(부활).
+## 전부 기존 take_damage / _make_enemy / stun 만 쓴다.
+func _signature_on_death() -> bool:
+	var b := EnemyConfig.mon_behavior(enemy_type)
+	if b.is_empty():
+		return false
+	match String(b.get("kind", "")):
+		"death_blast":
+			# 폭발체 — 죽으면서 주변을 태운다. 가까이서 마무리하면 아프다.
+			var r := float(b.get("radius", 5.0))
+			CombatFeel.impact("slam")
+			var pl := Battlefield.live_player()
+			if pl and global_position.distance_to(pl.global_position) <= r:
+				pl.take_damage(contact_damage * float(b.get("damage", 1.6)), global_position)
+		"split":
+			# 분열체 — 죽으면 작은 것 둘로 갈라진다
+			var world = get_tree().current_scene
+			if world and world.has_method("_make_enemy"):
+				var n := int(b.get("count", 2))
+				for i in range(n):
+					var a := TAU * float(i) / float(maxi(1, n))
+					var kid = world._make_enemy(String(b.get("into", "goblin")),
+						global_position + Vector3(cos(a) * 1.6, 0, sin(a) * 1.6))
+					if kid != null:
+						kid.max_hp *= float(b.get("hp_pct", 0.3))
+						kid.hp = kid.max_hp
+						kid.landmark_id = landmark_id
+		"revive":
+			# 완충재 — 한 번은 다시 일어난다. 확인 사살이 필요하다.
+			if brain and not brain.revived:
+				brain.revived = true
+				hp = max_hp * float(b.get("hp_pct", 0.35))
+				dead = false
+				animation._flash()
+				stun(float(b.get("delay", 1.2)))
+				return true
+	return false

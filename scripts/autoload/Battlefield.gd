@@ -16,6 +16,9 @@ var player: Node3D = null
 var base_core: Node3D = null
 var enemies: Array = []
 var defenses: Array = []
+## 미니맵·퀘스트HUD·펫이 각자 매 프레임 그룹 검색을 하고 있었다 (프레임당 3회 배열 할당).
+## 여기 한 번만 담아 공유한다.
+var item_drops: Array = []
 
 var _frame := -1
 var _enemy_count_last := -1
@@ -53,6 +56,7 @@ func refresh() -> void:
 
 	enemies = tree.get_nodes_in_group("enemies")
 	defenses = tree.get_nodes_in_group("defenses")
+	item_drops = tree.get_nodes_in_group("item_drops")
 
 	if enemies.size() != _enemy_count_last:
 		_enemy_count_last = enemies.size()
@@ -72,6 +76,17 @@ func live_base() -> Node3D:
 	if base_core and is_instance_valid(base_core):
 		return base_core
 	return null
+
+## 아직 싸울 수 있는 적의 수.
+## enemies.size() 는 시체까지 센다 — 죽은 몹이 사망 연출 동안 트리에 남기 때문이다.
+## 화면에 "적 N" 으로 보여줄 때는 이 값을 써야 실제와 맞는다.
+func live_enemy_count() -> int:
+	refresh()
+	var n := 0
+	for e in enemies:
+		if is_instance_valid(e) and not e.dead:
+			n += 1
+	return n
 
 ## 가장 가까운 방벽/포탑 (없으면 null)
 func nearest_defense(from: Vector3) -> Node3D:
@@ -156,3 +171,14 @@ func reset() -> void:
 	_slot_of.clear()
 	_frame = -1
 	_enemy_count_last = -1
+
+## 플레이어가 큰 기술을 쓰기 직전에 부른다.
+## 반경 안의 적이 각자 확률에 따라 옆으로 빠진다 (data/ai.json 의 dodge_chance).
+func telegraph(from: Vector3, radius: float = 12.0) -> void:
+	refresh()
+	for e in enemies:
+		if not is_instance_valid(e) or e.dead or e.brain == null:
+			continue
+		if e.global_position.distance_to(from) > radius:
+			continue
+		e.brain.try_dodge(from)

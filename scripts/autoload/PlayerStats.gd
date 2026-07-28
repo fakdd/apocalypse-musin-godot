@@ -57,14 +57,67 @@ func get_item_speed() -> float:
 	return sum
 
 func get_final_atk() -> float:
-	return (BASE_ATK + get_item_atk()) * (1.0 + TraitManager.get_atk_pct() / 100.0)
+	# 영구 강화 배율은 UpgradeManager 만 계산한다 (여기서 직접 곱하지 않는다)
+	var base: float = BASE_ATK + get_item_atk() + float(set_bonus().get("atk", 0.0))
+	return base * (1.0 + TraitManager.get_atk_pct() / 100.0) \
+		* UpgradeManager.mult("attack") * EventManager.buff_mult()
 
 func get_final_speed() -> float:
-	var v: float = (BASE_SPEED + get_item_speed()) * (1.0 + TraitManager.get_speed_pct() / 100.0)
+	var v: float = (BASE_SPEED + get_item_speed() + float(set_bonus().get("speed", 0.0))) \
+		* (1.0 + TraitManager.get_speed_pct() / 100.0) * UpgradeManager.mult("move_speed")
 	return clampf(v, 1.5, 40.0)
 
 func get_final_max_hp() -> float:
-	return BASE_HP + GameManager.bonus_max_hp
+	return BASE_HP + GameManager.bonus_max_hp + UpgradeManager.value("hp") \
+		+ item_stat("hp_bonus") + float(set_bonus().get("hp", 0.0))
+
+## ── 접사 합산 (data/affixes.json) ──
+## 장착 중인 아이템의 새 스탯을 더한다. 옛 아이템은 필드가 0 이라 영향이 없다.
+func item_stat(field: String) -> float:
+	var sum := 0.0
+	for slot in ["weapon", "armor", "relic"]:
+		var it: ItemData = equipped.get(slot, null)
+		if it and field in it:
+			sum += float(it.get(field))
+	return sum
+
+func set_bonus() -> Dictionary:
+	var eq := []
+	for slot in ["weapon", "armor", "relic"]:
+		var it: ItemData = equipped.get(slot, null)
+		if it:
+			eq.append(it)
+	return LootManager.set_bonus(eq)
+
+## 아이템·세트에서 오는 추가 치명타 확률
+func get_item_crit() -> float:
+	return item_stat("crit_bonus") + float(set_bonus().get("crit", 0.0))
+
+## 아이템·세트에서 오는 쿨다운 감소 (0.0~)
+func get_item_cdr() -> float:
+	return item_stat("cdr_bonus") + float(set_bonus().get("cdr", 0.0))
+
+## 아이템·세트에서 오는 운
+## 장착 아이템 중에 이 전설 flag 가 있는가 (affixes.json 의 legendary.flag)
+## 장착 무기의 계열 정의. 없으면 default (모든 배율 1.0)
+func weapon_family() -> Dictionary:
+	var it: ItemData = equipped.get("weapon", null)
+	if it == null:
+		return ItemData.weapon_data().get("default", {})
+	return it.family()
+
+func wf(key: String, fallback: float) -> float:
+	return float(weapon_family().get(key, fallback))
+
+func has_legendary(flag: String) -> bool:
+	for slot in ["weapon", "armor", "relic"]:
+		var it: ItemData = equipped.get(slot, null)
+		if it and String(it.legendary) == flag:
+			return true
+	return false
+
+func get_item_luck() -> float:
+	return item_stat("luck_bonus") + float(set_bonus().get("luck", 0.0))
 
 ## 검기 1회당 데미지 (기본 공격력을 데미지 단위로 환산)
 func get_slash_damage() -> float:

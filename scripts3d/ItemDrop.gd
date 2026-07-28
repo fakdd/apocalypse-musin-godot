@@ -33,6 +33,30 @@ func setup(p_item: ItemData) -> void:
 	light.position.y = 0.6
 	add_child(light)
 
+	# 고등급은 하늘로 빛기둥이 선다 — 멀리서도 "저기 좋은 게 있다"가 보인다
+	var td: Dictionary = CombatFeel.pacing().get("drop_tease", {})
+	if item.rarity >= int(td.get("beam_from", 99)):
+		var h := float(td.get("beam_height", {}).get(str(item.rarity), 5.0))
+		var beam := MeshInstance3D.new()
+		var cyl := CylinderMesh.new()
+		cyl.top_radius = 0.16
+		cyl.bottom_radius = 0.5
+		cyl.height = h
+		cyl.radial_segments = 8
+		beam.mesh = cyl
+		var bm := StandardMaterial3D.new()
+		bm.albedo_color = Color(col.r, col.g, col.b, 0.22)
+		bm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		bm.emission_enabled = true
+		bm.emission = col
+		bm.emission_energy_multiplier = 2.5
+		bm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		bm.cull_mode = BaseMaterial3D.CULL_DISABLED
+		beam.material_override = bm
+		beam.position.y = h * 0.5
+		beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(beam)
+
 	# 고등급은 바닥 광륜 추가
 	if item.rarity >= RarityEnums.Rarity.S:
 		var ring := MeshInstance3D.new()
@@ -98,8 +122,14 @@ func _process(delta: float) -> void:
 	mesh.rotation.y = spin
 	mesh.position.y = 0.5 + sin(spin * 1.6) * 0.12
 
-	if player_near and Input.is_key_pressed(KEY_E):
+	if player_near and Input.is_key_pressed(KEY_E) and not _windows_open():
 		_collect()
+
+func _windows_open() -> bool:
+	var world = get_tree().current_scene
+	if world == null or world.get("hud") == null:
+		return false
+	return world.hud.windows_open()
 
 ## 펫이 원격으로 회수
 func pet_collect() -> void:

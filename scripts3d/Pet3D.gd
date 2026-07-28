@@ -125,7 +125,7 @@ func _physics_process(delta: float) -> void:
 func _find_nearest_drop(from: Vector3, radius: float) -> Node3D:
 	var best: Node3D = null
 	var best_d := radius
-	for d in get_tree().get_nodes_in_group("item_drops"):
+	for d in Battlefield.item_drops:
 		if not is_instance_valid(d) or d.collected:
 			continue
 		var dist: float = from.distance_to(d.global_position)

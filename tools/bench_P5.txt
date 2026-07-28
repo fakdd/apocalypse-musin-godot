@@ -1,0 +1,17 @@
+== P5 ==
+fps_avg=89.4
+frame_ms_median=9.88
+frame_ms_p95=12.65
+draw_calls=1250
+primitives=3470897
+render_objects=1612
+nodes=2929
+objects=7203
+mem_static_mb=178.7
+video_mem_mb=983.1
+enemies=43
+world_children=744
+multimesh_nodes=25
+shared_mats=3
+CLASSCOUNT AnimationPlayer=45 Area3D=35 CharacterBody3D=44 CollisionShape3D=127 Control=53 Label=154 MeshInstance3D=996 Node3D=601 Node=197 OmniLight3D=142 Panel=56 Skeleton3D=45 Sprite3D=86 StaticBody3D=48 TextureRect=44
+pool={ "damage_pooled": 0, "damage_created": 0, "damage_reused": 0, "proj_pooled": 0, "proj_created": 10, "proj_reused": 0 }

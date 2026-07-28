@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "note": "그래픽 품질 프리셋. EnvironmentManager 가 이 값을 그대로 적용한다 — 코드에 수치가 없다.",
+  "rules": {
+    "levels": "0=Low 1=Medium 2=High. SaveGame.graphics 에 저장된다.",
+    "tone": "ACES 톤매핑 · 노출 · 대비 · 채도 (성능 영향 없음 — 전 품질 공통)",
+    "shadow": "directional_shadow_max_distance / splits / soft_shadow_filter"
+  },
+  "tone": {
+    "mode": "aces",
+    "exposure": 1.06,
+    "white": 6.0,
+    "contrast": 1.08,
+    "saturation": 1.12,
+    "brightness": 1.02
+  },
+  "levels": [
+    {
+      "id": 0, "name": "낮음",
+      "desc": "안개와 글로우만. 저사양 PC용.",
+      "ssao": false, "sdfgi": false, "ssr": false, "volumetric": false,
+      "glow": true, "glow_intensity": 0.85, "glow_bloom": 0.20, "glow_strength": 1.0,
+      "shadow_distance": 55.0, "shadow_splits": 1, "soft_shadow": 0,
+      "shadow_size": 2048, "msaa": 0, "scale": 1.0
+    },
+    {
+      "id": 1, "name": "보통",
+      "desc": "SSAO 와 부드러운 그림자. 권장.",
+      "ssao": true, "sdfgi": false, "ssr": false, "volumetric": false,
+      "glow": true, "glow_intensity": 1.0, "glow_bloom": 0.28, "glow_strength": 1.15,
+      "shadow_distance": 90.0, "shadow_splits": 2, "soft_shadow": 1,
+      "shadow_size": 4096, "msaa": 1, "scale": 1.0
+    },
+    {
+      "id": 2, "name": "높음",
+      "desc": "SSAO · SDFGI · 볼류메트릭 안개 전부.",
+      "ssao": true, "sdfgi": true, "ssr": true, "volumetric": true,
+      "glow": true, "glow_intensity": 1.15, "glow_bloom": 0.34, "glow_strength": 1.25,
+      "shadow_distance": 120.0, "shadow_splits": 2, "soft_shadow": 2,
+      "shadow_size": 4096, "msaa": 2, "scale": 1.0
+    }
+  ],
+  "sdfgi": { "cascades": 4, "min_cell_size": 0.25, "energy": 0.55, "bounce_feedback": 0.2 },
+  "ssao": { "radius": 1.6, "intensity": 3.4, "power": 2.0, "detail": 0.6, "light_affect": 0.15 },
+  "volumetric": { "density": 0.014, "length": 90.0, "gi_inject": 0.5, "emission_energy": 0.5 }
+}

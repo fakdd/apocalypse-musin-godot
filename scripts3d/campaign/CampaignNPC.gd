@@ -143,6 +143,13 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _interact() -> void:
 	var world = get_tree().current_scene
+	# NPCManager 에 정의가 있으면 대화창을 연다 (선택지·상점·퀘스트)
+	# 정의가 없는 NPC 는 기존처럼 한 줄 대사만 띄운다 — 회귀 없음
+	if NPCManager.has(npc_id):
+		if world and world.hud and world.hud.get("npc_ui") != null:
+			world.hud.npc_ui.open(npc_id)
+			LandmarkRegistry.notify_npc_talked(landmark_id, npc_id)
+			return
 	var line := _current_line()
 	if world and world.hud:
 		if line != "":

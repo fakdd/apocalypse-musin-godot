@@ -9,8 +9,13 @@ var _shard_mm_colors: Array[Color] = []
 var _moss_mm_xforms: Array[Transform3D] = []
 
 func build_scatter_and_detail() -> void:
-	_build_scatter()
-	_build_street_detail()
+	# 잔해·차량·가로등·신호등·벤치·전선은 전부 **도시 소품**이다.
+	# 숲이나 설원에 가로등이 서 있으면 지역이 달라 보이지 않는다.
+	# 자연 챕터의 소품은 BiomeBuilder 가 만든다.
+	if ChapterConfig.is_city(GameManager.chapter):
+		_build_scatter()
+		_build_street_detail()
+	# 침식 결정·이끼는 차원 균열의 흔적이라 어느 지역에나 어울린다
 	_build_corruption()
 	_commit_corruption()
 	# 정적 소품 전체를 MultiMesh 로 확정한다

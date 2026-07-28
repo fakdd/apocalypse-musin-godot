@@ -1,0 +1,135 @@
+{
+  "version": 1,
+  "note": "엔딩 이후 콘텐츠. 코드에는 티어 수치도 챌린지 id 도 없다.",
+  "rules": {
+    "tiers": "NEW GAME+ 회차마다 한 단계씩 올라간다. 마지막 티어를 넘으면 마지막 값이 계속 쓰인다.",
+    "challenges": "kind: no_death | time | boss_rush | tier — 조건을 만족하면 기록에 남는다.",
+    "records": "SaveGame.records 에 최고 기록만 저장한다."
+  },
+  "tiers": [
+    {
+      "tier": 0,
+      "name": "표준",
+      "hp": 1.0,
+      "dmg": 1.0,
+      "essence": 1.0,
+      "drop": 1.0,
+      "exp": 1.0
+    },
+    {
+      "tier": 1,
+      "name": "고통 I",
+      "hp": 1.45,
+      "dmg": 1.18,
+      "essence": 1.45,
+      "drop": 1.25,
+      "exp": 1.35
+    },
+    {
+      "tier": 2,
+      "name": "고통 II",
+      "hp": 2.1,
+      "dmg": 1.4,
+      "essence": 1.95,
+      "drop": 1.5,
+      "exp": 1.65
+    },
+    {
+      "tier": 3,
+      "name": "고통 III",
+      "hp": 3.1,
+      "dmg": 1.66,
+      "essence": 2.6,
+      "drop": 1.8,
+      "exp": 2.0
+    },
+    {
+      "tier": 4,
+      "name": "심연 I",
+      "hp": 4.6,
+      "dmg": 1.95,
+      "essence": 3.45,
+      "drop": 2.15,
+      "exp": 2.45
+    },
+    {
+      "tier": 5,
+      "name": "심연 II",
+      "hp": 6.8,
+      "dmg": 2.3,
+      "essence": 4.55,
+      "drop": 2.55,
+      "exp": 3.0
+    },
+    {
+      "tier": 6,
+      "name": "무한",
+      "hp": 10.0,
+      "dmg": 2.7,
+      "essence": 6.0,
+      "drop": 3.0,
+      "exp": 3.65
+    }
+  ],
+  "challenges": [
+    {
+      "id": "ch_no_death",
+      "name": "무결의 회차",
+      "desc": "한 번도 쓰러지지 않고 7챕터를 끝낸다.",
+      "kind": "no_death"
+    },
+    {
+      "id": "ch_speed_40",
+      "name": "질주",
+      "desc": "40분 안에 7챕터를 끝낸다.",
+      "kind": "time",
+      "value": 2400
+    },
+    {
+      "id": "ch_speed_25",
+      "name": "폭주",
+      "desc": "25분 안에 7챕터를 끝낸다.",
+      "kind": "time",
+      "value": 1500
+    },
+    {
+      "id": "ch_tier_3",
+      "name": "고통을 넘어",
+      "desc": "월드 티어 3 이상에서 클리어한다.",
+      "kind": "tier",
+      "value": 3
+    },
+    {
+      "id": "ch_tier_6",
+      "name": "무한의 끝",
+      "desc": "월드 티어 6 에서 클리어한다.",
+      "kind": "tier",
+      "value": 6
+    },
+    {
+      "id": "ch_boss_rush",
+      "name": "보스 러시",
+      "desc": "보스 러시에서 9보스를 모두 잡는다.",
+      "kind": "boss_rush",
+      "value": 9
+    }
+  ],
+  "boss_rush": {
+    "note": "엔딩 후 해금. 챕터 보스를 순서대로 연속으로 상대한다.",
+    "order": [
+      "dire_wolf",
+      "sandworm",
+      "ice_golem",
+      "fire_dragon",
+      "fallen_lord",
+      "seraph",
+      "overlord",
+      "warlord",
+      "abyss_lord"
+    ],
+    "hp_mult": 0.85,
+    "heal_between": 0.5,
+    "rest": 6.0,
+    "essence": 60
+  }
+}

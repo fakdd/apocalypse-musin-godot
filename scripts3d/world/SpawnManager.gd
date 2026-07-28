@@ -57,17 +57,32 @@ func _roll_enemy_type(pos: Vector3 = Vector3.ZERO) -> String:
 	return _roll_global_type()
 
 func _roll_global_type() -> String:
-	var w := GameManager.wave
-	var pool := ["hound", "hound"]
-	if w >= 2:
-		pool.append("stalker")
-	if w >= 3:
-		pool.append_array(["ravager", "destroyer"])
-	if w >= 4:
-		pool.append_array(["juggernaut", "screecher"])
-	if w >= 6:
-		pool.append_array(["destroyer", "juggernaut"])
-	return pool[randi() % pool.size()]
+	# 이 챕터의 몬스터가 먼저다 — 숲에 폐허 도시의 사냥개가 나오면 안 된다.
+	# 정의되지 않은 종류는 걸러내고, 하나도 없으면 예전 풀로 물러난다.
+	var themed: Array = []
+	for m in ChapterConfig.monsters_of(GameManager.chapter):
+		if EnemyConfig.TYPES.has(String(m)):
+			themed.append(String(m))
+	if not themed.is_empty():
+		# 웨이브가 올라갈수록 뒤쪽(강한) 종류가 더 자주 나온다
+		var w: int = GameManager.wave
+		var pool: Array = themed.duplicate()
+		for i in range(themed.size()):
+			if w >= 2 + i * 2:
+				pool.append(themed[mini(i + 1, themed.size() - 1)])
+		return String(pool[randi() % pool.size()])
+
+	var w2 := GameManager.wave
+	var pool2 := ["hound", "hound"]
+	if w2 >= 2:
+		pool2.append("stalker")
+	if w2 >= 3:
+		pool2.append_array(["ravager", "destroyer"])
+	if w2 >= 4:
+		pool2.append_array(["juggernaut", "screecher"])
+	if w2 >= 6:
+		pool2.append_array(["destroyer", "juggernaut"])
+	return pool2[randi() % pool2.size()]
 
 func _make_enemy(etype: String, pos: Vector3) -> Node:
 	var e := CharacterBody3D.new()
@@ -83,8 +98,12 @@ func _spawn_boss() -> void:
 	var rifts := get_tree().get_nodes_in_group("rifts")
 	if rifts.size() > 0:
 		pos = rifts[randi() % rifts.size()].global_position
-	_make_enemy("overlord", pos)
-	world.hud.show_banner("⚠ 차원의 환수 강림")
+	# 이 챕터의 보스를 부른다 (없으면 예전 overlord)
+	var btype: String = ChapterConfig.boss_of(GameManager.chapter)
+	if not EnemyConfig.TYPES.has(btype):
+		btype = "overlord"
+	_make_enemy(btype, pos)
+	world.hud.show_banner("⚠ %s 강림" % ChapterConfig.name_of(GameManager.chapter))
 	SoundManager.play("ultimate")
 
 ## 최후의 외계 군주

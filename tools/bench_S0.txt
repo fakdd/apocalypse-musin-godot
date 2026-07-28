@@ -1,0 +1,17 @@
+== S0 ==
+fps_avg=61.4
+frame_ms_median=13.27
+frame_ms_p95=16.74
+draw_calls=418
+primitives=1491905
+render_objects=587
+nodes=2895
+objects=7143
+mem_static_mb=175.3
+video_mem_mb=988.4
+enemies=44
+world_children=740
+multimesh_nodes=25
+shared_mats=3
+CLASSCOUNT AnimationPlayer=46 Area3D=33 CharacterBody3D=45 CollisionShape3D=124 Control=53 Label=154 MeshInstance3D=961 Node3D=594 Node=201 OmniLight3D=147 Panel=56 Skeleton3D=46 Sprite3D=88 StaticBody3D=46 TextureRect=44
+pool={ "damage_pooled": 0, "damage_created": 0, "damage_reused": 0, "proj_pooled": 0, "proj_created": 8, "proj_reused": 1 }

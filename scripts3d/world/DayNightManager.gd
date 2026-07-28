@@ -83,6 +83,10 @@ func _end_night_phase() -> void:
 		world.hud.show_banner("차원의 균열 봉인  %d / %d" % [GameManager.seals_done, needed])
 
 	GameManager.start_day()
+	# 아침은 자연스러운 세이브 지점이다 (밤을 버텨 낸 결과가 확정된 순간)
+	SaveGame.save()
+	# 랜덤 이벤트 — 무엇이 얼마나 나오는지는 전부 EventManager 가 정한다
+	EventManager.roll_daily()
 	world.day_timer = DemoDirector.day_duration()
 	GameManager.phase_timer = world.day_timer
 	world.hud.show_banner("☀ %d일차 아침이 밝았다" % GameManager.day_count)

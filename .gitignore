@@ -20,3 +20,6 @@ export_presets.cfg
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# 절차 생성 플레이스홀더 오디오 (tools/gen_audio 로 재생성 가능, 12MB)
+# 진짜 음원으로 교체하면 이 두 줄을 지운다.

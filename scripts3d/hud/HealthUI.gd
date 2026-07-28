@@ -95,13 +95,27 @@ func update_identity() -> void:
 	hud.level_label.text = "Day %d" % GameManager.day_count
 
 ## HP/내공 바 갱신. 반환: 체력 비율 (비네트 갱신에 쓴다)
+## 게이지가 값에 딱 붙어 움직이면 피해량이 얼마인지 눈에 안 들어온다.
+## 목표치로 부드럽게 따라가게 해 "깎이는 것"이 보이게 한다.
+var _hp_shown := -1.0
+var _ult_shown := -1.0
+
 func update_bars(player) -> float:
 	var hud := owner_hud
 	var hr: float = clampf(player.hp / maxf(player.max_hp, 1.0), 0.0, 1.0)
-	hud.hp_bar.size.x = BAR_WIDTH * hr
+	var k: float = clampf(owner_hud.get_process_delta_time()
+		* CombatFeel.num("ui", "bar_lerp", 9.0), 0.0, 1.0)
+	if _hp_shown < 0.0:
+		_hp_shown = hr
+	# 늘어날 때는 즉시, 줄어들 때만 천천히 (회복은 바로 보여야 안심이 된다)
+	_hp_shown = hr if hr > _hp_shown else lerpf(_hp_shown, hr, k)
+	hud.hp_bar.size.x = BAR_WIDTH * _hp_shown
 	hud.hp_text.text = "HP  %d / %d" % [int(player.hp), int(player.max_hp)]
 	var ur: float = clampf(player.ult_gauge / maxf(player.ult_max, 1.0), 0.0, 1.0)
-	hud.mp_bar.size.x = BAR_WIDTH * ur
+	if _ult_shown < 0.0:
+		_ult_shown = ur
+	_ult_shown = lerpf(_ult_shown, ur, k)
+	hud.mp_bar.size.x = BAR_WIDTH * _ult_shown
 	hud.mp_text.text = "내공  %d%%" % int(ur * 100)
 	return hr
 

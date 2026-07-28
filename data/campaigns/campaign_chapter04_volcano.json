@@ -1,0 +1,676 @@
+{
+  "version": 2,
+  "schema": 2,
+  "name": "불타는 화산",
+  "author": "AI Asset Factory",
+  "modified": "2026-07-27T17:23:44",
+  "id": "chapter04_volcano",
+  "description": "",
+  "arena": {
+    "w": 80.0,
+    "h": 80.0
+  },
+  "start": "lava_river",
+  "nodes": [
+    {
+      "id": "lava_river",
+      "order": 0,
+      "pos": {
+        "x": 67.0,
+        "z": 40.0
+      },
+      "zone": 1,
+      "name": "용암강",
+      "locked_until": "",
+      "events": [],
+      "stages": [
+        {
+          "id": "bank",
+          "area_id": "lava_river",
+          "name": "용암강 기슭",
+          "subtitle": "돌다리가 반쯤 녹았다",
+          "desc": "강을 건너는 다리가 열기에 휘었다. 아직 버티고는 있다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 67.0,
+            "z": 40.0
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 2,
+          "level": 41,
+          "bgm": "explore",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "fire_wisp": 3
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "fire_wisp": 1
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            }
+          ],
+          "npcs": [
+            {
+              "id": "dragon_hunter",
+              "name": "용 사냥꾼",
+              "role": "생존자",
+              "dialogue": "위쪽 둥지는 비었어. 그놈은 지금 돌아다니고 있다는 뜻이지.",
+              "reward": "item",
+              "state": "quest",
+              "dialogue_completed": "그놈을 잡았다고? 술 한잔 사지."
+            }
+          ],
+          "story": [
+            "다리 난간에 손자국이 녹아 붙어 있다."
+          ],
+          "ambient": {
+            "fire_wisp": 2
+          },
+          "quest": {
+            "id": "q_lava_river",
+            "title": "강을 건너다",
+            "objective": "clear",
+            "target": 1,
+            "essence": 56,
+            "rarity": "E",
+            "next": ""
+          },
+          "items": 4,
+          "luck": 28.0,
+          "kind": "treasure"
+        }
+      ]
+    },
+    {
+      "id": "fire_altar",
+      "order": 1,
+      "pos": {
+        "x": 48.3,
+        "z": 65.7
+      },
+      "zone": 1,
+      "name": "불의 제단",
+      "locked_until": "q_lava_river",
+      "events": [],
+      "stages": [
+        {
+          "id": "stair",
+          "area_id": "fire_altar",
+          "name": "제단 계단",
+          "subtitle": "돌이 아직 붉다",
+          "desc": "계단이 오래 달궈져 붉은빛을 잃지 않았다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 48.3,
+            "z": 65.7
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 3,
+          "level": 43,
+          "bgm": "explore",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "fire_wisp": 4
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "lizardman": 4,
+                "fire_wisp": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            }
+          ],
+          "npcs": [
+            {
+              "id": "smith",
+              "name": "대장장이",
+              "role": "상인",
+              "dialogue": "이 불이라면 뭐든 벼릴 수 있지. 재료만 가져오면.",
+              "reward": "essence",
+              "state": "quest",
+              "dialogue_completed": "좋은 쇠였어. 잘 썼네."
+            }
+          ],
+          "ambient": {
+            "fire_wisp": 2
+          },
+          "quest": {
+            "id": "q_fire_altar",
+            "title": "계단을 오르다",
+            "objective": "clear",
+            "target": 1,
+            "essence": 74,
+            "rarity": "E",
+            "next": "q_fire_altar_flame"
+          },
+          "items": 6,
+          "luck": 42.0,
+          "kind": "combat"
+        },
+        {
+          "id": "flame",
+          "area_id": "fire_altar_flame",
+          "name": "불의 제단",
+          "subtitle": "불이 꺼지지 않는다",
+          "desc": "제단 위 불꽃이 바람에도 흔들리지 않는다.",
+          "offset": {
+            "x": -12.4,
+            "z": 4.0
+          },
+          "pos": {
+            "x": 35.9,
+            "z": 69.7
+          },
+          "zone": 2,
+          "radius": 5.5,
+          "danger": 4,
+          "level": 45,
+          "bgm": "tense",
+          "locked_until": "q_fire_altar",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "lizardman": 5
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "fire_wisp": 5,
+                "lizardman": 3
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": "lizardman"
+            },
+            {
+              "index": 3,
+              "composition": {
+                "fire_wisp": 6,
+                "lizardman": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.3,
+              "boss": "lizardman"
+            }
+          ],
+          "ambient": {
+            "lizardman": 2
+          },
+          "boss": "lizardman",
+          "boss_hp_mult": 3.25,
+          "quest": {
+            "id": "q_fire_altar_flame",
+            "title": "제단의 불을 끄다",
+            "objective": "boss",
+            "target": 1,
+            "essence": 92,
+            "rarity": "D",
+            "next": ""
+          },
+          "items": 8,
+          "luck": 56.0,
+          "guaranteed": "D",
+          "kind": "combat"
+        }
+      ]
+    },
+    {
+      "id": "ash_fort",
+      "order": 2,
+      "pos": {
+        "x": 18.2,
+        "z": 55.9
+      },
+      "zone": 1,
+      "name": "화산 요새",
+      "locked_until": "q_fire_altar_flame",
+      "events": [],
+      "stages": [
+        {
+          "id": "gate",
+          "area_id": "ash_fort",
+          "name": "요새 정문",
+          "subtitle": "화산재가 무릎까지 쌓였다",
+          "desc": "재가 문을 절반쯤 묻었다. 안쪽에서 파낸 흔적이 있다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 18.2,
+            "z": 55.9
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 3,
+          "level": 46,
+          "bgm": "explore",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "lizardman": 4
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "fire_wisp": 4,
+                "lizardman": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            }
+          ],
+          "ambient": {
+            "lizardman": 2
+          },
+          "quest": {
+            "id": "q_ash_fort",
+            "title": "정문을 파내다",
+            "objective": "clear",
+            "target": 1,
+            "essence": 74,
+            "rarity": "E",
+            "next": "q_ash_fort_forge"
+          },
+          "items": 6,
+          "luck": 42.0,
+          "kind": "rest"
+        },
+        {
+          "id": "forge",
+          "area_id": "ash_fort_forge",
+          "name": "요새 대장간",
+          "subtitle": "풀무가 저절로 움직인다",
+          "desc": "아무도 없는데 풀무가 규칙적으로 오르내린다.",
+          "offset": {
+            "x": -7.6,
+            "z": -10.5
+          },
+          "pos": {
+            "x": 10.6,
+            "z": 45.4
+          },
+          "zone": 2,
+          "radius": 5.5,
+          "danger": 4,
+          "level": 48,
+          "bgm": "tense",
+          "locked_until": "q_ash_fort",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "lizardman": 5
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "lizardman": 3
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": "lizardman"
+            },
+            {
+              "index": 3,
+              "composition": {
+                "lizardman": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.3,
+              "boss": "lizardman"
+            }
+          ],
+          "story": [
+            "모루 위에 완성되지 않은 검이 놓여 있다."
+          ],
+          "ambient": {
+            "lizardman": 2
+          },
+          "boss": "lizardman",
+          "boss_hp_mult": 3.4,
+          "quest": {
+            "id": "q_ash_fort_forge",
+            "title": "대장간을 멈추다",
+            "objective": "boss",
+            "target": 1,
+            "essence": 92,
+            "rarity": "C",
+            "next": ""
+          },
+          "items": 8,
+          "luck": 56.0,
+          "guaranteed": "C",
+          "puzzle": {
+            "id": "pz_volcano_forge",
+            "kind": "torch",
+            "count": 4,
+            "reward": "chest",
+            "rarity": "C",
+            "achievement": "ach_pz_volcano",
+            "hint": "화로 넷에 불이 없다"
+          },
+          "kind": "combat"
+        }
+      ]
+    },
+    {
+      "id": "magma_cave",
+      "order": 3,
+      "pos": {
+        "x": 18.2,
+        "z": 24.1
+      },
+      "zone": 1,
+      "name": "용암동굴",
+      "locked_until": "q_fire_altar_flame",
+      "events": [],
+      "stages": [
+        {
+          "id": "core",
+          "area_id": "magma_cave",
+          "name": "용암동굴 심부",
+          "subtitle": "숨을 쉬면 목이 탄다",
+          "desc": "동굴 바닥이 유리처럼 굳은 용암이다. 밟으면 쩍 갈라진다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 18.2,
+            "z": 24.1
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 5,
+          "level": 49,
+          "bgm": "tense",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "fire_wisp": 6
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "lizardman": 6,
+                "fire_wisp": 4
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            },
+            {
+              "index": 3,
+              "composition": {
+                "lizardman": 7,
+                "fire_wisp": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.3,
+              "boss": "lizardman"
+            }
+          ],
+          "ambient": {
+            "fire_wisp": 2
+          },
+          "boss": "lizardman",
+          "boss_hp_mult": 3.45,
+          "quest": {
+            "id": "q_magma_cave",
+            "title": "심부의 열기",
+            "objective": "boss",
+            "target": 1,
+            "essence": 110,
+            "rarity": "B",
+            "next": ""
+          },
+          "items": 13,
+          "luck": 70.0,
+          "guaranteed": "B",
+          "kind": "combat"
+        }
+      ]
+    },
+    {
+      "id": "dragon_nest",
+      "order": 4,
+      "pos": {
+        "x": 48.3,
+        "z": 14.3
+      },
+      "zone": 1,
+      "name": "용의 둥지",
+      "locked_until": "q_ash_fort_forge",
+      "events": [],
+      "stages": [
+        {
+          "id": "ledge",
+          "area_id": "dragon_nest",
+          "name": "둥지 벼랑",
+          "subtitle": "뼈가 벼랑에 쌓여 있다",
+          "desc": "벼랑 끝까지 뼈가 밀려 있다. 대부분 부러졌다.",
+          "offset": {
+            "x": 0.0,
+            "z": 0.0
+          },
+          "pos": {
+            "x": 48.3,
+            "z": 14.3
+          },
+          "zone": 1,
+          "radius": 7.0,
+          "danger": 4,
+          "level": 51,
+          "bgm": "tense",
+          "locked_until": "",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "lizardman": 5
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "fire_wisp": 5,
+                "lizardman": 3
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            },
+            {
+              "index": 3,
+              "composition": {
+                "fire_wisp": 6,
+                "lizardman": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.3,
+              "boss": ""
+            }
+          ],
+          "ambient": {
+            "lizardman": 2
+          },
+          "quest": {
+            "id": "q_dragon_nest",
+            "title": "벼랑을 오르다",
+            "objective": "clear",
+            "target": 1,
+            "essence": 92,
+            "rarity": "E",
+            "next": "q_dragon_nest_nest"
+          },
+          "items": 8,
+          "luck": 56.0,
+          "kind": "treasure"
+        },
+        {
+          "id": "nest",
+          "area_id": "dragon_nest_nest",
+          "name": "용의 둥지",
+          "subtitle": "위에서 그림자가 진다",
+          "desc": "둥지 한가운데가 비어 있다. 그리고 하늘이 어두워진다.",
+          "offset": {
+            "x": 12.4,
+            "z": 4.0
+          },
+          "pos": {
+            "x": 60.7,
+            "z": 18.3
+          },
+          "zone": 1,
+          "radius": 5.5,
+          "danger": 5,
+          "level": 54,
+          "bgm": "boss",
+          "locked_until": "q_dragon_nest",
+          "events": [],
+          "waves": [
+            {
+              "index": 1,
+              "composition": {
+                "fire_wisp": 6
+              },
+              "delay": 0.0,
+              "hp_mult": 1.0,
+              "boss": ""
+            },
+            {
+              "index": 2,
+              "composition": {
+                "lizardman": 6,
+                "fire_wisp": 4
+              },
+              "delay": 10.0,
+              "hp_mult": 1.15,
+              "boss": ""
+            },
+            {
+              "index": 3,
+              "composition": {
+                "lizardman": 7,
+                "fire_wisp": 2
+              },
+              "delay": 10.0,
+              "hp_mult": 1.3,
+              "boss": "fire_dragon"
+            }
+          ],
+          "story": [
+            "둥지 바닥에 갑옷 조각이 녹아 엉겨 있다."
+          ],
+          "ambient": {
+            "fire_wisp": 2
+          },
+          "boss": "fire_dragon",
+          "boss_hp_mult": 3.7,
+          "quest": {
+            "id": "q_dragon_nest_nest",
+            "title": "화염 드래곤을 쓰러뜨려라",
+            "objective": "boss",
+            "target": 1,
+            "essence": 110,
+            "rarity": "A",
+            "next": ""
+          },
+          "items": 10,
+          "luck": 70.0,
+          "guaranteed": "A",
+          "kind": "combat"
+        }
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "from": "lava_river",
+      "to": "fire_altar",
+      "kind": "main",
+      "locked_until": ""
+    },
+    {
+      "from": "fire_altar",
+      "to": "ash_fort",
+      "kind": "main",
+      "locked_until": ""
+    },
+    {
+      "from": "ash_fort",
+      "to": "dragon_nest",
+      "kind": "main",
+      "locked_until": ""
+    },
+    {
+      "from": "fire_altar",
+      "to": "magma_cave",
+      "kind": "branch",
+      "locked_until": ""
+    }
+  ],
+  "events": []
+}

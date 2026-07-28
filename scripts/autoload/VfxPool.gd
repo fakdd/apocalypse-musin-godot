@@ -86,8 +86,10 @@ func take_projectile(parent: Node) -> Area3D:
 		projectile_reused += 1
 		if proj.get_parent():
 			proj.get_parent().remove_child(proj)
+	# 마스크는 Projectile3D.setup()/retarget() 이 대상에 맞춰 정한다.
+	# 여기서 2(플레이어)로 고정하면 플레이어가 쏜 화살이 적을 통과해 버린다.
 	proj.collision_layer = 0
-	proj.collision_mask = 2
+	proj.collision_mask = 2   ## LAYER_PLAYER
 	parent.add_child(proj)
 	proj.visible = true
 	proj.set_physics_process(true)
@@ -109,6 +111,57 @@ func give_projectile(proj: Area3D) -> void:
 func _prune() -> void:
 	_damage_pool = _damage_pool.filter(func(n): return is_instance_valid(n))
 	_projectile_pool = _projectile_pool.filter(func(n): return is_instance_valid(n))
+	_fx_pool = _fx_pool.filter(func(n): return is_instance_valid(n))
+
+# ══════════════════════════════════════════════
+#  임시 메시 (검격 잔상 · 폭발 구 · 장판 · 화살)
+# ══════════════════════════════════════════════
+## 전투 연출이 프레임마다 MeshInstance3D 를 새로 만들고 버렸다.
+## 여기서 돌려 쓰면 GC 부담과 노드 생성 비용이 사라진다.
+const FX_POOL_MAX := 48
+var _fx_pool: Array[MeshInstance3D] = []
+var fx_created := 0
+var fx_reused := 0
+
+func take_fx(parent: Node, mesh: Mesh, mat: Material) -> MeshInstance3D:
+	var mi: MeshInstance3D = null
+	while _fx_pool.size() > 0 and mi == null:
+		var cand: MeshInstance3D = _fx_pool.pop_back()
+		if is_instance_valid(cand):
+			mi = cand
+	if mi == null:
+		mi = MeshInstance3D.new()
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		fx_created += 1
+	else:
+		fx_reused += 1
+		if mi.get_parent():
+			mi.get_parent().remove_child(mi)
+	mi.mesh = mesh
+	mi.material_override = mat
+	mi.transform = Transform3D.IDENTITY
+	mi.scale = Vector3.ONE
+	mi.visible = true
+	parent.add_child(mi)
+	return mi
+
+func give_fx(mi: MeshInstance3D) -> void:
+	if not is_instance_valid(mi):
+		return
+	if _fx_pool.size() >= FX_POOL_MAX:
+		mi.queue_free()
+		return
+	mi.visible = false
+	if mi.get_parent():
+		mi.get_parent().remove_child(mi)
+	_fx_pool.append(mi)
+
+## 수명이 끝나면 자동으로 풀에 돌려준다. queue_free 대신 이걸 쓴다.
+func give_fx_after(mi: MeshInstance3D, seconds: float) -> void:
+	if not is_instance_valid(mi):
+		return
+	await get_tree().create_timer(seconds, true, false, true).timeout
+	give_fx(mi)
 
 ## 풀 상태 (성능 보고용)
 func stats() -> Dictionary:
@@ -117,6 +170,9 @@ func stats() -> Dictionary:
 		"damage_created": damage_created,
 		"damage_reused": damage_reused,
 		"proj_pooled": _projectile_pool.size(),
+		"fx_pooled": _fx_pool.size(),
+		"fx_created": fx_created,
+		"fx_reused": fx_reused,
 		"proj_created": projectile_created,
 		"proj_reused": projectile_reused,
 	}

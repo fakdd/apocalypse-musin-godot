@@ -79,10 +79,80 @@ func _on_body_exited(body: Node3D) -> void:
 
 ## 밤에만 몬스터를 만든다. 낮에는 구역 안으로 들어와도 절대 소환하지 않는다.
 func _try_start_combat() -> void:
-	if _spawned or GameManager.phase != GameManager.Phase.NIGHT:
+	if _spawned:
+		return
+	# 전투가 아닌 영역은 밤을 기다리지 않고 진입 즉시 처리한다.
+	# 유형 정의가 없으면 combat 로 보므로 옛 캠페인은 동작이 같다.
+	var kind := String(data.area_kind)
+	if kind != "" and kind != "combat":
+		_spawned = true
+		_run_special(kind)
+		return
+	if GameManager.phase != GameManager.Phase.NIGHT:
 		return
 	_spawned = true
 	_populate()
+
+# ══════════════════════════════════════════════
+#  비전투 영역 (data/area_kinds.json)
+#  전부 기존 시스템의 재배치다 — 새 매니저·새 노드를 만들지 않는다.
+# ══════════════════════════════════════════════
+const KIND_PATH := "res://data/area_kinds.json"
+static var _kinds: Dictionary = {}
+
+static func kind_data() -> Dictionary:
+	if not _kinds.is_empty():
+		return _kinds
+	var f := FileAccess.open(KIND_PATH, FileAccess.READ)
+	if f == null:
+		_kinds = {"kinds": {}}
+		return _kinds
+	var j = JSON.parse_string(f.get_as_text())
+	f.close()
+	_kinds = j if typeof(j) == TYPE_DICTIONARY else {"kinds": {}}
+	return _kinds
+
+static func kind_def(k: String) -> Dictionary:
+	return kind_data().get("kinds", {}).get(k, {})
+
+func _run_special(kind: String) -> void:
+	var d := kind_def(kind)
+	var world = get_tree().current_scene
+	if world and world.get("hud") != null and String(d.get("banner", "")) != "":
+		world.hud.show_banner(String(d.get("banner", "")))
+
+	match kind:
+		"treasure":
+			# 상자방 — LootManager 로 확정 드랍을 여러 개 뿌린다
+			var n: int = int(d.get("drops", 4))
+			var bonus: int = int(d.get("rarity_bonus", 1))
+			for i in range(n):
+				var a := TAU * float(i) / float(maxi(1, n))
+				var pos: Vector3 = data.center + Vector3(cos(a) * 3.2, 0.0, sin(a) * 3.2)
+				LootManager.spawn_drop(pos, 1.0,
+					clampi(RarityEnums.roll_rarity(120.0) + bonus, 0, RarityEnums.Rarity.SSS))
+			CraftManager.add_essence(int(d.get("essence", 45)))
+			CombatFeel.impact("crit")
+		"rest":
+			# 쉼터 — 체력을 돌려주고 숨을 돌린다
+			var pl := Battlefield.live_player()
+			if pl:
+				var heal := float(d.get("heal", 0.45))
+				pl.hp = minf(pl.max_hp, pl.hp + pl.max_hp * heal)
+				pl.hp_changed.emit()
+			CraftManager.add_essence(int(d.get("essence", 15)))
+			SoundManager.play("rescue", -8.0)
+		"shop":
+			# 상인 — 기존 NPC 대화창을 그대로 연다
+			var nid := String(d.get("npc", ""))
+			if nid != "" and NPCManager.has(nid) and world \
+					and world.get("hud") != null and world.hud.get("npc_ui") != null:
+				world.hud.npc_ui.open(nid)
+		"puzzle":
+			pass          ## PuzzleSet 이 이미 이 영역에 장치를 깔아 두었다
+
+	# 전투가 없으므로 진입 즉시 클리어로 친다 (잠금 사슬이 막히지 않게)
+	LandmarkRegistry.force_clear(data.id)
 
 ## 밤으로 바뀌는 순간 이미 구역 안에 있었다면 첫 웨이브를 자동으로 시작한다.
 func _on_phase_changed(p: int) -> void:
@@ -181,7 +251,7 @@ func _spawn_wave(index: int) -> void:
 			boss.landmark_id = data.id
 			made += 1
 			if world.hud:
-				world.hud.show_banner("⚠ %s 강림" % wave.boss)
+				_boss_intro(world, String(wave.boss))
 
 	LandmarkRegistry.register_spawns(data.id, made)
 	if made == 0:
@@ -254,3 +324,25 @@ func _scatter_loot() -> void:
 		var pos: Vector3 = data.center + Vector3(cos(a) * r, 0, sin(a) * r)
 		# drop_chance 1.0 = 확정 배치. 등급은 랜드마크 운 보정을 받는다.
 		LootManager.spawn_drop(pos, 1.0, -1, data.item_luck_bonus)
+
+## 보스 등장 연출 — 문구·BGM 전부 data/bosses.json 에서 온다.
+## 정의가 없으면 예전처럼 한 줄 배너만 띄운다.
+func _boss_intro(world, btype: String) -> void:
+	var d := EnemyConfig.boss_def(btype)
+	if d.is_empty():
+		world.hud.show_banner("\u26a0 %s 강림" % btype)
+		return
+	var bgm := String(EnemyConfig.boss_field(btype, "bgm"))
+	if bgm != "":
+		SoundManager.set_bgm(bgm)
+	CombatFeel.screen_flash(Color(0.9, 0.2, 0.25), 0.4, 0.1, 0.5)
+	CombatFeel.slow_motion(0.7, 0.35)
+	SoundManager.play("night_start", -4.0)
+	var lines: Array = d.get("cutscene", [])
+	if lines.size() > 0:
+		world.hud.show_banner(String(lines[0]))
+		await get_tree().create_timer(1.6, true, false, true).timeout
+	if not is_instance_valid(world) or world.get("hud") == null:
+		return
+	world.hud.show_banner("\u2620 %s — %s"
+		% [String(d.get("name", btype)), String(d.get("title", ""))])

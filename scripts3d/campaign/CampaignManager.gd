@@ -59,15 +59,25 @@ func build() -> void:
 		GameManager.phase_changed.connect(_on_phase_changed)
 	_ambient_specs.clear()
 
+	print("[Chapter %d/%d] %s — %s"
+		% [GameManager.chapter, ChapterConfig.LAST,
+		ChapterConfig.name_of(GameManager.chapter),
+		ChapterConfig.get_chapter(GameManager.chapter).get("subtitle", "")])
 	print("[Campaign] '%s' 불러옴 — 노드 %d · 경로 %d"
 		% [campaign.display_name, campaign.nodes.size(), campaign.routes.size()])
+
+	# 비밀 던전 판정은 랜드마크를 만들기 **전에** 해야 한다
+	# (표식을 감출지 여기서 정해진다)
+	_mark_secrets()
 
 	var made := 0
 	for site in campaign.nodes:
 		for area in site.areas():
 			_build_area(area, site)
 			made += 1
-	print("[Campaign] 진입 영역 %d개 생성 (노드 %d개)" % [made, campaign.nodes.size()])
+	print("[Campaign] 진입 영역 %d개 생성 (노드 %d개) · 비밀 던전 %d곳%s"
+		% [made, campaign.nodes.size(), _secret_ids.size(),
+		(" " + str(_secret_ids.keys())) if _secret_ids.size() > 0 else ""])
 
 	_apply_quest_locks()
 	events.fire_global(campaign, "on_enter")
@@ -84,6 +94,9 @@ func _build_area(area, owner) -> void:
 
 	# ── 1) 랜드마크 데이터 ──
 	var data: LandmarkData = _make_landmark_data(area)
+	# 비밀 던전은 찾아내기 전까지 미니맵에 뜨지 않는다
+	if _is_secret(owner.id):
+		data.show_when_unexplored = false
 	LandmarkRegistry.register(data)
 
 	# ── 2) 진입 감지 영역 ──
@@ -93,10 +106,17 @@ func _build_area(area, owner) -> void:
 	zone.setup(data, area)
 
 	# ── 3) 시각 표식 (Zone 의 자식으로 붙인다 — 랜드마크와 함께 움직이고 함께 사라진다) ──
-	_spawn_marker(data, zone)
+	_spawn_marker(data, zone, _is_secret(owner.id))
 
 	# ── 4) NPC ──
 	_spawn_npcs(area, data)
+
+	# ── 4-b) 퍼즐 (캠페인 JSON 이 정의한 경우에만) ──
+	if not area.puzzle.is_empty():
+		var pz := PuzzleSet.new()
+		pz.name = "Puzzle_" + area.area_id
+		zone.add_child(pz)
+		pz.setup(area.puzzle, area.area_id, data.radius)
 
 	# ── 5) 배회 몹 — 밤에만. 낮에는 예약만 해 둔다 ──
 	_ambient_specs.append(area)
@@ -127,6 +147,7 @@ func _make_landmark_data(site) -> LandmarkData:
 	else:
 		data.spawn_table = {}
 		data.spawn_budget = 0
+	data.area_kind = site.area_kind
 	data.spawn_radius = site.radius * 0.8
 
 	# 탐험 보상 — JSON 이 명시하면 그 값을, 아니면 위험도에서 유도한다.
@@ -175,10 +196,43 @@ func _rarity_index(name: String) -> int:
 ## ══════════════════════════════════════════════
 ##  시각 표식
 ## ══════════════════════════════════════════════
+## ══════════════════════════════════════════════
+##  비밀 던전
+## ══════════════════════════════════════════════
+## 본선(main) 경로로는 닿을 수 없고 곁가지(branch) 로만 이어진 노드를 비밀로 본다.
+## 캠페인 JSON 에 새 필드를 넣지 않아도 되고, Campaign Builder 에서 경로 종류를
+## 'branch' 로 바꾸는 것만으로 비밀 던전이 된다.
+var _secret_ids := {}
+
+func _mark_secrets() -> void:
+	_secret_ids.clear()
+	var main_reach := {}
+	for r in campaign.routes:
+		if r.kind == "main":
+			main_reach[r.from_id] = true
+			main_reach[r.to_id] = true
+	for site in campaign.nodes:
+		if site.id == campaign.start_id:
+			continue
+		if not main_reach.has(site.id):
+			_secret_ids[site.id] = true
+
+func _is_secret(node_id: String) -> bool:
+	return _secret_ids.has(node_id)
+
 ## 표식은 전부 LandmarkZone 의 자식이다. Zone 이 이미 data.center 에 서 있으므로
 ## 좌표는 전부 로컬(중심 기준)이고, Zone 이 사라지면 표식도 함께 사라진다.
-func _spawn_marker(data: LandmarkData, zone: Node3D) -> void:
+##
+## secret 이면 광주·이름표·조명을 **발견 전까지 숨긴다.**
+## 대신 구조물(LandmarkPrefab)은 그대로 세워 둬서, 지나가다 "저기 뭔가 있다"를
+## 눈으로 찾아낼 수 있게 한다.
+func _spawn_marker(data: LandmarkData, zone: Node3D, secret: bool = false) -> void:
 	var col: Color = data.minimap_color
+
+	# 실제 구조물 — 신전/요새/궁전/마을/제단…
+	# 어떤 원형을 쓸지는 LandmarkPrefab 이 랜드마크 id 로 정한다.
+	# (JSON 은 "여기 무엇이 있다"만 말하고, 생김새는 게임이 정한다)
+	LandmarkPrefab.build(zone, data)
 
 	# 바닥 링 — 경계를 알려준다. 가까이 가야 보이게 해 화면이 지저분해지지 않게 한다
 	var ring := MeshInstance3D.new()
@@ -223,6 +277,32 @@ func _spawn_marker(data: LandmarkData, zone: Node3D) -> void:
 	light.light_energy = 1.6
 	light.omni_range = data.radius * 1.6
 	zone.add_child(light)
+
+	if not secret:
+		return
+
+	# ── 비밀 던전: 찾기 전에는 표식을 감춘다 ──
+	# 구조물(LandmarkPrefab)과 바닥 링은 남겨 둔다 — 눈으로 찾아낼 단서가 있어야
+	# "숨겨진 곳을 발견했다" 가 성립한다. 광주·이름표·조명만 끈다.
+	if not data.explored:
+		beam.visible = false
+		label.visible = false
+		light.visible = false
+		_reveal_on_explore(data.id, [beam, label, light])
+
+## 처음 들어간 순간 표식을 켜고 발견을 알린다.
+func _reveal_on_explore(area_id: String, hidden: Array) -> void:
+	var cb: Callable = func(d: LandmarkData) -> void:
+		if d.id != area_id:
+			return
+		for node in hidden:
+			if is_instance_valid(node):
+				node.visible = true
+		if world and world.hud:
+			world.hud.show_banner("◈ 비밀 던전 발견 — %s" % d.display_name)
+		SoundManager.play("ultimate", -8.0)
+		AchievementManager.bump("secret")
+	LandmarkRegistry.landmark_explored.connect(cb)
 
 ## ══════════════════════════════════════════════
 ##  NPC · 배회 몹
@@ -316,11 +396,26 @@ func fire_event(landmark_id: String, trigger: String) -> void:
 	events.fire(_nodes.get(landmark_id, null), trigger)
 
 func _active_campaign_id() -> String:
+	# 프로젝트 설정이 있으면 그것이 최우선 (디버그/테스트용 강제 지정)
 	if ProjectSettings.has_setting("campaign/active"):
 		var v := String(ProjectSettings.get_setting("campaign/active"))
 		if v != "":
 			return v
+
+	# 현재 챕터의 캠페인.
+	# 아직 만들지 않은 챕터는 파일이 없으므로 기존 캠페인으로 물려 둔다 —
+	# 빈 맵으로 떨어뜨리는 것보다 낫고, 캠페인을 내보내는 순간 자동으로 붙는다.
+	var id: String = ChapterConfig.campaign_of(GameManager.chapter)
+	if _campaign_exists(id):
+		return id
+	if id != DEFAULT_CAMPAIGN:
+		print("[Campaign] 챕터 %d(%s) 의 캠페인 '%s' 이(가) 없어 '%s' 로 대체합니다."
+			% [GameManager.chapter, ChapterConfig.name_of(GameManager.chapter),
+			id, DEFAULT_CAMPAIGN])
 	return DEFAULT_CAMPAIGN
+
+func _campaign_exists(id: String) -> bool:
+	return FileAccess.file_exists("res://data/campaigns/campaign_%s.json" % id)
 
 ## 캠페인을 못 읽었을 때 — 조용히 빈 맵을 내놓지 않고 분명히 알린다.
 ## (빈 맵은 "왜 아무것도 없지?" 로 한참 헤매게 만든다)

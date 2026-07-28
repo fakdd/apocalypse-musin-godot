@@ -37,7 +37,7 @@ const DEMO_WAVE_DURATION := 45.0       ## 원본 32초 → 살짝 길게 (전투
 const DEMO_REST_DURATION := 20.0
 const DEMO_WAVES_TONIGHT := 2          ## 데모는 2웨이브 뒤 바로 보스
 const DEMO_SEALS_NEEDED := 1           ## 봉인 1개 = 데모 클리어 조건
-const DEMO_BASE_HP := 200.0            ## 첫 플레이는 관대하게 (죽어서 끝나면 안 된다)
+const DEMO_BASE_HP := 320.0            ## 첫 플레이는 관대하게 (죽어서 끝나면 안 된다)
 
 var beat: int = Beat.INTRO
 var elapsed := 0.0
@@ -164,6 +164,10 @@ func _on_demo_boss_dead() -> void:
 func _finish_after_reward() -> void:
 	await get_tree().create_timer(26.0, true, false, true).timeout
 	if beat >= Beat.OUTRO:
+		return
+	# 챕터 구조가 들어온 뒤로 보스 처치는 "다음 지역으로 가는 포탈"을 연다.
+	# 마지막 챕터가 아니면 여기서 엔딩을 띄우면 안 된다.
+	if not ChapterConfig.is_last(GameManager.chapter):
 		return
 	set_beat(Beat.OUTRO)
 	var hud: Node = _hud()

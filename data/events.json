@@ -1,0 +1,193 @@
+{
+  "version": 1,
+  "note": "랜덤 이벤트. 코드에는 이벤트 id 가 하나도 없다 — 여기만 고치면 늘어난다.",
+  "rules": {
+    "roll_at": "낮이 시작될 때(아침) 한 번 굴린다",
+    "weight": "가중치. 후보들 중 비례 확률로 하나가 뽑힌다",
+    "chance": "그날 이벤트가 아예 일어날 확률 (global.chance)",
+    "chapters": "비어 있으면 모든 챕터. 숫자를 넣으면 그 챕터에서만",
+    "once": "true 면 한 회차에 한 번만 (SaveGame 에 기록)",
+    "kind": "merchant | ambush | treasure | elite | weather | blessing | curse | rescue"
+  },
+  "global": {
+    "chance": 0.65
+  },
+  "events": [
+    {
+      "id": "ev_merchant",
+      "kind": "merchant",
+      "weight": 14,
+      "name": "떠돌이 상인",
+      "desc": "누군가 방주 앞에 좌판을 폈다.",
+      "banner": "◈ 떠돌이 상인이 찾아왔다",
+      "color": "#ffd880",
+      "effect": {
+        "essence": 112,
+        "drops": 1,
+        "rarity": "C"
+      }
+    },
+    {
+      "id": "ev_rescue",
+      "kind": "rescue",
+      "weight": 12,
+      "name": "구조 요청",
+      "desc": "생존자를 데려왔다.",
+      "banner": "◈ 생존자를 구했다",
+      "color": "#8fe0a0",
+      "effect": {
+        "survivor": 1,
+        "essence": 50
+      }
+    },
+    {
+      "id": "ev_treasure",
+      "kind": "treasure",
+      "weight": 10,
+      "name": "보물 고블린",
+      "desc": "무언가가 유물을 흘리고 달아났다.",
+      "banner": "◈ 보물 고블린이 흔적을 남겼다",
+      "color": "#ffe070",
+      "effect": {
+        "drops": 3,
+        "rarity": "B",
+        "luck": 120
+      }
+    },
+    {
+      "id": "ev_ambush",
+      "kind": "ambush",
+      "weight": 13,
+      "name": "매복",
+      "desc": "밤을 기다리지 않고 덤벼든다.",
+      "banner": "⚠ 매복이다",
+      "color": "#ff8060",
+      "effect": {
+        "spawn": 6,
+        "spawn_scale": 1.0
+      }
+    },
+    {
+      "id": "ev_elite",
+      "kind": "elite",
+      "weight": 9,
+      "name": "희귀 몬스터",
+      "desc": "유난히 큰 개체가 어슬렁거린다.",
+      "banner": "⚠ 희귀 개체가 나타났다",
+      "color": "#ff6090",
+      "effect": {
+        "spawn": 1,
+        "spawn_scale": 2.6,
+        "elite": true
+      }
+    },
+    {
+      "id": "ev_blessing",
+      "kind": "blessing",
+      "weight": 8,
+      "name": "축복",
+      "desc": "오늘 하루 몸이 가볍다.",
+      "banner": "◈ 축복 — 오늘은 강해진다",
+      "color": "#a8e0ff",
+      "effect": {
+        "buff": "blessing",
+        "duration_days": 1
+      }
+    },
+    {
+      "id": "ev_curse",
+      "kind": "curse",
+      "weight": 6,
+      "name": "저주",
+      "desc": "무언가가 발목을 잡는다.",
+      "banner": "⚠ 저주 — 오늘은 버겁다",
+      "color": "#c060d0",
+      "effect": {
+        "buff": "curse",
+        "duration_days": 1
+      }
+    },
+    {
+      "id": "ev_storm_forest",
+      "kind": "weather",
+      "weight": 10,
+      "chapters": [
+        1
+      ],
+      "name": "짙은 안개",
+      "desc": "숲이 숨을 삼켰다.",
+      "banner": "◈ 짙은 안개가 내렸다",
+      "color": "#9fc0a0",
+      "effect": {
+        "fog": 2.2,
+        "essence": 25
+      }
+    },
+    {
+      "id": "ev_sandstorm",
+      "kind": "weather",
+      "weight": 12,
+      "chapters": [
+        2
+      ],
+      "name": "모래폭풍",
+      "desc": "모래가 시야를 지운다.",
+      "banner": "◈ 모래폭풍",
+      "color": "#e0c070",
+      "effect": {
+        "fog": 2.6,
+        "spawn": 3
+      }
+    },
+    {
+      "id": "ev_blizzard",
+      "kind": "weather",
+      "weight": 12,
+      "chapters": [
+        3
+      ],
+      "name": "눈보라",
+      "desc": "숨이 얼어붙는다.",
+      "banner": "◈ 눈보라가 몰아친다",
+      "color": "#cfe8ff",
+      "effect": {
+        "fog": 2.8,
+        "buff": "curse",
+        "duration_days": 1
+      }
+    },
+    {
+      "id": "ev_ashfall",
+      "kind": "weather",
+      "weight": 12,
+      "chapters": [
+        4
+      ],
+      "name": "화산재",
+      "desc": "하늘에서 재가 떨어진다.",
+      "banner": "◈ 화산재가 쏟아진다",
+      "color": "#ff9060",
+      "effect": {
+        "fog": 2.4,
+        "spawn": 4
+      }
+    },
+    {
+      "id": "ev_soulstorm",
+      "kind": "weather",
+      "weight": 14,
+      "chapters": [
+        7
+      ],
+      "name": "영혼 폭풍",
+      "desc": "형체 없는 것들이 몰려든다.",
+      "banner": "⚠ 영혼 폭풍",
+      "color": "#b060ff",
+      "effect": {
+        "fog": 3.0,
+        "spawn": 8,
+        "spawn_scale": 1.2
+      }
+    }
+  ]
+}

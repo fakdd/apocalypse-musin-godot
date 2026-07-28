@@ -42,6 +42,8 @@ var vignette: ColorRect
 var tutorial_panel: Control
 var game_over_panel: Control
 var game_over_label: Label
+var loading_panel: Control        ## 챕터 이동 로딩
+var loading_label: Label
 var victory_panel: Control
 var stats_window: CanvasLayer
 var inventory_ui: CanvasLayer
@@ -59,8 +61,14 @@ var quest_ui: QuestUI
 var damage_ui: DamageUI
 var popup_ui: PopupUI
 var landmark_ui: LandmarkUI
+var achievement_ui: AchievementUI
+var upgrade_ui: UpgradeUI
+var npc_ui: NPCUI
+var menu_ui: MainMenuUI
 
 func _ready() -> void:
+	# 메뉴가 트리를 멈춰도 HUD 는 계속 돌아야 조작이 된다
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 10
 	_create_modules()
 	# 구축 순서 = 원본 그대로 (CanvasLayer 자식 순서가 그리기 순서를 정한다)
@@ -76,11 +84,23 @@ func _ready() -> void:
 	popup_ui.build_tutorial()
 	popup_ui.build_game_over()
 	popup_ui.build_victory()
+	popup_ui.build_loading()
+	achievement_ui.build()
+	upgrade_ui.build()
+	menu_ui.build()
+	npc_ui.build()
 
 	stats_window = load("res://scripts3d/StatsWindow.gd").new()
 	add_child(stats_window)
 	inventory_ui = load("res://scripts3d/InventoryUI.gd").new()
 	add_child(inventory_ui)
+
+## 창이 열려 있는 동안에는 마우스를 쓸 수 있어야 한다.
+## 평소에는 카메라 조작 때문에 마우스를 잡아 두는데, 창이 뜨면 놓아준다.
+func sync_mouse_mode() -> void:
+	var want := Input.MOUSE_MODE_VISIBLE if windows_open() else Input.MOUSE_MODE_CAPTURED
+	if Input.mouse_mode != want:
+		Input.mouse_mode = want
 
 func _create_modules() -> void:
 	health_ui = HealthUI.new()
@@ -97,7 +117,16 @@ func _create_modules() -> void:
 	popup_ui.name = "PopupUI"
 	landmark_ui = LandmarkUI.new()
 	landmark_ui.name = "LandmarkUI"
-	for m in [health_ui, skill_ui, minimap_ui, quest_ui, damage_ui, popup_ui, landmark_ui]:
+	achievement_ui = AchievementUI.new()
+	achievement_ui.name = "AchievementUI"
+	upgrade_ui = UpgradeUI.new()
+	upgrade_ui.name = "UpgradeUI"
+	npc_ui = NPCUI.new()
+	npc_ui.name = "NPCUI"
+	menu_ui = MainMenuUI.new()
+	menu_ui.name = "MainMenuUI"
+	for m in [health_ui, skill_ui, minimap_ui, quest_ui, damage_ui, popup_ui,
+			landmark_ui, achievement_ui, upgrade_ui, npc_ui, menu_ui]:
 		m.setup(self)
 		add_child(m)
 
@@ -224,6 +253,67 @@ func show_victory() -> void:
 func show_game_over(reason: String) -> void:
 	popup_ui.show_game_over(reason)
 
+func show_loading(text: String) -> void:
+	popup_ui.show_loading(text)
+
+## 창이 뜰 때 살짝 커지며 나타난다 — 즉시 켜지면 뚝 끊겨 보인다.
+func pop_in(c: Control) -> void:
+	if c == null:
+		return
+	c.modulate.a = 0.0
+	c.scale = Vector2(0.97, 0.97)
+	c.pivot_offset = c.size * 0.5
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(c, "modulate:a", 1.0, 0.12)
+	tw.tween_property(c, "scale", Vector2.ONE, 0.16) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+## 전체 화면 창은 하나만 떠 있어야 한다.
+## 겹쳐 뜨면 입력을 앞선 창이 먼저 먹어 뒤 창을 조작할 수 없다.
+## keep 에 넘긴 것만 남기고 나머지를 닫는다.
+func close_windows(keep: Node = null) -> void:
+	if menu_ui and menu_ui != keep and menu_ui.is_open():
+		menu_ui.close()
+	if npc_ui and npc_ui != keep and npc_ui.is_open():
+		npc_ui.close()
+	if upgrade_ui and upgrade_ui != keep and upgrade_ui.is_open():
+		upgrade_ui.panel.visible = false
+	if achievement_ui and achievement_ui != keep and achievement_ui.is_list_open():
+		achievement_ui.list_panel.visible = false
+	if stats_window and stats_window != keep and stats_window.visible:
+		stats_window.visible = false
+	if inventory_ui and inventory_ui != keep and inventory_ui.visible:
+		inventory_ui.visible = false
+	call_deferred("sync_mouse_mode")
+
+## 전체 화면 창이 하나라도 떠 있는가.
+## 폴링(Input.is_key_pressed)으로 읽는 입력은 set_input_as_handled 로 막히지 않는다.
+## 그래서 스킬·줍기 쪽에서 이 값을 직접 물어봐야 한다.
+func windows_open() -> bool:
+	if menu_ui and menu_ui.is_open():
+		return true
+	if npc_ui and npc_ui.is_open():
+		return true
+	if upgrade_ui and upgrade_ui.is_open():
+		return true
+	if achievement_ui and achievement_ui.is_list_open():
+		return true
+	if stats_window and stats_window.visible:
+		return true
+	if inventory_ui and inventory_ui.visible:
+		return true
+	return false
+
+## World3D 가 첫 실행에서 부른다
+func show_title() -> void:
+	if menu_ui:
+		menu_ui.open_title()
+
+## AchievementManager 가 부른다 (우측 상단 토스트)
+func show_achievement(title: String, desc: String) -> void:
+	achievement_ui.show_achievement(title, desc)
+
 ## ── 매 프레임 갱신 — 원본 _process 와 동일한 순서 ──
 
 func _process(_delta: float) -> void:
@@ -238,6 +328,9 @@ func _process(_delta: float) -> void:
 		damage_ui.update_vignette(hr)
 		skill_ui.update_cooldowns(player)
 
+	sync_mouse_mode()
+	if get_tree().paused:
+		return
 	health_ui.update_resources()
 	quest_ui.update_phase_status()
 
@@ -250,25 +343,46 @@ func _process(_delta: float) -> void:
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
+		# 메뉴가 떠 있으면 무엇보다 먼저 입력을 가져간다
+		if menu_ui and menu_ui.handle_key(event.keycode):
+			get_viewport().set_input_as_handled()
+			return
+		# 대화창이 열려 있으면 그쪽이 먼저 입력을 가져간다
+		if npc_ui and npc_ui.handle_key(event.keycode):
+			get_viewport().set_input_as_handled()
+			return
+		# 제단 화면이 열려 있으면 그쪽이 먼저 입력을 가져간다
+		if upgrade_ui and upgrade_ui.handle_key(event.keycode):
+			get_viewport().set_input_as_handled()
+			return
 		if event.keycode == KEY_TAB:
-			if inventory_ui and inventory_ui.visible:
-				inventory_ui.visible = false
+			close_windows(stats_window)
 			if stats_window:
 				stats_window.toggle()
 			get_viewport().set_input_as_handled()
 		elif event.keycode == KEY_I:
-			if stats_window and stats_window.visible:
-				stats_window.visible = false
+			close_windows(inventory_ui)
 			if inventory_ui:
 				inventory_ui.toggle()
 			get_viewport().set_input_as_handled()
+		elif event.keycode == KEY_U:
+			# 업적 목록 — 다른 창은 close_windows 가 닫는다
+			if achievement_ui:
+				achievement_ui.toggle_list()
+			get_viewport().set_input_as_handled()
 		elif event.keycode == KEY_ESCAPE:
 			var closed := false
+			if achievement_ui and achievement_ui.is_list_open():
+				achievement_ui.toggle_list()
+				closed = true
 			if stats_window and stats_window.visible:
 				stats_window.visible = false
 				closed = true
 			if inventory_ui and inventory_ui.visible:
 				inventory_ui.visible = false
+				closed = true
+			if not closed and menu_ui:
+				menu_ui.open_pause()      ## 닫을 창이 없으면 일시정지
 				closed = true
 			if closed:
 				get_viewport().set_input_as_handled()

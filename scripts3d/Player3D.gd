@@ -277,6 +277,7 @@ func _physics_process(delta: float) -> void:
 
 	cam_rig.global_position = global_position
 	_update_shake(delta)
+	_update_fov(delta)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_SPACE:
@@ -292,6 +293,32 @@ func shake(mag: float, dur: float) -> void:
 
 ## 방향성 킥이 있는 흔들림 — dir 방향으로 카메라가 한 번 밀린 뒤 되돌아온다.
 ## 정면에서 맞았는지 옆에서 맞았는지가 화면으로 읽힌다.
+## ── 카메라 FOV 연출 ──
+## 타격 순간 잠깐 좁아졌다 돌아온다. 화면이 "파고드는" 느낌을 만든다.
+var _fov_punch := 0.0
+var _near_death_shown := false
+
+func fov_punch(amount: float) -> void:
+	_fov_punch = maxf(_fov_punch, amount)
+
+## 매 프레임 FOV 를 목표값으로 되돌린다. 질주·저체력 보정도 여기서 합친다.
+func _update_fov(delta: float) -> void:
+	if camera == null:
+		return
+	var base: float = CombatFeel.num("camera", "base_fov", 62.0)
+	var extra := 0.0
+	# 빠르게 움직일수록 시야가 살짝 넓어진다 (속도감)
+	var spd := Vector2(velocity.x, velocity.z).length()
+	extra += CombatFeel.num("camera", "sprint_fov", 3.5) \
+		* clampf(spd / maxf(PlayerStats.get_final_speed(), 0.001), 0.0, 1.0)
+	# 체력이 낮으면 화면이 조여든다 (위기감)
+	var hr: float = hp / maxf(max_hp, 1.0)
+	if hr < 0.35:
+		extra -= CombatFeel.num("camera", "low_hp_fov", 2.5) * (1.0 - hr / 0.35)
+	var rec: float = CombatFeel.num("camera", "punch_recover", 7.0)
+	_fov_punch = lerpf(_fov_punch, 0.0, clampf(delta * rec, 0.0, 1.0))
+	camera.fov = base + extra - _fov_punch
+
 func shake_from(mag: float, dur: float, dir: Vector3) -> void:
 	shake_trauma = clampf(maxf(shake_trauma, mag * SHAKE_TRAUMA_GAIN), 0.0, 1.0)
 	shake_decay = clampf(1.0 / maxf(dur, 0.05), 1.2, 12.0)
@@ -335,9 +362,29 @@ func take_damage(amount: float, from: Vector3 = Vector3.ZERO) -> void:
 	if parry_timer > 0:
 		combat._parry_success()
 		return
+	# 전설 '성채' — 받는 피해 경감 (지금까지 flag 만 있고 효과가 없었다)
+	if PlayerStats.has_legendary("fortress"):
+		amount *= 1.0 - float(CombatFeel.pacing().get("legendary", {})
+			.get("fortress", {}).get("damage_reduce", 0.0))
 	hp -= amount
 	hp_changed.emit()
-	invuln_timer = 0.35
+
+	# ── 위험 순간 강조 ──
+	# 한 방에 죽을 체력으로 떨어지는 순간을 놓치지 않게 화면으로 알린다.
+	var ratio: float = hp / maxf(max_hp, 1.0)
+	if hp > 0.0 and ratio <= CombatFeel.pace("moments", "near_death_hp", 0.12) \
+			and not _near_death_shown:
+		_near_death_shown = true
+		CombatFeel.impact("hurt")
+		CombatFeel.slow_motion(0.35, 0.45)
+		var w = get_tree().current_scene
+		if w and w.get("hud") != null:
+			w.hud.show_banner(CombatFeel.pace_text("near_death_text", "⚠ 위험"))
+	elif ratio > 0.35:
+		_near_death_shown = false
+	# 떼로 붙었을 때 초당 피격 횟수를 제한한다.
+	# 0.35 이면 초당 2.9회까지 맞아, 몹 3~4기에 둘러싸이면 빠져나올 틈이 없었다.
+	invuln_timer = 0.55
 	# 피해량이 클수록 더 크게 흔들린다 (전부 같은 세기로 흔들리면 위기감이 안 생긴다)
 	var weight: float = clampf(amount / 25.0, 0.35, 1.6)
 	var kick_dir := Vector3.ZERO
@@ -346,7 +393,7 @@ func take_damage(amount: float, from: Vector3 = Vector3.ZERO) -> void:
 	shake_from(0.13 * weight, 0.18, kick_dir)
 	# 큰 피해에는 붉은 화면 플래시로 위험을 즉시 알린다
 	if amount >= 14.0:
-		CombatFeel.screen_flash(Color(0.85, 0.05, 0.05), 0.2, 0.0, 0.22)
+		CombatFeel.impact("hurt")
 	SoundManager.play("player_hurt")
 	animation._flash()
 	if hp > 0 and anim and anim.has_animation("hit"):
@@ -355,5 +402,6 @@ func take_damage(amount: float, from: Vector3 = Vector3.ZERO) -> void:
 		anim.play("hit")
 	if hp <= 0:
 		hp = 0
+		SaveGame.run_deaths += 1
 		animation._play_anim("die")
 		died.emit()
