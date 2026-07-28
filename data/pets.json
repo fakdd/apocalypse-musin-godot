@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "note": "펫 전투·패시브·뽑기. Pet3D.TYPES 의 외형/수집 설정은 그대로 두고 여기 값만 얹는다.",
+  "rules": {
+    "grade": "D < C < B < A < S < SS. 뽑기 확률과 패시브 세기를 정한다.",
+    "attack": "cd 초마다 range 안의 적에게 투사체. damage 는 플레이어 검기 피해의 배율.",
+    "passive": "장착 중일 때 플레이어에게 붙는 배율 (atk / speed / drop / essence)",
+    "level": "중복으로 뽑으면 오른다. 단계마다 attack.damage 와 passive 가 step 만큼 늘어난다.",
+    "gacha": "cost 마석 소모. weight 비율로 뽑는다. 이미 최대 레벨이면 refund 마석으로 환급."
+  },
+  "grades": {
+    "D":  { "color": [0.70, 0.72, 0.75], "step": 0.06 },
+    "C":  { "color": [0.55, 0.85, 0.60], "step": 0.08 },
+    "B":  { "color": [0.45, 0.70, 1.00], "step": 0.10 },
+    "A":  { "color": [0.80, 0.50, 1.00], "step": 0.13 },
+    "S":  { "color": [1.00, 0.75, 0.30], "step": 0.16 },
+    "SS": { "color": [1.00, 0.35, 0.45], "step": 0.20 }
+  },
+  "pets": {
+    "sprite": {
+      "grade": "D",
+      "attack": { "cd": 2.2, "range": 12.0, "damage": 0.35, "speed": 18.0 },
+      "passive": { "atk": 0.00, "speed": 0.00, "drop": 6.0, "essence": 0.00 }
+    },
+    "scavenger": {
+      "grade": "C",
+      "attack": { "cd": 2.4, "range": 13.0, "damage": 0.40, "speed": 18.0 },
+      "passive": { "atk": 0.00, "speed": 0.02, "drop": 14.0, "essence": 0.10 }
+    },
+    "hound": {
+      "grade": "B",
+      "attack": { "cd": 1.5, "range": 11.0, "damage": 0.55, "speed": 22.0 },
+      "passive": { "atk": 0.05, "speed": 0.04, "drop": 8.0, "essence": 0.05 }
+    },
+    "warden": {
+      "grade": "A",
+      "attack": { "cd": 1.7, "range": 16.0, "damage": 0.62, "speed": 20.0 },
+      "passive": { "atk": 0.08, "speed": 0.02, "drop": 20.0, "essence": 0.20 }
+    }
+  },
+  "max_level": 5,
+  "gacha": {
+    "cost": 150,
+    "refund": 60,
+    "note": "weight 는 상대 비율. 정의되지 않은 펫은 뽑히지 않는다.",
+    "weights": { "sprite": 50.0, "scavenger": 28.0, "hound": 16.0, "warden": 6.0 },
+    "pity": {
+      "note": "이만큼 연속으로 A 이상이 안 나오면 다음 뽑기는 확정 A 이상.",
+      "count": 12,
+      "grades": ["A", "S", "SS"]
+    }
+  }
+}

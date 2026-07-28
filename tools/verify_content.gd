@@ -644,6 +644,7 @@ func _run_projectile_tests() -> void:
 	await _t_freeze_guard()
 	await _t_qol()
 	await _t_aim()
+	await _t_pet()
 
 	host.queue_free()
 	if _pt_bad > 0:
@@ -1202,3 +1203,78 @@ func _t_aim() -> void:
 		print("CT|  ✘ 마우스 조준 (모드 %s / 상하반전 %s / 최하단 %s)"
 			% [str(mode_ok), str(aim_ok), str(down_ok)])
 		_pt_bad += 1
+
+## [펫] 전투 설정 · 패시브 · 뽑기 · 저장
+func _t_pet() -> void:
+	# 1) 모든 펫이 등급·공격·패시브 정의를 갖는가
+	var miss := []
+	var pet_types: Dictionary = load("res://scripts3d/Pet3D.gd").TYPES
+	for t in pet_types:
+		var d := PetManager.pet_def(String(t))
+		if d.is_empty() or not d.has("attack") or not d.has("passive"):
+			miss.append(t)
+	if miss.is_empty():
+		print("CT|  ✔ 펫 %d종 전부 전투·패시브 정의" % pet_types.size())
+	else:
+		print("CT|  ✘ 정의 없는 펫: %s" % str(miss)); _pt_bad += 1
+
+	# 2) 레벨이 오르면 피해와 패시브가 같이 오른다
+	PetManager.reset()
+	PetManager.grant("hound")
+	PetManager.set_active("hound")
+	PetManager.levels["hound"] = 1
+	var d1 := float(PetManager.attack_of("hound").get("damage", 0.0))
+	var p1 := PetManager.passive("atk")
+	PetManager.levels["hound"] = PetManager.max_level()
+	var d2 := float(PetManager.attack_of("hound").get("damage", 0.0))
+	var p2 := PetManager.passive("atk")
+	if d2 > d1 and p2 > p1:
+		print("CT|  ✔ 펫 레벨 — 피해 %.2f→%.2f · 공격 패시브 %.3f→%.3f" % [d1, d2, p1, p2])
+	else:
+		print("CT|  ✘ 레벨이 반영되지 않는다"); _pt_bad += 1
+
+	# 3) 패시브가 실제 플레이어 스탯에 붙는가
+	# set_active("") 는 보유 목록에 없어 무시된다 — 필드를 직접 비운다
+	PetManager.active = ""
+	var atk0 := PlayerStats.get_final_atk()
+	PetManager.active = "hound"
+	var atk1 := PlayerStats.get_final_atk()
+	if atk1 > atk0:
+		print("CT|  ✔ 펫 패시브가 공격력에 반영 (%.1f → %.1f)" % [atk0, atk1])
+	else:
+		print("CT|  ✘ 패시브 미반영 (%.1f / %.1f)" % [atk0, atk1]); _pt_bad += 1
+
+	# 4) 뽑기 — 마석이 줄고, 새 펫이거나 레벨업이거나 환급이 난다
+	PetManager.reset()
+	CraftManager.essence = PetManager.gacha_cost() * 6
+	var before := CraftManager.essence
+	var got := PetManager.gacha()
+	var spent: bool = CraftManager.essence < before
+	if got != "" and spent and PetManager.owned.size() >= 1:
+		print("CT|  ✔ 펫 뽑기 — %s 획득 (마석 %d → %d)"
+			% [got, before, CraftManager.essence])
+	else:
+		print("CT|  ✘ 뽑기 실패 (got '%s' · 마석 %d→%d)"
+			% [got, before, CraftManager.essence]); _pt_bad += 1
+
+	# 5) 마석이 모자라면 뽑히지 않는다
+	CraftManager.essence = 0
+	if PetManager.gacha() == "":
+		print("CT|  ✔ 마석 부족 시 뽑기 차단")
+	else:
+		print("CT|  ✘ 마석 없이 뽑혔다"); _pt_bad += 1
+
+	# 6) 레벨·천장이 저장 왕복에서 살아남는가
+	PetManager.grant("warden")
+	PetManager.levels["warden"] = 3
+	PetManager.pity = 7
+	SaveGame.save()
+	PetManager.levels.clear()
+	PetManager.pity = 0
+	SaveGame.load_game()
+	if PetManager.level_of("warden") == 3 and PetManager.pity == 7:
+		print("CT|  ✔ 펫 레벨·천장 저장 왕복")
+	else:
+		print("CT|  ✘ 펫 저장 누락 (lv %d · pity %d)"
+			% [PetManager.level_of("warden"), PetManager.pity]); _pt_bad += 1
+	PetManager.reset()

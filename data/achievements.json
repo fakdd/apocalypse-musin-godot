@@ -16,7 +16,8 @@
     "essence": "누적 마석",
     "npc_talk": "대화한 NPC 수",
     "npc_quest": "완료한 NPC 의뢰",
-    "npc_shop": "상점 구매 횟수"
+    "npc_shop": "상점 구매 횟수",
+    "pet_gacha": "동행 뽑기 횟수"
   },
   "achievements": [
     {
@@ -271,6 +272,14 @@
       "desc": "상점에서 10번 산다.",
       "kind": "counter",
       "counter": "npc_shop",
+      "target": 10
+    },
+    {
+      "id": "ach_pet_10",
+      "name": "동행을 모으다",
+      "desc": "동행 뽑기를 10번 한다.",
+      "kind": "counter",
+      "counter": "pet_gacha",
       "target": 10
     }
   ]

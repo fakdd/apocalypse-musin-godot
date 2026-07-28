@@ -14,6 +14,8 @@ var detail: RichTextLabel
 var essence_label: Label
 var buy_btn: Button
 var title_label: Label
+var gacha_btn: Button
+var gacha_info: RichTextLabel
 
 var _cat := ""
 var _sel := ""
@@ -95,6 +97,22 @@ func build() -> void:
 	buy_btn.pressed.connect(_on_buy)
 	side.add_child(buy_btn)
 
+	# ── 펫 뽑기 ── 제단 화면 아래쪽에 붙인다. 새 창을 만들지 않는다.
+	gacha_btn = Button.new()
+	gacha_btn.position = Vector2(90, 540)
+	gacha_btn.size = Vector2(180, 44)
+	gacha_btn.pressed.connect(_on_gacha)
+	panel.add_child(gacha_btn)
+
+	gacha_info = RichTextLabel.new()
+	gacha_info.bbcode_enabled = true
+	gacha_info.add_theme_font_size_override("normal_font_size", 13)
+	gacha_info.position = Vector2(300, 620)
+	gacha_info.size = Vector2(500, 60)
+	panel.add_child(gacha_info)
+
+	PetManager.gacha_result.connect(_on_gacha_result)
+
 	var hint := Label.new()
 	hint.text = "[G]/[ESC] 닫기      ↑↓ 카테고리 ←→      Enter 강화"
 	hint.add_theme_font_size_override("font_size", 13)
@@ -164,6 +182,9 @@ func _refresh() -> void:
 	if panel == null or not panel.visible:
 		return
 	essence_label.text = "◇ 보유 마석  %d" % CraftManager.essence
+	if gacha_btn:
+		gacha_btn.text = "🐾 동행 뽑기  ◇%d" % PetManager.gacha_cost()
+		gacha_btn.disabled = not PetManager.can_gacha()
 
 	for uid in _list_btns:
 		var b: Button = _list_btns[uid]
@@ -286,3 +307,32 @@ func handle_key(keycode: int) -> bool:
 			_select_cat(String(ids[j]))
 			return true
 	return false
+
+# ══════════════════════════════════════════════
+#  펫 뽑기
+# ══════════════════════════════════════════════
+func _on_gacha() -> void:
+	PetManager.gacha()
+	_refresh()
+
+func _on_gacha_result(pet_type: String, is_new: bool, leveled: bool, refund: int) -> void:
+	var info := PetManager.get_info(pet_type)
+	var nm := String(info.get("name", pet_type))
+	var gr := PetManager.grade_of(pet_type)
+	var msg := ""
+	if is_new:
+		msg = "[color=#e8c26a]★ 새 동행 — %s [%s][/color]" % [nm, gr]
+		CombatFeel.impact("crit")
+		SoundManager.play("loot_legend", -4.0)
+	elif leveled:
+		msg = "[color=#8fd8a0]%s [%s] 레벨 %d[/color]" % [nm, gr, PetManager.level_of(pet_type)]
+		SoundManager.play("loot_epic", -6.0)
+	else:
+		msg = "[color=#8a8a92]%s [%s] 최대 레벨 — 마석 %d 환급[/color]" % [nm, gr, refund]
+		SoundManager.play("loot_rare", -8.0)
+	if gacha_info:
+		gacha_info.text = "%s
+[color=#70707a]보유 %d종 · 천장까지 %d회[/color]" % [
+			msg, PetManager.owned.size(),
+			maxi(0, int(PetManager.defs().get("gacha", {}).get("pity", {}).get("count", 0))
+				- PetManager.pity)]

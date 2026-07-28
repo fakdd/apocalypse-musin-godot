@@ -38,7 +38,8 @@ func roll_essence_drop(tier_bonus: int = 0) -> int:
 	# 월드 티어 · 자원 획득 강화 — 후반 챕터에서 수입이 늘지 않던 문제
 	# 후반 챕터는 몹이 두꺼워지므로 보상도 같이 커진다 (pacing.json tempo.reward)
 	return maxi(1, int(round(float(n) * SaveGame.tier_mult("essence")
-		* UpgradeManager.mult("resource_gain") * CombatFeel.tempo("reward", 1.0))))
+		* UpgradeManager.mult("resource_gain") * CombatFeel.tempo("reward", 1.0)
+		* (1.0 + PetManager.passive("essence")))))
 
 ## ── 합성 ──
 ## 인벤토리에서 지정 등급의 아이템 3개를 소모해 상위 등급 1개를 시도한다.

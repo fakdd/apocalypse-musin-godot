@@ -97,6 +97,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	orbit_phase += delta * 1.6
+	_tick_attack(delta)
 	var speed: float = float(cfg.get("speed", 9.0))
 	var radius: float = float(cfg.get("radius", 5.5))
 	var orbit: float = float(cfg.get("orbit", 2.0))
@@ -147,3 +148,48 @@ func _pulse() -> void:
 	var tw := create_tween()
 	tw.tween_property(body, "scale", Vector3(1.6, 1.6, 1.6), 0.1)
 	tw.tween_property(body, "scale", Vector3.ONE, 0.16)
+
+# ══════════════════════════════════════════════
+#  전투 (data/pets.json)
+#  기존 VfxPool 투사체를 그대로 빌려 쓴다 — 새 시스템 없음.
+# ══════════════════════════════════════════════
+var atk_cd := 0.0
+
+func _tick_attack(delta: float) -> void:
+	var conf := PetManager.attack_of(pet_type)
+	if conf.is_empty():
+		return
+	atk_cd = maxf(0.0, atk_cd - delta)
+	if atk_cd > 0.0:
+		return
+	# 밤에만 싸운다 — 낮에는 수집만 (기존 역할 유지)
+	if GameManager.phase != GameManager.Phase.NIGHT:
+		return
+
+	var reach := float(conf.get("range", 12.0))
+	var best: Node3D = null
+	var best_d := reach
+	for e in Battlefield.enemies:
+		if not is_instance_valid(e) or e.dead:
+			continue
+		var d: float = global_position.distance_to(e.global_position)
+		if d < best_d:
+			best_d = d
+			best = e
+	if best == null:
+		return
+
+	atk_cd = float(conf.get("cd", 2.0))
+	var dir: Vector3 = best.global_position - global_position
+	dir.y = 0.0
+	if dir.length_squared() < 0.0001:
+		return
+	var proj := VfxPool.take_projectile(get_parent())
+	if proj == null:
+		return
+	proj.global_position = global_position
+	# 펫 피해는 플레이어 검기에 비례한다 — 성장하면 펫도 같이 세진다
+	proj.setup(dir.normalized(), float(conf.get("speed", 18.0)),
+		PlayerStats.get_slash_damage() * float(conf.get("damage", 0.4)),
+		2.0, false, false)
+	SoundManager.play_pitched("turret_fire", -16.0, 1.4)

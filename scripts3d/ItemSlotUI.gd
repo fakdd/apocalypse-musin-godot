@@ -15,6 +15,9 @@ var placeholder: Label
 var icon_tex: TextureRect
 
 func setup(p_is_equip: bool = false, p_slot_key: String = "") -> void:
+	# HUD 전체를 마우스 투명하게 만드는 처리에서 제외시킨다 (클릭을 받아야 한다)
+	add_to_group("ui_clickable")
+	mouse_filter = Control.MOUSE_FILTER_STOP
 	is_equip_slot = p_is_equip
 	equip_slot_key = p_slot_key
 	custom_minimum_size = Vector2(CELL, CELL)
@@ -207,7 +210,8 @@ func _gui_input(event: InputEvent) -> void:
 		if event.button_index == MOUSE_BUTTON_LEFT and not is_equip_slot and item != null:
 			request_equip.emit(item)
 			accept_event()
-		elif event.button_index == MOUSE_BUTTON_RIGHT and is_equip_slot and item != null:
+		elif is_equip_slot and item != null:
+			# 좌·우 어느 쪽이든 해제한다 — 우클릭만 되는 걸 모르는 사람이 많다
 			request_unequip.emit(equip_slot_key)
 			accept_event()
 

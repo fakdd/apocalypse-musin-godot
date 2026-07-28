@@ -155,6 +155,8 @@ func _player_out() -> Dictionary:
 		"reroll_count": TraitManager.reroll_count,
 		"pets_owned": PetManager.owned.duplicate(),
 		"pet_active": PetManager.active,
+		"pet_levels": PetManager.levels.duplicate(),
+		"pet_pity": PetManager.pity,
 		"inventory": _items_out(PlayerStats.inventory),
 		"equipped": _equipped_out(),
 	}
@@ -268,6 +270,9 @@ func _player_in(p: Dictionary) -> void:
 	for pet in p.get("pets_owned", []):
 		PetManager.owned.append(String(pet))
 	PetManager.active = String(p.get("pet_active", ""))
+	var plv = p.get("pet_levels", {})
+	PetManager.levels = plv.duplicate() if typeof(plv) == TYPE_DICTIONARY else {}
+	PetManager.pity = int(p.get("pet_pity", 0))
 
 	PlayerStats.inventory.clear()
 	for raw in p.get("inventory", []):

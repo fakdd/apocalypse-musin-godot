@@ -39,8 +39,10 @@ func _setup_environment() -> void:
 
 	_apply_tone(e)
 	e.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	e.ambient_light_energy = 0.42
-	e.ambient_light_sky_contribution = 0.75
+	# 다크 판타지 — 주변광을 낮춰 그림자를 깊게 남긴다 (data/graphics.json)
+	var df: Dictionary = gfx().get("dark_fantasy", {})
+	e.ambient_light_energy = float(df.get("ambient_energy", 0.42))
+	e.ambient_light_sky_contribution = float(df.get("ambient_sky", 0.75))
 
 	# ── SSAO: 구석에 짙은 그림자를 넣어 입체감을 만든다 (가장 중요) ──
 	e.ssao_enabled = false
@@ -67,7 +69,7 @@ func _setup_environment() -> void:
 
 	# 거리 안개 (원경을 뭉개 깊이감)
 	e.fog_enabled = true
-	e.fog_density = _tf("day_fog", DAY_FOG)
+	e.fog_density = _tf("day_fog", DAY_FOG) 		* float(gfx().get("dark_fantasy", {}).get("fog_density_mult", 1.0))
 	e.fog_light_color = fogc
 	e.fog_sky_affect = 0.4
 
@@ -77,7 +79,8 @@ func _setup_environment() -> void:
 	e.glow_bloom = 0.28
 	e.glow_strength = 1.15
 	e.glow_blend_mode = Environment.GLOW_BLEND_MODE_SOFTLIGHT
-	e.glow_hdr_threshold = 0.92
+	# 임계값을 낮추면 검기·제단·붉은 눈만 골라 번진다 (밝은 면은 그대로)
+	e.glow_hdr_threshold = float(gfx().get("dark_fantasy", {}).get("glow_hdr_threshold", 0.92))
 
 	# ── SDFGI: 실시간 전역조명 (가로등/불빛이 벽에 자연스럽게 반사) ──
 	e.sdfgi_enabled = false
@@ -110,8 +113,8 @@ func _setup_environment() -> void:
 	world.sun = DirectionalLight3D.new()
 	world.sun.rotation_degrees = Vector3(-42, -38, 0)
 	world.sun.light_color = _tc("sun", Color(1.0, 0.62, 0.45))
-	world.sun.light_energy = 1.15
-	world.sun.light_angular_distance = 1.2
+	world.sun.light_energy = float(gfx().get("dark_fantasy", {}).get("sun_energy", 1.15))
+	world.sun.light_angular_distance = float(gfx().get("dark_fantasy", {}).get("sun_angular", 1.2))
 	world.sun.shadow_enabled = true
 	# 맵은 80×80m(대각 약 113m)인데 그림자 거리가 260m 였다.
 	# 스플릿 4개가 각각 맵 전체를 다시 그려 5장 기준 드로우콜 2869 중 2449 가

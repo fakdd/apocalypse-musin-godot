@@ -332,8 +332,9 @@ func show_achievement(title: String, desc: String) -> void:
 func make_hud_click_through(root: Node = self) -> void:
 	for c in root.get_children():
 		if c is Control:
-			# 버튼만 클릭을 받는다
-			if c is Button:
+			# 버튼과 "ui_clickable" 로 표시한 것(인벤토리 슬롯 등)은 클릭을 받는다.
+			# 나머지 라벨·패널만 투명하게 만들어 3D 조준을 가리지 않게 한다.
+			if c is Button or c.is_in_group("ui_clickable"):
 				c.mouse_filter = Control.MOUSE_FILTER_STOP
 			elif c.mouse_filter == Control.MOUSE_FILTER_STOP:
 				c.mouse_filter = Control.MOUSE_FILTER_IGNORE

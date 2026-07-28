@@ -104,11 +104,18 @@ const BGM_HINTS := {
 ## 징글/효과음 파일명 → 기존 사운드 키.
 ## 파일명이 제각각이라 이름만으로는 못 잡히는 것들을 여기서 이어 준다.
 ## 한 파일이 여러 키를 맡아도 된다.
+## Escalona Music 팩은 파일명이 MS/BGM + 번호 + 이름 꼴이다.
+## 접미사(NL/L, 1/2)가 붙어도 잡히도록 앞부분만 비교한다 (_alias_key 참고).
 const SFX_ALIASES := {
-	"ms02gameover1nl":  ["game_over"],
-	"ms08levelup1nl":   ["level_up", "rescue"],
-	"ms01triumph1nl":   ["ultimate"],
-	"ms03discoverynl":  ["pickup"],
+	"ms01triumph":  ["ultimate"],
+	"ms02gameover": ["game_over"],
+	"ms03discovery":["pickup"],
+	"ms04":         ["build"],
+	"ms05":         ["rescue"],
+	"ms06":         ["day_start"],
+	"ms07":         ["night_start"],
+	"ms08levelup":  ["level_up"],
+	"ms09":         ["error"],
 }
 
 ## res:// 를 뒤져 오디오 파일 경로를 모은다.
@@ -149,13 +156,14 @@ func _scan_sfx_folder() -> void:
 	var aliased := 0
 	for base in found:
 		var lower: String = String(base).to_lower()
-		if not SFX_ALIASES.has(lower):
+		var key := _alias_key(lower)
+		if key == "":
 			continue
 		var st2 = _safe_load(found[base])
 		if st2 == null:
 			continue
-		for key in SFX_ALIASES[lower]:
-			sounds[key] = st2      ## 별칭은 기존 키를 덮어쓴다 (더 좋은 음원이므로)
+		for key2 in SFX_ALIASES[key]:
+			sounds[key2] = st2     ## 별칭은 기존 키를 덮어쓴다 (더 좋은 음원이므로)
 			aliased += 1
 	if added > 0 or aliased > 0:
 		print("[Sound] SFX %d개 자동 등록 · 별칭 %d개 (폴더 %d개)"
@@ -297,6 +305,14 @@ func set_bgm(track_id: String) -> void:
 
 func current_bgm() -> String:
 	return _bgm_current
+
+## 파일명이 별칭으로 시작하면 그 별칭을 돌려준다 (접미사 무시).
+##   "MS08levelup1NL" → "ms08levelup"
+func _alias_key(lower: String) -> String:
+	for k in SFX_ALIASES:
+		if lower.begins_with(String(k)):
+			return String(k)
+	return ""
 
 ## 마스터 버스 상태는 두 가지 이유로 죽는다 — 일시정지, 볼륨 0%.
 ## 둘을 따로 기억하고 한 곳에서만 버스에 반영한다.

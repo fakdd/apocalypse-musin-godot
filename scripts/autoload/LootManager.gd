@@ -69,7 +69,7 @@ const LUCK_CAP := 420.0
 func spawn_drop(global_pos: Vector3, drop_chance: float = 0.55, forced_rarity: int = -1, luck_override: float = -1.0) -> Node3D:
 	# 운(luck): 특성 드랍률 + 구역 보정
 	var luck: float = TraitManager.get_drop_pct() + UpgradeManager.value("drop_rate") \
-		+ PlayerStats.get_item_luck()
+		+ PlayerStats.get_item_luck() + PetManager.passive("drop")
 	if luck_override >= 0.0:
 		luck += luck_override
 

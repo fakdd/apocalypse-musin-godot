@@ -60,11 +60,13 @@ func get_final_atk() -> float:
 	# 영구 강화 배율은 UpgradeManager 만 계산한다 (여기서 직접 곱하지 않는다)
 	var base: float = BASE_ATK + get_item_atk() + float(set_bonus().get("atk", 0.0))
 	return base * (1.0 + TraitManager.get_atk_pct() / 100.0) \
-		* UpgradeManager.mult("attack") * EventManager.buff_mult()
+		* UpgradeManager.mult("attack") * EventManager.buff_mult() \
+		* (1.0 + PetManager.passive("atk"))
 
 func get_final_speed() -> float:
 	var v: float = (BASE_SPEED + get_item_speed() + float(set_bonus().get("speed", 0.0))) \
-		* (1.0 + TraitManager.get_speed_pct() / 100.0) * UpgradeManager.mult("move_speed")
+		* (1.0 + TraitManager.get_speed_pct() / 100.0) * UpgradeManager.mult("move_speed") \
+		* (1.0 + PetManager.passive("speed"))
 	return clampf(v, 1.5, 40.0)
 
 func get_final_max_hp() -> float:
