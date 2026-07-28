@@ -49,6 +49,7 @@ VerifyNpc="*res://tools/verify_npc.gd"
 VerifyQA="*res://tools/verify_qa.gd"
 VerifyContent="*res://tools/verify_content.gd"
 PlaytestBot="*res://tools/playtest_bot.gd"
+DebugConsole="*res://tools/debug_console.gd"
 
 [display]
 

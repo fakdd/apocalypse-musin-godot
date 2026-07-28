@@ -131,15 +131,16 @@ func _windows_open() -> bool:
 		return false
 	return world.hud.windows_open()
 
-## 펫이 원격으로 회수
+## 펫이 원격으로 회수.
+## 플레이어가 직접 주운 게 아니므로 화면 연출(히트스톱·플래시)은 넣지 않는다.
 func pet_collect() -> void:
-	_collect()
+	_collect(true)
 
-func _collect() -> void:
+func _collect(by_pet: bool = false) -> void:
 	if collected:
 		return
 	collected = true
-	LootManager.collect(item)
+	LootManager.collect(item, by_pet)
 	SoundManager.play("pickup")
 
 	if label:

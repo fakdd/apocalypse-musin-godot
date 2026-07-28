@@ -279,13 +279,16 @@ func _pick_skin(slot: String, rarity: int) -> String:
 	return pool[clampi(idx, 0, pool.size() - 1)]
 
 ## 플레이어가 아이템을 획득했을 때 호출된다 (ItemDrop 에서 호출)
-func collect(item: ItemData) -> void:
-	# 줍는 순간에도 등급이 손에 잡히게 — 연출 강도를 등급에 비례시킨다
+func collect(item: ItemData, by_pet: bool = false) -> void:
+	# 줍는 순간에도 등급이 손에 잡히게 — 연출 강도를 등급에 비례시킨다.
+	# 다만 펫이 대신 주운 것은 화면을 멈추지 않는다 (플레이어 조작이 아니다).
 	var pop := float(CombatFeel.pacing().get("drop_tease", {})
 		.get("pickup_pop", {}).get(str(item.rarity), 0.0))
 	if pop > 0.0:
-		CombatFeel.hit_stop(0.04 * pop)
-		SoundManager.play_pitched("pickup", -4.0, 0.9 + 0.12 * pop)
+		if not by_pet:
+			CombatFeel.hit_stop(0.04 * pop)
+		SoundManager.play_pitched("pickup", -4.0 if not by_pet else -12.0,
+			0.9 + 0.12 * pop)
 	# 업적 — 주운 유물 수 (판정은 AchievementManager 가 한다)
 	AchievementManager.bump("chest")
 	PlayerStats.acquire_item(item)

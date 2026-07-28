@@ -9,33 +9,119 @@
     "gacha": "cost 마석 소모. weight 비율로 뽑는다. 이미 최대 레벨이면 refund 마석으로 환급."
   },
   "grades": {
-    "D":  { "color": [0.70, 0.72, 0.75], "step": 0.06 },
-    "C":  { "color": [0.55, 0.85, 0.60], "step": 0.08 },
-    "B":  { "color": [0.45, 0.70, 1.00], "step": 0.10 },
-    "A":  { "color": [0.80, 0.50, 1.00], "step": 0.13 },
-    "S":  { "color": [1.00, 0.75, 0.30], "step": 0.16 },
-    "SS": { "color": [1.00, 0.35, 0.45], "step": 0.20 }
+    "D": {
+      "color": [
+        0.7,
+        0.72,
+        0.75
+      ],
+      "step": 0.05
+    },
+    "C": {
+      "color": [
+        0.55,
+        0.85,
+        0.6
+      ],
+      "step": 0.08
+    },
+    "B": {
+      "color": [
+        0.45,
+        0.7,
+        1.0
+      ],
+      "step": 0.12
+    },
+    "A": {
+      "color": [
+        0.8,
+        0.5,
+        1.0
+      ],
+      "step": 0.16
+    },
+    "S": {
+      "color": [
+        1.0,
+        0.75,
+        0.3
+      ],
+      "step": 0.21
+    },
+    "SS": {
+      "color": [
+        1.0,
+        0.35,
+        0.45
+      ],
+      "step": 0.27
+    }
   },
   "pets": {
     "sprite": {
       "grade": "D",
-      "attack": { "cd": 2.2, "range": 12.0, "damage": 0.35, "speed": 18.0 },
-      "passive": { "atk": 0.00, "speed": 0.00, "drop": 6.0, "essence": 0.00 }
+      "attack": {
+        "cd": 3.0,
+        "range": 10.0,
+        "damage": 0.22,
+        "speed": 16.0
+      },
+      "passive": {
+        "atk": 0.0,
+        "speed": 0.0,
+        "drop": 5.0,
+        "essence": 0.0
+      },
+      "desc": "가장 흔한 동행. 줍기 담당."
     },
     "scavenger": {
       "grade": "C",
-      "attack": { "cd": 2.4, "range": 13.0, "damage": 0.40, "speed": 18.0 },
-      "passive": { "atk": 0.00, "speed": 0.02, "drop": 14.0, "essence": 0.10 }
+      "attack": {
+        "cd": 2.6,
+        "range": 12.0,
+        "damage": 0.34,
+        "speed": 17.0
+      },
+      "passive": {
+        "atk": 0.03,
+        "speed": 0.02,
+        "drop": 16.0,
+        "essence": 0.12
+      },
+      "desc": "수집 반경이 넓다. 드랍률·마석 보너스."
     },
     "hound": {
       "grade": "B",
-      "attack": { "cd": 1.5, "range": 11.0, "damage": 0.55, "speed": 22.0 },
-      "passive": { "atk": 0.05, "speed": 0.04, "drop": 8.0, "essence": 0.05 }
+      "attack": {
+        "cd": 1.6,
+        "range": 12.0,
+        "damage": 0.58,
+        "speed": 22.0
+      },
+      "passive": {
+        "atk": 0.08,
+        "speed": 0.06,
+        "drop": 8.0,
+        "essence": 0.05
+      },
+      "desc": "빠르게 물어뜯는다. 공격·이속 중심."
     },
     "warden": {
       "grade": "A",
-      "attack": { "cd": 1.7, "range": 16.0, "damage": 0.62, "speed": 20.0 },
-      "passive": { "atk": 0.08, "speed": 0.02, "drop": 20.0, "essence": 0.20 }
+      "attack": {
+        "cd": 1.3,
+        "range": 17.0,
+        "damage": 0.8,
+        "speed": 21.0
+      },
+      "passive": {
+        "atk": 0.14,
+        "speed": 0.04,
+        "drop": 24.0,
+        "essence": 0.25
+      },
+      "desc": "최상급 동행. 모든 면에서 앞선다."
     }
   },
   "max_level": 5,
@@ -43,11 +129,20 @@
     "cost": 150,
     "refund": 60,
     "note": "weight 는 상대 비율. 정의되지 않은 펫은 뽑히지 않는다.",
-    "weights": { "sprite": 50.0, "scavenger": 28.0, "hound": 16.0, "warden": 6.0 },
+    "weights": {
+      "sprite": 52.0,
+      "scavenger": 30.0,
+      "hound": 14.0,
+      "warden": 4.0
+    },
     "pity": {
       "note": "이만큼 연속으로 A 이상이 안 나오면 다음 뽑기는 확정 A 이상.",
       "count": 12,
-      "grades": ["A", "S", "SS"]
+      "grades": [
+        "A",
+        "S",
+        "SS"
+      ]
     }
   }
 }

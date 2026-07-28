@@ -136,7 +136,7 @@ func gacha() -> String:
 func _ready() -> void:
 	# 시작 시 기본 펫 1마리를 준다
 	if owned.is_empty():
-		grant("sprite")
+		pass          ## 기본 지급 없음 — 동행은 제단의 뽑기로만 얻는다
 
 func grant(pet_type: String) -> bool:
 	var script_ref = load(PET_SCRIPT)

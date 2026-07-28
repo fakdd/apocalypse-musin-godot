@@ -98,23 +98,31 @@ func build() -> void:
 	side.add_child(buy_btn)
 
 	# ── 펫 뽑기 ── 제단 화면 아래쪽에 붙인다. 새 창을 만들지 않는다.
+	var ghead := Label.new()
+	ghead.text = "🐾 동행"
+	ghead.add_theme_font_size_override("font_size", 18)
+	ghead.add_theme_color_override("font_color", hud.GOLD)
+	ghead.position = Vector2(90, 528)
+	ghead.size = Vector2(200, 24)
+	panel.add_child(ghead)
+
 	gacha_btn = Button.new()
-	gacha_btn.position = Vector2(90, 540)
-	gacha_btn.size = Vector2(180, 44)
+	gacha_btn.position = Vector2(90, 556)
+	gacha_btn.size = Vector2(210, 46)
 	gacha_btn.pressed.connect(_on_gacha)
 	panel.add_child(gacha_btn)
 
 	gacha_info = RichTextLabel.new()
 	gacha_info.bbcode_enabled = true
 	gacha_info.add_theme_font_size_override("normal_font_size", 13)
-	gacha_info.position = Vector2(300, 620)
-	gacha_info.size = Vector2(500, 60)
+	gacha_info.position = Vector2(90, 606)
+	gacha_info.size = Vector2(680, 40)
 	panel.add_child(gacha_info)
 
 	PetManager.gacha_result.connect(_on_gacha_result)
 
 	var hint := Label.new()
-	hint.text = "[G]/[ESC] 닫기      ↑↓ 카테고리 ←→      Enter 강화"
+	hint.text = "[G]/[ESC] 닫기   ↑↓ 강화 선택   ←→ 카테고리   Enter 강화   아래 버튼: 동행 뽑기"
 	hint.add_theme_font_size_override("font_size", 13)
 	hint.add_theme_color_override("font_color", Color(0.6, 0.6, 0.66))
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -183,8 +191,12 @@ func _refresh() -> void:
 		return
 	essence_label.text = "◇ 보유 마석  %d" % CraftManager.essence
 	if gacha_btn:
-		gacha_btn.text = "🐾 동행 뽑기  ◇%d" % PetManager.gacha_cost()
+		gacha_btn.text = "동행 뽑기  ◇%d   (보유 %d/%d)" % [
+			PetManager.gacha_cost(), PetManager.owned.size(),
+			PetManager.defs().get("pets", {}).size()]
 		gacha_btn.disabled = not PetManager.can_gacha()
+		if gacha_info and gacha_info.text == "":
+			gacha_info.text = "[color=#70707a]동행은 뽑기로만 얻는다. P 로 교체.[/color]"
 
 	for uid in _list_btns:
 		var b: Button = _list_btns[uid]

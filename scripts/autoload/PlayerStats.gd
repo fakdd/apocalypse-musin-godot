@@ -133,7 +133,12 @@ func acquire_item(item: ItemData) -> bool:
 		return false
 	var slot: String = item.slot
 	var current: ItemData = equipped.get(slot, null)
-	if current == null or item.power_score() > current.power_score():
+	# 등급이 더 높으면 점수와 무관하게 갈아입는다.
+	# power_score 만 보면 강화를 많이 한 하급 장비가 SS 를 이겨서
+	# "좋은 게 떴는데 왜 안 끼지" 가 된다 — 플레이어 기대와 어긋난다.
+	if current == null or item.rarity > current.rarity \
+			or (item.rarity == current.rarity
+				and item.power_score() > current.power_score()):
 		if current != null:
 			inventory.append(current)
 		equipped[slot] = item

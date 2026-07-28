@@ -9,7 +9,8 @@ func setup(h: CanvasLayer) -> void:
 
 func build_quest_panel() -> void:
 	var hud := owner_hud
-	hud.quest_panel = hud._framed_panel(Vector2(1002, 230), Vector2(264, 140), hud.RED_DIM)
+	# 내용이 늘어 칸을 넘쳤다 — 패널을 세로로 키운다
+	hud.quest_panel = hud._framed_panel(Vector2(1002, 230), Vector2(264, 250), hud.RED_DIM)
 	var head := Label.new()
 	head.text = "◈ 퀘스트 추적"
 	head.add_theme_font_size_override("font_size", 15)
@@ -21,7 +22,9 @@ func build_quest_panel() -> void:
 	hud.quest_lines.add_theme_font_size_override("font_size", 13)
 	hud.quest_lines.add_theme_color_override("font_color", Color(0.86, 0.86, 0.9))
 	hud.quest_lines.position = Vector2(12, 32)
-	hud.quest_lines.size = Vector2(240, 100)
+	# 칸을 넘던 문제 — 패널 안쪽 폭에 맞추고 높이는 내용만큼 자란다
+	hud.quest_lines.size = Vector2(236, 220)
+	hud.quest_lines.clip_text = false
 	hud.quest_lines.autowrap_mode = TextServer.AUTOWRAP_WORD
 	hud.quest_panel.add_child(hud.quest_lines)
 
@@ -104,15 +107,19 @@ func _next_step() -> String:
 			target = d
 			break
 	if target != null:
-		return "%s 으로 이동 (미탐험 %d곳)" % [target.display_name, _unexplored()]
+		return "%s (미탐험 %d)" % [_short(target.display_name), _unexplored()]
 
 	# 5) 전부 밟았는데 안 깬 곳이 남았다 — 밤에 싸워야 한다
 	var uncleared := _uncleared()
 	if uncleared != null:
-		return "밤에 %s 를 공략 (J 로 밤 진입)" % uncleared.display_name
+		return "밤에 %s 공략 (J)" % _short(uncleared.display_name)
 
 	# 6) 다 깼다 — 보스전
 	return "지역 보스를 찾아 쓰러뜨려라 (J 로 밤 진입)"
+
+## 이름이 길면 칸을 넘는다 — 앞부분만 남긴다
+func _short(t: String, n: int = 10) -> String:
+	return t if t.length() <= n else t.substr(0, n) + "…"
 
 func _unexplored() -> int:
 	var n := 0
