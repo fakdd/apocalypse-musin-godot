@@ -282,6 +282,7 @@ func _physics_process(delta: float) -> void:
 	cam_rig.global_position = global_position
 	_update_shake(delta)
 	_update_fov(delta)
+	_update_ghost(delta)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_SPACE:
@@ -301,6 +302,9 @@ func shake(mag: float, dur: float) -> void:
 ## 타격 순간 잠깐 좁아졌다 돌아온다. 화면이 "파고드는" 느낌을 만든다.
 var _fov_punch := 0.0
 var _near_death_shown := false
+## 회피 잔상 — 구르는 동안 지나간 자리에 검은 안개를 남긴다
+var ghost_timer := 0.0
+const GHOST_STEP := 0.045
 ## 피격 무적 최소 시간. 어떤 경로로 맞아도 이 아래로는 안 내려간다.
 const I_FRAME_MIN := 0.35
 
@@ -414,3 +418,16 @@ func take_damage(amount: float, from: Vector3 = Vector3.ZERO) -> void:
 		SaveGame.run_deaths += 1
 		animation._play_anim("die")
 		died.emit()
+
+## 회피 잔상.
+## 구르는 동안 짧은 간격으로 어두운 안개를 흘려 궤적이 남게 한다.
+## 무적 구간이 눈에 보여야 "피했다" 는 감각이 생긴다.
+func _update_ghost(delta: float) -> void:
+	if dash_timer <= 0.0:
+		return
+	ghost_timer -= delta
+	if ghost_timer > 0.0:
+		return
+	ghost_timer = GHOST_STEP
+	VfxPool.burst(get_parent(), global_position + Vector3(0, 0.9, 0),
+		Color(0.10, 0.08, 0.16), 8, 1.2, 0.42, 0.30, -0.6)

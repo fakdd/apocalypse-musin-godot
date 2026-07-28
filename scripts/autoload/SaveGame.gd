@@ -85,6 +85,9 @@ var run_deaths := 0
 ## ── 환경설정 (슬롯과 무관 — 전역) ──
 var graphics := 1                 ## 0 Low / 1 Medium / 2 High
 var master_db := 0.0
+var bgm_db := 0.0             ## 배경음 (SoundManager 가 BGM 플레이어에 적용)
+var sfx_db := 0.0             ## 효과음
+var fullscreen := false
 ## ── 보스 러시 ──
 var rush_index := -1              ## -1 이면 진행 중이 아니다
 
@@ -126,6 +129,9 @@ func save() -> bool:
 		"run_deaths": run_deaths,
 		"graphics": graphics,
 		"master_db": master_db,
+		"bgm_db": bgm_db,
+		"sfx_db": sfx_db,
+		"fullscreen": fullscreen,
 	}
 	var f := FileAccess.open(slot_path(), FileAccess.WRITE)
 	if f == null:
@@ -233,6 +239,9 @@ func load_game() -> bool:
 	run_deaths = int(d.get("run_deaths", 0))
 	graphics = clampi(int(d.get("graphics", 1)), 0, 2)
 	master_db = float(d.get("master_db", 0.0))
+	bgm_db = float(d.get("bgm_db", 0.0))
+	sfx_db = float(d.get("sfx_db", 0.0))
+	fullscreen = bool(d.get("fullscreen", false))
 
 	has_save = true
 	loaded.emit()

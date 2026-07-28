@@ -300,7 +300,10 @@ func set_bgm(track_id: String) -> void:
 	if _bgm_tween and _bgm_tween.is_valid():
 		_bgm_tween.kill()
 	_bgm_tween = create_tween().set_parallel(true).set_ignore_time_scale(true)
-	_bgm_tween.tween_property(incoming, "volume_db", BGM_DB, BGM_FADE)
+	var target_db := BGM_DB + SaveGame.bgm_db
+	if SaveGame.bgm_db <= MIN_DB + 0.01:
+		target_db = MUTE_DB
+	_bgm_tween.tween_property(incoming, "volume_db", target_db, BGM_FADE)
 	_bgm_tween.tween_property(outgoing, "volume_db", -80.0, BGM_FADE)
 	_bgm_tween.chain().tween_callback(outgoing.stop)
 	_bgm_active = incoming
@@ -338,6 +341,26 @@ func set_master_db(db: float) -> void:
 	_volume_db = clampf(db, MIN_DB, 6.0)
 	_apply_bus()
 
+## 배경음만 조절한다. 전용 버스가 없어도 BGM 플레이어 두 대에 직접 건다.
+func set_bgm_db(db: float) -> void:
+	SaveGame.bgm_db = clampf(db, MIN_DB, 6.0)
+	_apply_bgm_volume()
+
+func _apply_bgm_volume() -> void:
+	var v := BGM_DB + SaveGame.bgm_db
+	if SaveGame.bgm_db <= MIN_DB + 0.01:
+		v = MUTE_DB
+	for pl in [_bgm_a, _bgm_b]:
+		if pl != null and is_instance_valid(pl) and pl.playing:
+			pl.volume_db = v
+
+## 효과음만 조절한다. play() 계열이 이 값을 더해 쓴다.
+func set_sfx_db(db: float) -> void:
+	SaveGame.sfx_db = clampf(db, MIN_DB, 6.0)
+
+func sfx_offset() -> float:
+	return MUTE_DB if SaveGame.sfx_db <= MIN_DB + 0.01 else SaveGame.sfx_db
+
 func is_muted() -> bool:
 	return _paused or _volume_db <= MIN_DB + 0.01
 
@@ -363,6 +386,7 @@ func play_pitched(name: String, volume_db: float = 0.0, pitch_mult: float = 1.0,
 		pitch_variance: float = 0.05) -> void:
 	if not sounds.has(name):
 		return
+	volume_db += sfx_offset()      ## 설정의 효과음 볼륨
 	# 중복 재생 차단 — 같은 소리가 너무 촘촘히 겹치는 것을 막는다
 	var now := Time.get_ticks_msec() / 1000.0
 	if _last_played.get(name, -99.0) > now - SAME_SOUND_GAP:

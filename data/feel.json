@@ -14,7 +14,7 @@
     "kill": 0.11,
     "parry": 0.13,
     "ult": 0.2,
-    "crit": 0.12,
+    "crit": 0.14,
     "boss_hit": 0.07
   },
   "shake": {
@@ -35,8 +35,8 @@
       0.15
     ],
     "crit": [
-      0.32,
-      0.16
+      0.42,
+      0.2
     ],
     "parry": [
       0.36,
@@ -62,9 +62,9 @@
   "camera": {
     "base_fov": 62.0,
     "punch_light": 1.2,
-    "punch_heavy": 3.0,
-    "punch_crit": 4.5,
-    "punch_ult": 7.0,
+    "punch_heavy": 4.2,
+    "punch_crit": 7.5,
+    "punch_ult": 9.0,
     "punch_recover": 7.0,
     "sprint_fov": 3.5,
     "low_hp_fov": 2.5,
@@ -96,11 +96,11 @@
   "flash": {
     "crit": [
       1.0,
-      0.92,
-      0.55,
-      0.16,
+      0.72,
+      0.28,
+      0.24,
       0.0,
-      0.2
+      0.26
     ],
     "parry": [
       0.55,

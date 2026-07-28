@@ -91,6 +91,28 @@ func _draw() -> void:
 		if is_instance_valid(al):
 			_dot(al.global_position, ppos, yaw, 4.0, Color(0.6, 0.9, 1.0))
 
+	# 랜드마크 — 영역 유형별 색 (data/area_kinds.json)
+	# 미탐험은 크게·진하게, 탐험한 곳은 작고 흐리게. 클리어한 곳은 그리지 않는다.
+	for d in LandmarkRegistry.landmarks:
+		if d == null or d.cleared:
+			continue
+		var kd := LandmarkZone.kind_def(String(d.area_kind))
+		var col := Color(0.95, 0.45, 0.40)
+		var ca = kd.get("color", null)
+		if typeof(ca) == TYPE_ARRAY and ca.size() >= 3:
+			col = Color(float(ca[0]), float(ca[1]), float(ca[2]))
+		if d.explored:
+			col.a = 0.45
+			_dot(d.center, ppos, yaw, 3.5, col)
+		else:
+			_dot(d.center, ppos, yaw, 5.5, col)
+
+	# 다음 장으로 나가는 포탈 — 가장 크고 흰빛
+	for pt in get_tree().get_nodes_in_group("chapter_portals"):
+		if is_instance_valid(pt):
+			_dot(pt.global_position, ppos, yaw, 7.0, Color(1.0, 1.0, 1.0))
+			_dot(pt.global_position, ppos, yaw, 3.0, Color(0.6, 0.9, 1.0))
+
 	# 균열 (활성 / 봉인됨)
 	for rf in get_tree().get_nodes_in_group("rifts"):
 		if is_instance_valid(rf):

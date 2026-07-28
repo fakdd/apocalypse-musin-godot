@@ -32,11 +32,11 @@ func _skill_button(pos: Vector2, radius: float, key: String, glyph: String, col:
 	icon.set_anchors_preset(Control.PRESET_FULL_RECT)
 	btn.add_child(icon)
 
-	var cd := ColorRect.new()
-	cd.color = Color(0, 0, 0, 0.62)
+	# 12시에서 시계 방향으로 도는 부채꼴 암영.
+	# 위→아래로 채우던 방식보다 남은 시간이 훨씬 잘 읽힌다.
+	var cd := CooldownArc.new()
 	cd.position = Vector2.ZERO
 	cd.size = btn.size
-	cd.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	btn.add_child(cd)
 
 	var cdtext := Label.new()
@@ -154,7 +154,7 @@ func update_cooldowns(p) -> void:
 	_set_cd("parry", p.parry_cd, p.PARRY_COOLDOWN)
 	var ult_ratio: float = 1.0 - clampf(p.ult_gauge / maxf(p.ult_max, 1.0), 0.0, 1.0)
 	var d: Dictionary = hud.skill_buttons["ult"]
-	d["cd"].size.y = d["full"] * ult_ratio
+	d["cd"].ratio = ult_ratio
 	d["cdtext"].text = "" if ult_ratio <= 0.001 else "%d%%" % int((1.0 - ult_ratio) * 100)
 
 func _set_cd(key: String, remain: float, total: float) -> void:
@@ -163,5 +163,5 @@ func _set_cd(key: String, remain: float, total: float) -> void:
 		return
 	var d: Dictionary = hud.skill_buttons[key]
 	var ratio: float = clampf(remain / maxf(total, 0.001), 0.0, 1.0)
-	d["cd"].size.y = d["full"] * ratio
+	d["cd"].ratio = ratio
 	d["cdtext"].text = "" if remain <= 0.05 else "%.1f" % remain

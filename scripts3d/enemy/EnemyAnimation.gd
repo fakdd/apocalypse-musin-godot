@@ -197,15 +197,28 @@ func _do_flash(damage_ratio: float = 0.2) -> void:
 
 ## 데미지 숫자 — 풀에서 꺼내 쓰고 반납한다 (피격마다 Label3D 를 새로 만들지 않는다).
 ## 피해 비율에 따라 글자 크기와 색이 달라져 큰 타격이 눈에 들어온다.
+## 직전 타격이 치명타였는가 (Enemy3D.take_damage 가 세운다)
+var crit_hit := false
+
 func _spawn_damage_number(amount: float) -> void:
 	var lbl := VfxPool.take_damage_label(owner_enemy.get_parent())
 	if lbl == null:
 		return          ## 동시 표시 상한 — 화면을 덮지 않게 이번 숫자는 건너뛴다
-	lbl.text = str(int(amount))
 	var ratio: float = clampf(amount / maxf(owner_enemy.max_hp, 1.0), 0.0, 1.0)
 	# 큰 피해는 크고 붉게, 작은 피해는 작고 노랗게
+	lbl.text = str(int(amount))
 	lbl.pixel_size = lerpf(0.010, 0.018, ratio)
 	lbl.modulate = Color(1, 1, 0.7).lerp(Color(1.0, 0.55, 0.3), ratio)
+	lbl.outline_size = 12
+	lbl.outline_modulate = Color(0, 0, 0)
+	# 치명타는 확실히 달라 보여야 한다 — 크게 · 주황 발광 · 느낌표
+	if crit_hit:
+		crit_hit = false
+		lbl.text = "%d!" % int(amount)
+		lbl.pixel_size *= 1.75
+		lbl.modulate = Color(1.0, 0.62, 0.18)
+		lbl.outline_size = 20
+		lbl.outline_modulate = Color(0.55, 0.16, 0.0)
 	lbl.modulate.a = 1.0
 	lbl.global_position = owner_enemy.global_position + Vector3(randf_range(-0.3, 0.3), owner_enemy.hover_height + owner_enemy.hit_radius * 2.0, 0)
 	var start_y: float = lbl.position.y

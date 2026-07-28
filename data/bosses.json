@@ -5,20 +5,22 @@
     "phases": "hp 비율이 at 이상인 동안 그 페이즈. 위에서부터 내려가며 첫 일치를 쓴다.",
     "patterns": "volley(부채꼴 탄) | nova(전방위 탄) | charge(돌진) | summon(잡몹 소환) | slam(근접 충격파) | sweep(회전 탄막) | homing(유도탄) | field(장판)",
     "weakness": "kind=after_charge 이면 돌진이 끝난 뒤 window 초 동안 받는 피해 ×mult",
-    "enrage": "전투 시작 후 at 초가 지나면 발동. 이동속도·발사속도 배율이 곱해진다.",
+    "enrage": "at 초가 지나거나 hp 비율이 hp_below 아래로 떨어지면 발동. 이동속도·발사속도 배율이 곱해지고 붉은 오라가 붙는다.",
     "cutscene": "보스가 나타날 때 배너 → 부제 순서로 뜬다. 길이는 hold 초."
   },
   "defaults": {
     "bgm": "boss",
     "enrage": {
       "at": 95.0,
-      "speed": 1.25,
-      "rate": 1.35,
+      "speed": 1.2,
+      "rate": 1.2,
       "tint": [
         1.0,
         0.45,
         0.4
-      ]
+      ],
+      "hp_below": 0.3,
+      "aura": true
     },
     "weakness": {
       "kind": "after_charge",
@@ -238,7 +240,9 @@
           1.0,
           0.35,
           0.2
-        ]
+        ],
+        "hp_below": 0.3,
+        "aura": true
       },
       "phases": [
         {
@@ -447,7 +451,9 @@
           0.85,
           0.25,
           1.0
-        ]
+        ],
+        "hp_below": 0.3,
+        "aura": true
       },
       "weakness": {
         "kind": "after_charge",

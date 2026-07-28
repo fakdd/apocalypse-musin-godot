@@ -64,6 +64,9 @@ func _ready() -> void:
 		SaveGame.load_game()
 	set_process(true)
 	SoundManager.set_master_db(SaveGame.master_db)   ## 저장된 볼륨을 되살린다
+	SoundManager.set_bgm_db(SaveGame.bgm_db)
+	SoundManager.set_sfx_db(SaveGame.sfx_db)
+	MainMenuUI.apply_screen_mode()
 
 	_create_managers()
 
@@ -278,6 +281,8 @@ func _rush_spawn() -> void:
 	_rush_boss.max_hp *= float(_rush_conf().get("hp_mult", 0.85))
 	_rush_boss.hp = _rush_boss.max_hp
 
+	if hud and hud.get("boss_bar") != null:
+		hud.boss_bar.show_for(_rush_boss)
 	if hud:
 		var d := EnemyConfig.boss_def(btype)
 		hud.show_banner("%s  —  %s" % [

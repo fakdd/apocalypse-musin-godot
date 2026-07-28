@@ -72,6 +72,7 @@ func _slash() -> void:
 		if fwd.angle_to(to_enemy.normalized()) > half_angle: continue
 		hits += 1
 		hit_center += enemy.global_position
+		enemy.incoming_crit = is_crit          ## 데미지 텍스트가 이 값을 본다
 		var kb: float = 4.0 * combo_mult \
 			* (1.0 + PlayerStats.wf("knockback", 0.0))
 		if enemy.take_damage(owner_player.slash_damage * combo_mult * crit_mult * fam_dmg,

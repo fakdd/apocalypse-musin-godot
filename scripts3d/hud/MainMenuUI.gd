@@ -163,7 +163,15 @@ func _build_rows(sc: Dictionary) -> Array:
 func _decorate(id: String, label: String) -> String:
 	match id:
 		"vol_down", "vol_up":
-			return "%s      %s" % [label, txt("vol_fmt", "마스터 볼륨: %d%%") % _volume_pct()]
+			return "%s      %s" % [label, txt("vol_fmt", "마스터 볼륨: %d%%") % _pct(SaveGame.master_db)]
+		"bgm_down", "bgm_up":
+			return "%s      %s" % [label, txt("bgm_fmt", "배경음: %d%%") % _pct(SaveGame.bgm_db)]
+		"sfx_down", "sfx_up":
+			return "%s      %s" % [label, txt("sfx_fmt", "효과음: %d%%") % _pct(SaveGame.sfx_db)]
+		"fullscreen":
+			return "%s      %s" % [label, txt("screen_fmt", "화면: %s")
+				% txt("screen_full" if SaveGame.fullscreen else "screen_window",
+					"전체화면" if SaveGame.fullscreen else "창모드")]
 		"gfx_down", "gfx_up":
 			return "%s      %s" % [label,
 				txt("gfx_fmt", "그래픽 품질: %s") % EnvironmentManager.level_name(SaveGame.graphics)]
@@ -173,8 +181,11 @@ func _decorate(id: String, label: String) -> String:
 	return label
 
 ## -30dB ~ +6dB 를 0~100% 로 보여준다 (사람이 읽는 값).
+func _pct(db: float) -> int:
+	return int(round(clampf((db + 30.0) / 36.0, 0.0, 1.0) * 100.0))
+
 func _volume_pct() -> int:
-	return int(round(clampf((SaveGame.master_db + 30.0) / 36.0, 0.0, 1.0) * 100.0))
+	return _pct(SaveGame.master_db)
 
 func _slot_label(info: Dictionary) -> String:
 	var n: int = int(info["slot"]) + 1
@@ -258,6 +269,16 @@ func _activate(id: String) -> void:
 			_nudge_volume(-4.0)
 		"vol_up":
 			_nudge_volume(4.0)
+		"bgm_down":
+			_nudge_bgm(-4.0)
+		"bgm_up":
+			_nudge_bgm(4.0)
+		"sfx_down":
+			_nudge_sfx(-4.0)
+		"sfx_up":
+			_nudge_sfx(4.0)
+		"fullscreen":
+			_toggle_fullscreen()
 		"gfx_down":
 			_nudge_graphics(-1)
 		"gfx_up":
@@ -298,6 +319,29 @@ func _nudge_volume(db: float) -> void:
 	SoundManager.set_master_db(SaveGame.master_db)
 	SaveGame.save()
 	_refresh()
+
+func _nudge_bgm(db: float) -> void:
+	SoundManager.set_bgm_db(SaveGame.bgm_db + db)
+	SaveGame.save()
+	_refresh()
+
+func _nudge_sfx(db: float) -> void:
+	SoundManager.set_sfx_db(SaveGame.sfx_db + db)
+	SoundManager.play("ui_select", -6.0)      ## 바뀐 볼륨을 바로 들려준다
+	SaveGame.save()
+	_refresh()
+
+## 전체화면 ↔ 창모드. DisplayServer 에 즉시 적용한다.
+func _toggle_fullscreen() -> void:
+	SaveGame.fullscreen = not SaveGame.fullscreen
+	apply_screen_mode()
+	SaveGame.save()
+	_refresh()
+
+static func apply_screen_mode() -> void:
+	DisplayServer.window_set_mode(
+		DisplayServer.WINDOW_MODE_FULLSCREEN if SaveGame.fullscreen
+		else DisplayServer.WINDOW_MODE_WINDOWED)
 
 func _nudge_graphics(step: int) -> void:
 	SaveGame.graphics = clampi(SaveGame.graphics + step, 0,
@@ -346,10 +390,17 @@ func handle_key(keycode: int) -> bool:
 			if _screen != "options" or _btns.is_empty():
 				return true
 			var rid := String(_rows[_sel]["id"])
+			var up := keycode == KEY_RIGHT
 			if rid.begins_with("vol_"):
-				_nudge_volume(4.0 if keycode == KEY_RIGHT else -4.0)
+				_nudge_volume(4.0 if up else -4.0)
+			elif rid.begins_with("bgm_"):
+				_nudge_bgm(4.0 if up else -4.0)
+			elif rid.begins_with("sfx_"):
+				_nudge_sfx(4.0 if up else -4.0)
 			elif rid.begins_with("gfx_"):
-				_nudge_graphics(1 if keycode == KEY_RIGHT else -1)
+				_nudge_graphics(1 if up else -1)
+			elif rid == "fullscreen":
+				_toggle_fullscreen()
 			return true
 		KEY_ENTER, KEY_KP_ENTER:
 			if _sel >= 0 and _sel < _btns.size() and not _btns[_sel].disabled:

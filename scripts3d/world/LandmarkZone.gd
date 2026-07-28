@@ -251,6 +251,8 @@ func _spawn_wave(index: int) -> void:
 			boss.landmark_id = data.id
 			made += 1
 			if world.hud:
+				if world.hud.get("boss_bar") != null:
+					world.hud.boss_bar.show_for(boss)
 				_boss_intro(world, String(wave.boss))
 
 	LandmarkRegistry.register_spawns(data.id, made)

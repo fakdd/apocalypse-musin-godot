@@ -192,6 +192,10 @@ func _physics_process(delta: float) -> void:
 
 ## ── 공개 API — 외부(플레이어 공격/스킬)가 호출한다 ──
 
+## 이번 타격이 치명타인가. PlayerCombat 이 때리기 직전에 세운다.
+## 인자를 늘리면 기존 호출부(적 투사체·장판·펫)를 전부 고쳐야 해서 플래그로 둔다.
+var incoming_crit := false
+
 func take_damage(amount: float, knockback: Vector3 = Vector3.ZERO) -> bool:
 	if dead:
 		return false
@@ -242,6 +246,8 @@ func take_damage(amount: float, knockback: Vector3 = Vector3.ZERO) -> bool:
 			knock_vel.y = EnemyConfig.KNOCKBACK_POP
 
 	animation._do_flash(amount / maxf(max_hp, 1.0))
+	animation.crit_hit = incoming_crit
+	incoming_crit = false
 	if hp_bar_fill and is_instance_valid(hp_bar_fill):
 		hp_bar_fill.scale.x = clampf(hp / max_hp, 0.0, 1.0)
 	if amount < 50.0:

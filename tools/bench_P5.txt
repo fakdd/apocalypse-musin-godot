@@ -1,17 +1,17 @@
 == P5 ==
-fps_avg=89.4
-frame_ms_median=9.88
-frame_ms_p95=12.65
-draw_calls=1250
-primitives=3470897
-render_objects=1612
-nodes=2929
-objects=7203
-mem_static_mb=178.7
-video_mem_mb=983.1
+fps_avg=113.4
+frame_ms_median=7.06
+frame_ms_p95=10.49
+draw_calls=1201
+primitives=3404518
+render_objects=1587
+nodes=2870
+objects=7163
+mem_static_mb=165.9
+video_mem_mb=497.9
 enemies=43
-world_children=744
+world_children=726
 multimesh_nodes=25
 shared_mats=3
-CLASSCOUNT AnimationPlayer=45 Area3D=35 CharacterBody3D=44 CollisionShape3D=127 Control=53 Label=154 MeshInstance3D=996 Node3D=601 Node=197 OmniLight3D=142 Panel=56 Skeleton3D=45 Sprite3D=86 StaticBody3D=48 TextureRect=44
-pool={ "damage_pooled": 0, "damage_created": 0, "damage_reused": 0, "proj_pooled": 0, "proj_created": 10, "proj_reused": 0 }
+CLASSCOUNT AnimationPlayer=45 Area3D=36 CharacterBody3D=44 CollisionShape3D=124 Control=60 Label=160 MeshInstance3D=939 Node3D=580 Node=199 OmniLight3D=141 Panel=56 Skeleton3D=45 Sprite3D=86 StaticBody3D=44 TextureRect=44
+pool={ "damage_pooled": 0, "damage_created": 0, "damage_reused": 0, "proj_pooled": 4, "fx_pooled": 0, "fx_created": 0, "fx_reused": 0, "proj_created": 15, "proj_reused": 8 }

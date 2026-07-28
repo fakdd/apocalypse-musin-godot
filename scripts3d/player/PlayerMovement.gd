@@ -19,6 +19,7 @@ func _start_dash() -> void:
 	owner_player.dash_dir = dir.normalized()
 	owner_player.dash_timer = PlayerConfig.DASH_DURATION
 	owner_player.dash_cd = PlayerConfig.DASH_COOLDOWN * UpgradeManager.reduce("cooldown")
+	owner_player.ghost_timer = 0.0          ## 잔상 시작
 	owner_player.invuln_timer = max(owner_player.invuln_timer, 0.22)
 	SoundManager.play("dash")
 	owner_player.animation._spawn_dash_trail()

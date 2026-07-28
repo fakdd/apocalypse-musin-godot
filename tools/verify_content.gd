@@ -538,8 +538,9 @@ func _run() -> void:
 			print("CT|  ✘ 없는 화면: %s" % str(miss_scr)); bad += 1
 
 		# 항목 id 가 전부 처리 가능한 것인가 (오타 나면 눌러도 아무 일이 없다)
-		var known := ["continue", "new", "resume", "options", "title",
-			"back", "vol_down", "vol_up", "gfx_down", "gfx_up", "quit", "boss_rush"]
+		var known := ["continue", "new", "resume", "options", "title", "back",
+			"vol_down", "vol_up", "bgm_down", "bgm_up", "sfx_down", "sfx_up",
+			"gfx_down", "gfx_up", "fullscreen", "quit", "boss_rush"]
 		var bad_id := []
 		for k in sc:
 			for it in sc[k].get("items", []):
@@ -647,6 +648,7 @@ func _run_projectile_tests() -> void:
 	await _t_pet()
 	await _t_boot()
 	await _t_new_game_flow()
+	await _t_polish()
 
 	host.queue_free()
 	if _pt_bad > 0:
@@ -937,19 +939,19 @@ func _t_menu_click() -> void:
 		m.close(); return
 	await _idle()
 
-	var db0: float = SaveGame.master_db
+	var db0: float = SaveGame.bgm_db
 	var gfx0: int = SaveGame.graphics
-	_click(m, "vol_down")
+	_click(m, "bgm_down")
 	await _idle()
 	_click(m, "gfx_up")
 	await _idle()
-	var vol_ok: bool = SaveGame.master_db < db0
+	var vol_ok: bool = SaveGame.bgm_db < db0
 	var gfx_ok: bool = SaveGame.graphics != gfx0 or gfx0 == EnvironmentManager.level_count() - 1
 
 	# 라벨에 현재 수치가 실제로 찍히는가
 	var shown := ""
 	for b in m._btns:
-		if "볼륨" in b.text:
+		if "배경음" in b.text:
 			shown = b.text
 	var label_ok: bool = shown.find("%") >= 0
 
@@ -963,7 +965,7 @@ func _t_menu_click() -> void:
 	_click(m, "back")
 	await _idle()
 	m.close()
-	SaveGame.master_db = db0
+	SoundManager.set_bgm_db(db0)
 	SaveGame.graphics = gfx0
 
 	if vol_ok and gfx_ok and label_ok and hover_ok:
@@ -1359,3 +1361,96 @@ func _t_new_game_flow() -> void:
 	SaveGame.wipe()
 	SaveGame.slot = keep_slot
 	SaveGame.session_started = keep_sess
+
+## [이번 폴리싱] 보스바 · 광폭화 · 치명타 · 잔상 · 쿨다운 · 설정
+func _t_polish() -> void:
+	var w = get_tree().current_scene
+	var hud = w.hud if w and w.get("hud") != null else null
+	if hud == null:
+		print("CT|  ✘ HUD 없음"); _pt_bad += 1
+		return
+
+	# 1) 보스 체력바 — 보스를 만들고 띄웠다 내린다
+	if hud.get("boss_bar") == null:
+		print("CT|  ✘ 보스 체력바가 없다"); _pt_bad += 1
+	else:
+		var host := Node3D.new()
+		w.add_child(host)
+		var b = w._make_enemy("dire_wolf", Vector3(90, 0, 90))
+		await get_tree().physics_frame
+		hud.boss_bar.show_for(b)
+		var opened: bool = hud.boss_bar.is_open()
+		hud.boss_bar.update_bar(0.016)
+		var named: bool = String(hud.boss_bar.name_label.text) != ""
+		hud.boss_bar.hide_bar()
+		if is_instance_valid(b):
+			b.queue_free()
+		host.queue_free()
+		if opened and named:
+			print("CT|  ✔ 보스 체력바 — 표시·이름(%s)·갱신" % String(hud.boss_bar.name_label.text))
+		else:
+			print("CT|  ✘ 보스 체력바 (열림 %s · 이름 %s)" % [str(opened), str(named)])
+			_pt_bad += 1
+
+	# 2) 광폭화가 HP 조건으로도 발동하는가
+	var en = EnemyConfig.boss_field("dire_wolf", "enrage")
+	if typeof(en) == TYPE_DICTIONARY and float(en.get("hp_below", 0.0)) > 0.0:
+		print("CT|  ✔ 광폭화 HP 조건 %.0f%% (시간 조건과 병행)"
+			% (float(en["hp_below"]) * 100.0))
+	else:
+		print("CT|  ✘ 광폭화 HP 조건 없음"); _pt_bad += 1
+
+	# 3) 치명타 표시 경로가 이어져 있는가
+	var probe = load("res://scripts3d/enemy/EnemyAnimation.gd").new()
+	var has_crit: bool = "crit_hit" in probe
+	probe.free()
+	var e_probe = load("res://scripts3d/Enemy3D.gd").new()
+	var has_in: bool = "incoming_crit" in e_probe
+	e_probe.free()
+	if has_crit and has_in:
+		print("CT|  ✔ 치명타 → 데미지 텍스트 전달 경로 존재")
+	else:
+		print("CT|  ✘ 치명타 전달 경로 (anim %s / enemy %s)" % [str(has_crit), str(has_in)])
+		_pt_bad += 1
+
+	# 4) 회피 잔상
+	var pl := Battlefield.live_player()
+	if pl != null and ("ghost_timer" in pl) and pl.has_method("_update_ghost"):
+		print("CT|  ✔ 회피 잔상 경로 존재")
+	else:
+		print("CT|  ✘ 회피 잔상 없음"); _pt_bad += 1
+
+	# 5) 쿨다운 부채꼴
+	var arc_ok := false
+	if hud.skill_buttons.has("dash"):
+		arc_ok = hud.skill_buttons["dash"]["cd"] is CooldownArc
+		if arc_ok:
+			hud.skill_buttons["dash"]["cd"].ratio = 0.5
+			arc_ok = hud.skill_buttons["dash"]["cd"].visible
+			hud.skill_buttons["dash"]["cd"].ratio = 0.0
+	if arc_ok:
+		print("CT|  ✔ 스킬 쿨다운 부채꼴 동작")
+	else:
+		print("CT|  ✘ 쿨다운 부채꼴 이상"); _pt_bad += 1
+
+	# 6) 설정 — BGM/SFX 분리 · 전체화면
+	var kb := SaveGame.bgm_db
+	var ks := SaveGame.sfx_db
+	SoundManager.set_bgm_db(-8.0)
+	SoundManager.set_sfx_db(-12.0)
+	var split_ok: bool = absf(SaveGame.bgm_db + 8.0) < 0.1 		and absf(SaveGame.sfx_db + 12.0) < 0.1 and SaveGame.bgm_db != SaveGame.sfx_db
+	SoundManager.set_bgm_db(kb)
+	SoundManager.set_sfx_db(ks)
+	var screen_ok: bool = hud.menu_ui.has_method("_toggle_fullscreen")
+	if split_ok and screen_ok:
+		print("CT|  ✔ 설정 — 배경음/효과음 분리 · 화면 모드 전환")
+	else:
+		print("CT|  ✘ 설정 (분리 %s · 화면 %s)" % [str(split_ok), str(screen_ok)])
+		_pt_bad += 1
+
+	# 7) 미니맵이 영역 유형 색을 쓰는가
+	var kd := LandmarkZone.kind_def("treasure")
+	if not kd.is_empty() and kd.has("color"):
+		print("CT|  ✔ 미니맵 영역 유형 색 정의")
+	else:
+		print("CT|  ✘ 영역 유형 색 없음"); _pt_bad += 1

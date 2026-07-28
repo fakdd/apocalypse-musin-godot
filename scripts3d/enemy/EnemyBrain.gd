@@ -303,10 +303,26 @@ func _update_enrage(delta: float) -> void:
 	var e = EnemyConfig.boss_field(owner_enemy.enemy_type, "enrage")
 	if typeof(e) != TYPE_DICTIONARY:
 		return
-	if boss_time < float(e.get("at", 999.0)):
+	# 시간이 다 됐거나, 체력이 임계 아래로 떨어지면 발동한다.
+	# 시간만 보면 잘 싸우는 플레이어는 광폭화를 한 번도 못 본다.
+	var ratio: float = owner_enemy.hp / maxf(owner_enemy.max_hp, 1.0)
+	var by_time: bool = boss_time >= float(e.get("at", 999.0))
+	var by_hp: bool = ratio <= float(e.get("hp_below", 0.0))
+	if not by_time and not by_hp:
 		return
 	enraged = true
 	owner_enemy.speed *= float(e.get("speed", 1.25))
+	# 붉은 오라 — 멀리서도 "지금 세졌다" 가 보인다
+	if bool(e.get("aura", true)):
+		var tc2 = e.get("tint", [1.0, 0.35, 0.3])
+		var col := Color(1.0, 0.35, 0.3)
+		if typeof(tc2) == TYPE_ARRAY and tc2.size() >= 3:
+			col = Color(float(tc2[0]), float(tc2[1]), float(tc2[2]))
+		VfxPool.burst(owner_enemy.get_parent(),
+			owner_enemy.global_position + Vector3(0, owner_enemy.hover_height, 0),
+			col, 46, 5.0, 1.1, 0.22, -1.2)
+		if owner_enemy.animation and owner_enemy.animation.has_method("_add_aura"):
+			owner_enemy.animation._add_aura(col)
 	CombatFeel.impact("boss_enrage")
 	var world = owner_enemy.get_tree().current_scene
 	if world and world.get("hud") != null:

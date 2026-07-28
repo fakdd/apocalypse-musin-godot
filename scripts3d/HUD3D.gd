@@ -65,6 +65,7 @@ var achievement_ui: AchievementUI
 var upgrade_ui: UpgradeUI
 var npc_ui: NPCUI
 var menu_ui: MainMenuUI
+var boss_bar: BossBarUI
 
 func _ready() -> void:
 	# 메뉴가 트리를 멈춰도 HUD 는 계속 돌아야 조작이 된다
@@ -88,6 +89,7 @@ func _ready() -> void:
 	achievement_ui.build()
 	upgrade_ui.build()
 	menu_ui.build()
+	boss_bar.build()
 	# 모듈이 전부 만들어진 뒤 한 번에 처리한다
 	call_deferred("make_hud_click_through")
 	npc_ui.build()
@@ -134,8 +136,10 @@ func _create_modules() -> void:
 	npc_ui.name = "NPCUI"
 	menu_ui = MainMenuUI.new()
 	menu_ui.name = "MainMenuUI"
+	boss_bar = BossBarUI.new()
+	boss_bar.name = "BossBarUI"
 	for m in [health_ui, skill_ui, minimap_ui, quest_ui, damage_ui, popup_ui,
-			landmark_ui, achievement_ui, upgrade_ui, npc_ui, menu_ui]:
+			landmark_ui, achievement_ui, upgrade_ui, npc_ui, menu_ui, boss_bar]:
 		m.setup(self)
 		add_child(m)
 
@@ -365,6 +369,7 @@ func _process(_delta: float) -> void:
 	skill_ui.spin_weapon_icon(_delta)
 
 	quest_ui.refresh_quest()
+	boss_bar.update_bar(_delta)
 
 ## ── 창 토글 입력 (Tab/I/ESC) ──
 
