@@ -37,16 +37,32 @@ func _run() -> void:
 		print("DBG| DONE")
 		return
 
-	var keys := [KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_F5, KEY_F6,
-		KEY_F7, KEY_F8, KEY_F9, KEY_F10, KEY_F11, KEY_F12]
-	for k in keys:
+	# 에디터가 F5/F6/F8 을 가져가므로 치트는 Ctrl + 숫자로 옮겼다.
+	# F 키를 쓰면 에디터가 실행을 중지시켜 "게임이 꺼지는" 것처럼 보인다.
+	var keys := [KEY_QUOTELEFT, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5,
+		KEY_6, KEY_7, KEY_8, KEY_9, KEY_0, KEY_MINUS]
+	var names := ["`", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-"]
+	for i in range(keys.size()):
 		var ev := InputEventKey.new()
-		ev.keycode = k
+		ev.keycode = keys[i]
 		ev.pressed = true
+		ev.ctrl_pressed = true
 		dc._input(ev)
 		await get_tree().process_frame
 		await get_tree().process_frame
-		print("DBG|  ✔ F%d 통과" % (k - KEY_F1 + 1))
+		print("DBG|  ✔ Ctrl+%s 통과" % names[i])
+
+	# Ctrl 없이 누르면 아무 일도 없어야 한다 (일반 조작과 겹치지 않게)
+	var plain := InputEventKey.new()
+	plain.keycode = KEY_9
+	plain.pressed = true
+	var before := CraftManager.essence
+	dc._input(plain)
+	await get_tree().process_frame
+	if CraftManager.essence == before:
+		print("DBG|  ✔ Ctrl 없이는 발동하지 않는다")
+	else:
+		print("DBG|  ✘ Ctrl 없이 발동했다")
 
 	# 무적 토글을 켠 채 몇 프레임 더 (매 프레임 처리 경로 확인)
 	for i in range(30):

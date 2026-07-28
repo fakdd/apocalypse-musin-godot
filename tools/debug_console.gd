@@ -4,21 +4,26 @@ extends Node
 ## `OS.is_debug_build()` 가 아니면 스스로 사라진다 — 내보낸 배포판에는 없다.
 ## 자동 검증(--*test)이 도는 동안에도 켜지지 않는다.
 ##
-## F1 을 누르면 도움말이 화면에 뜬다.
+## Ctrl + \` 를 누르면 도움말이 화면에 뜬다.
+##
+## F 키를 쓰지 않는 이유 —
+##   에디터에서 F5(실행) · F6(현재 씬 실행) · F8(중지) 이 이미 잡혀 있다.
+##   게임 창이 떠 있어도 에디터가 먼저 받아, F8 을 누르면 게임이 그냥 꺼졌다.
+##   그래서 게임이 쓰지 않고 에디터와도 겹치지 않는 Ctrl + 숫자로 옮겼다.
 
 const HELP := [
-	"F1  이 도움말",
-	"F2  마석 +1000",
-	"F3  레벨 +5",
-	"F4  전 등급 아이템 한 벌 (F~SSS)",
-	"F5  동행 뽑기 10연 (마석 무시)",
-	"F6  현재 랜드마크 즉시 클리어",
-	"F7  다음 챕터로 (보스 생략)",
-	"F8  방주 무적 토글",
-	"F9  플레이어 무적 토글",
-	"F10 적 전멸",
-	"F11 밤/낮 전환",
-	"F12 그래픽 품질 순환",
+	"Ctrl+`  이 도움말",
+	"Ctrl+1  마석 +1000",
+	"Ctrl+2  레벨 +5",
+	"Ctrl+3  전 등급 아이템 한 벌 (F~SSS)",
+	"Ctrl+4  동행 뽑기 10연 (마석 무시)",
+	"Ctrl+5  현재 랜드마크 즉시 클리어",
+	"Ctrl+6  다음 챕터로 (보스 생략)",
+	"Ctrl+7  방주 무적 토글",
+	"Ctrl+8  플레이어 무적 토글",
+	"Ctrl+9  적 전멸",
+	"Ctrl+0  밤/낮 전환",
+	"Ctrl+-  그래픽 품질 순환",
 ]
 
 var god_player := false
@@ -35,58 +40,62 @@ func _ready() -> void:
 			return
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	set_process_input(true)
-	print("[Debug] 치트 콘솔 활성 — F1 로 목록")
+	print("[Debug] 치트 콘솔 활성 — Ctrl+` 로 목록 (F키는 에디터가 가져간다)")
 
 func _input(e: InputEvent) -> void:
 	if not (e is InputEventKey) or not e.pressed or e.echo:
 		return
+	# Ctrl 을 함께 눌러야 동작한다 — 일반 조작과 절대 겹치지 않게
+	if not e.ctrl_pressed:
+		return
+	get_viewport().set_input_as_handled()
 	match e.keycode:
-		KEY_F1: _toggle_help()
-		KEY_F2:
+		KEY_QUOTELEFT: _toggle_help()
+		KEY_1:
 			CraftManager.add_essence(1000)
 			_say("마석 +1000 (%d)" % CraftManager.essence)
-		KEY_F3:
+		KEY_2:
 			for i in range(5):
 				GameManager.add_exp(GameManager.exp_to_next())
 			_say("레벨 %d" % GameManager.player_level)
-		KEY_F4:
+		KEY_3:
 			for r in range(0, 9):
 				PlayerStats.acquire_item(LootManager.generate_item(r))
 			_say("아이템 9개 지급")
-		KEY_F5:
+		KEY_4:
 			var keep := CraftManager.essence
 			CraftManager.essence = PetManager.gacha_cost() * 10
 			for i in range(10):
 				PetManager.gacha()
 			CraftManager.essence = keep
 			_say("10연 뽑기 — 보유 %d종" % PetManager.owned.size())
-		KEY_F6:
+		KEY_5:
 			var d: LandmarkData = _current_landmark()
 			if d != null:
 				LandmarkRegistry.force_clear(d.id)
 				_say("%s 클리어" % d.display_name)
 			else:
 				_say("가까운 랜드마크가 없다")
-		KEY_F7:
+		KEY_6:
 			GameManager.mark_chapter_boss_defeated()
 			_say("보스 처치 처리 — 방주 앞 포탈 확인")
-		KEY_F8:
+		KEY_7:
 			god_base = not god_base
 			_say("방주 무적 %s" % ("ON" if god_base else "OFF"))
-		KEY_F9:
+		KEY_8:
 			god_player = not god_player
 			var pl := Battlefield.live_player()
 			if pl:
 				pl.invuln_timer = 99999.0 if god_player else 0.0
 			_say("플레이어 무적 %s" % ("ON" if god_player else "OFF"))
-		KEY_F10:
+		KEY_9:
 			var n := 0
 			for en in Battlefield.enemies:
 				if is_instance_valid(en) and not en.dead:
 					en.take_damage(999999)
 					n += 1
 			_say("적 %d기 제거" % n)
-		KEY_F11:
+		KEY_0:
 			var w = get_tree().current_scene
 			if w:
 				if GameManager.phase == GameManager.Phase.DAY:
@@ -95,7 +104,7 @@ func _input(e: InputEvent) -> void:
 				else:
 					GameManager.phase_timer = 0.1
 			_say("페이즈 전환")
-		KEY_F12:
+		KEY_MINUS:
 			SaveGame.graphics = (SaveGame.graphics + 1) % EnvironmentManager.level_count()
 			var w2 = get_tree().current_scene
 			if w2 and w2.get("environment_manager") != null:
