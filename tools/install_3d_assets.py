@@ -139,6 +139,43 @@ def rebuild_catalog() -> dict:
     return cat
 
 
+def install_folder(folder: pathlib.Path) -> list:
+    """이미 압축을 푼 폴더에서 모델만 골라 복사한다.
+    rar 처럼 여기서 못 여는 형식은 직접 푼 뒤 이 경로를 넘기면 된다."""
+    if not folder.is_dir():
+        return []
+    best = {}
+    for f in folder.rglob("*"):
+        if not f.is_file():
+            continue
+        ext = f.suffix.lower()
+        if ext not in MODEL_EXT:
+            continue
+        if any(d in str(f).lower() for d in SKIP_DIR):
+            continue
+        rank = MODEL_EXT.index(ext)
+        if f.stem not in best or rank < best[f.stem][0]:
+            best[f.stem] = (rank, f)
+
+    name = pack_name(folder)
+    out = DEST / name
+    out.mkdir(parents=True, exist_ok=True)
+    made = []
+    for stem, (_r, f) in best.items():
+        safe = stem.replace(" ", "_") + f.suffix.lower()
+        shutil.copy2(f, out / safe)
+        made.append("res://assets3d/models/%s/%s" % (name, safe))
+        # gltf/obj 는 부속 파일이 함께 있어야 열린다
+        if f.suffix.lower() in (".gltf", ".obj"):
+            for side in f.parent.iterdir():
+                if side.is_file() and side.suffix.lower() in SIDE_EXT:
+                    t = out / side.name.replace(" ", "_")
+                    if not t.exists():
+                        shutil.copy2(side, t)
+    print("  %-46s 모델 %3d → %s" % (folder.name[:46], len(made), out.name))
+    return made
+
+
 def main() -> None:
     args = [pathlib.Path(a) for a in sys.argv[1:]]
     if not args:
@@ -148,7 +185,8 @@ def main() -> None:
     print("== 3D 에셋 설치 ==")
     installed = 0
     for a in args:
-        if install(a):
+        got = install_folder(a) if a.is_dir() else install(a)
+        if got:
             installed += 1
     if installed == 0:
         print("  설치할 모델이 없었다.")
