@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "note": "사운드 키 → 파일 경로. 여기에 키만 늘리면 data/feel.json 의 레이어가 바로 쓴다. 지금 들어 있는 .wav 는 절차 생성 플레이스홀더 — 같은 이름으로 덮어쓰면 교체된다.",
+  "note": "사운드 키 → 파일. Escalona Music 팩(ActionRPGMusic 1.5)을 쓴다. SoundManager 가 폴더도 스캔하므로 파일만 넣어도 잡히지만, 여기 적힌 경로가 우선한다 — 어떤 곡이 어디 쓰이는지 한눈에 보이게.",
   "rules": {
     "sfx": "키 → 경로. 배열이면 무작위로 하나 고른다.",
     "bgm": "트랙 id → 경로. 없는 파일은 조용히 무시된다.",
@@ -31,16 +31,22 @@
     "portal": "res://assets/audio/portal.wav"
   },
   "bgm": {
-    "day": "res://assets/audio/bgm/day.wav",
-    "night": "res://assets/audio/bgm/night.wav",
-    "boss": "res://assets/audio/bgm/boss.wav",
-    "forest": "res://assets/audio/bgm/forest.wav",
-    "desert": "res://assets/audio/bgm/desert.wav",
-    "snow": "res://assets/audio/bgm/snow.wav",
-    "volcano": "res://assets/audio/bgm/volcano.wav",
-    "city": "res://assets/audio/bgm/city.wav",
-    "sky": "res://assets/audio/bgm/sky.wav",
-    "abyss": "res://assets/audio/bgm/abyss.wav"
+    "day": "res://assets/music/BGM06adventure1.wav",
+    "night": "res://assets/music/BGM07battle1.wav",
+    "explore": "res://assets/music/BGM03prairie.wav",
+    "tense": "res://assets/music/BGM12dungeon1.wav",
+    "danger": "res://assets/music/BGM14chase.wav",
+    "boss": "res://assets/music/BGM08boss1.wav",
+    "boss2": "res://assets/music/BGM08boss2.wav",
+    "forest": "res://assets/music/BGM16jungle.wav",
+    "desert": "res://assets/music/BGM10desert1.wav",
+    "snow": "res://assets/music/BGM15shrine.wav",
+    "volcano": "res://assets/music/BGM02evil.wav",
+    "city": "res://assets/music/BGM11bazaar.wav",
+    "sky": "res://assets/music/BGM05castle1.wav",
+    "abyss": "res://assets/music/BGM13dungeon2.wav",
+    "town": "res://assets/music/BGM04Town1.wav",
+    "credits": "res://assets/music/BGM09credits.wav"
   },
   "chapter_bgm": {
     "1": "forest",

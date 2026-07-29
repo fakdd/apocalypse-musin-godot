@@ -27,3 +27,6 @@ desktop.ini
 # 검증용 스크린샷 (재생성 가능)
 /tools/shots/
 /tools/bench_*.txt
+
+# 음원 (356MB) — 저작권 있는 팩이라 저장소에 올리지 않는다
+/assets/music/

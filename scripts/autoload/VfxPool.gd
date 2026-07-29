@@ -261,12 +261,23 @@ func load_model_node(path: String) -> Node3D:
 ## 모델 안의 첫 MeshInstance3D 에서 Mesh 와 머티리얼을 꺼낸다.
 ## MultiMesh 는 메시 하나만 받으므로, 소품을 MultiMesh 로 뿌리려면 이 형태가 필요하다.
 ## 못 찾으면 null — 호출부는 기존 기본 도형을 쓰면 된다.
+## 결과를 캐시한다.
+## 캐시가 없으면 무기를 바꿀 때마다 .glb 를 통째로 인스턴스화했다가 버려서
+## 아이템을 여러 개 줍는 순간(치트 Ctrl+3, 보물방) 화면이 몇 초씩 멈췄다.
+var _mesh_cache: Dictionary = {}
+
 func mesh_of(path: String) -> Array:
+	if path == "":
+		return []
+	if _mesh_cache.has(path):
+		return _mesh_cache[path]
 	var n := load_model_node(path)
 	if n == null:
+		_mesh_cache[path] = []
 		return []
 	var found := _find_mesh(n, 0)
 	n.queue_free()
+	_mesh_cache[path] = found
 	return found
 
 func _find_mesh(node: Node, depth: int) -> Array:

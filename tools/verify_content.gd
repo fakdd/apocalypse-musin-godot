@@ -649,6 +649,7 @@ func _run_projectile_tests() -> void:
 	await _t_boot()
 	await _t_new_game_flow()
 	await _t_polish()
+	await _t_equip_perf()
 
 	host.queue_free()
 	if _pt_bad > 0:
@@ -1454,3 +1455,47 @@ func _t_polish() -> void:
 		print("CT|  ✔ 미니맵 영역 유형 색 정의")
 	else:
 		print("CT|  ✘ 영역 유형 색 없음"); _pt_bad += 1
+
+## [장비 교체 비용] 무기를 여러 번 갈아 끼워도 프레임이 멈추지 않는가
+func _t_equip_perf() -> void:
+	PlayerStats.reset()
+	# 무기 6계열 × 등급을 연속으로 장착한다 (치트 Ctrl+3 과 같은 부하)
+	var skins := ["blade_rust", "spear_steel", "saber_fang", "mace_crystal",
+		"dagger_dragon", "bow_divine", "blade_divine", "mace_rust", "bow_rust"]
+	var t0 := Time.get_ticks_usec()
+	for i in range(skins.size()):
+		var it := ItemData.new()
+		it.slot = "weapon"
+		it.rarity = i % 9
+		it.skin = skins[i]
+		PlayerStats.acquire_item(it)
+	var ms := float(Time.get_ticks_usec() - t0) / 1000.0
+
+	# 두 번째는 캐시가 살아 있어 훨씬 빨라야 한다
+	var t1 := Time.get_ticks_usec()
+	for s2 in skins:
+		VfxPool.mesh_of(String(VfxPool.models().get("weapons", {}).get(s2, "")))
+	var ms2 := float(Time.get_ticks_usec() - t1) / 1000.0
+
+	if ms2 < 5.0:
+		print("CT|  ✔ 장비 교체 — 최초 %.0fms · 캐시 후 %.2fms (멈춤 없음)" % [ms, ms2])
+	else:
+		print("CT|  ✘ 장비 교체가 느리다 (최초 %.0fms · 재조회 %.0fms)" % [ms, ms2])
+		_pt_bad += 1
+	PlayerStats.reset()
+
+	# 음악이 실제 파일로 연결됐는가
+	var bgm: Dictionary = SoundManager.audio_defs.get("bgm", {})
+	var bad_bgm := []
+	for k in bgm:
+		if not ResourceLoader.exists(String(bgm[k])):
+			bad_bgm.append(k)
+	var placeholder := 0
+	for k in bgm:
+		if String(bgm[k]).find("/audio/bgm/") >= 0:
+			placeholder += 1
+	if bad_bgm.is_empty() and placeholder == 0 and bgm.size() >= 10:
+		print("CT|  ✔ BGM %d곡 전부 실제 음원 (플레이스홀더 0)" % bgm.size())
+	else:
+		print("CT|  ✘ BGM (없는 파일 %s · 플레이스홀더 %d)" % [str(bad_bgm), placeholder])
+		_pt_bad += 1
