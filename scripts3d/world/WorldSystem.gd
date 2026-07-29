@@ -212,3 +212,36 @@ func _road_spot(center: Vector3, min_center_dist: float) -> Vector3:
 			continue
 		return pos
 	return Vector3.INF
+
+## 지정한 자리 주변의 소품을 치운다.
+##
+## 소품은 MultiMesh 로 뿌려지는데, 챕터 포탈은 소품을 다 심은 뒤에 생긴다.
+## 그래서 바위·기둥이 포탈을 가려 "포탈이 안 보인다" 는 일이 생겼다.
+## 인스턴스 크기를 0 으로 만들어 그 자리만 비운다 (노드를 지우지 않으므로 안전하다).
+func clear_props_around(pos: Vector3, radius: float) -> int:
+	var removed := 0
+	var stack: Array = [world]
+	var guard := 0
+	while not stack.is_empty() and guard < 4000:
+		guard += 1
+		var n: Node = stack.pop_back()
+		if n == null or not is_instance_valid(n):
+			continue
+		for c in n.get_children():
+			stack.append(c)
+		if not (n is MultiMeshInstance3D):
+			continue
+		var mm: MultiMesh = n.multimesh
+		if mm == null:
+			continue
+		var base: Vector3 = n.global_position
+		for i in range(mm.instance_count):
+			var t: Transform3D = mm.get_instance_transform(i)
+			var wp: Vector3 = base + t.origin
+			if Vector2(wp.x - pos.x, wp.z - pos.z).length() > radius:
+				continue
+			if t.basis.get_scale().length_squared() < 0.0001:
+				continue          ## 이미 치운 것
+			mm.set_instance_transform(i, Transform3D(Basis().scaled(Vector3.ZERO), t.origin))
+			removed += 1
+	return removed

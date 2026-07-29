@@ -77,9 +77,18 @@ func toggle() -> void:
 	if visible:
 		_refresh()
 
+## 닫힌 동안 바뀐 것이 있는가 (열 때 한 번만 그린다)
+var _dirty := false
+
 func _refresh() -> void:
 	if trait_box == null:
 		return
+	# 닫혀 있으면 그릴 필요가 없다.
+	# 아이템을 주울 때마다 숨은 창까지 통째로 다시 그려 프레임이 튀었다.
+	if not visible:
+		_dirty = true
+		return
+	_dirty = false
 
 	# ── 특성 ──
 	if TraitManager.has_trait():

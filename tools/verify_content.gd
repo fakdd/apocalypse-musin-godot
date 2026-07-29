@@ -650,6 +650,7 @@ func _run_projectile_tests() -> void:
 	await _t_new_game_flow()
 	await _t_polish()
 	await _t_equip_perf()
+	await _t_intro()
 
 	host.queue_free()
 	if _pt_bad > 0:
@@ -1499,3 +1500,39 @@ func _t_equip_perf() -> void:
 	else:
 		print("CT|  ✘ BGM (없는 파일 %s · 플레이스홀더 %d)" % [str(bad_bgm), placeholder])
 		_pt_bad += 1
+
+## [챕터 안내] 지역을 넘으면 설명도 바뀌는가
+func _t_intro() -> void:
+	var w = get_tree().current_scene
+	var pu = w.hud.popup_ui if w and w.get("hud") != null else null
+	if pu == null or not pu.has_method("_intro_text"):
+		print("CT|  ✘ 챕터 안내 함수가 없다"); _pt_bad += 1
+		return
+	var keep := GameManager.chapter
+	var seen := {}
+	var dup := []
+	for ch in range(ChapterConfig.FIRST, ChapterConfig.LAST + 1):
+		GameManager.chapter = ch
+		var head: String = String(pu._intro_text()).get_slice("
+", 0)
+		if seen.has(head):
+			dup.append("%d장이 %d장과 같다" % [ch, int(seen[head])])
+		seen[head] = ch
+	GameManager.chapter = keep
+	if dup.is_empty() and seen.size() == ChapterConfig.LAST:
+		print("CT|  ✔ 챕터 안내 %d개 전부 다른 제목" % seen.size())
+	else:
+		print("CT|  ✘ 안내가 겹친다: %s" % str(dup)); _pt_bad += 1
+
+	# 오래된 안내가 남아 있지 않은가 (K 밤넘기기 · 보스 잡으면 펫 해금 등)
+	GameManager.chapter = 1
+	var body := String(pu._intro_text())
+	GameManager.chapter = keep
+	var stale := []
+	for bad_txt in ["K 밤 넘기기", "펫은 보스를 잡을 때마다", "1일차", "F 키로 마석 40"]:
+		if body.find(bad_txt) >= 0:
+			stale.append(bad_txt)
+	if stale.is_empty():
+		print("CT|  ✔ 안내에 옛 조작 설명 없음")
+	else:
+		print("CT|  ✘ 옛 설명 남음: %s" % str(stale)); _pt_bad += 1

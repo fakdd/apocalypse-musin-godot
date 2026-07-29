@@ -33,6 +33,10 @@ func spawn_chapter_portal() -> void:
 	world.add_child(portal)
 	portal.global_position = pos
 	portal.setup(_next_chapter_name())
+	# 소품은 포탈보다 먼저 심긴다 — 바위·기둥이 포탈을 가리지 않게 그 자리를 비운다
+	var cleared := clear_props_around(pos, 7.0)
+	if cleared > 0:
+		print("[Portal] 포탈 주변 소품 %d개 정리" % cleared)
 
 	if world.hud:
 		world.hud.show_banner("◈ 포탈이 열렸다 — %s" % _next_chapter_name())

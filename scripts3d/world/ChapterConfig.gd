@@ -73,8 +73,10 @@ const CHAPTERS := {
 			"day_sky_horizon": Color(0.80, 0.86, 0.92),
 			"night_sky_top": Color(0.04, 0.06, 0.12),
 			"night_sky_horizon": Color(0.16, 0.24, 0.38),
-			"day_fog": 0.032, "night_fog": 0.048,
-			"fog_color": Color(0.76, 0.84, 0.92),
+			# 안개색이 거의 흰색이라 밀도가 높으면 화면이 통째로 하얘진다.
+			# 설원만 절반으로 낮추고 색도 살짝 어둡게 해 형체가 보이게 한다.
+			"day_fog": 0.014, "night_fog": 0.022,
+			"fog_color": Color(0.62, 0.70, 0.80),
 			"ground": Color(0.78, 0.83, 0.88),
 			"sun": Color(0.86, 0.92, 1.0),
 		},

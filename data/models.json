@@ -64,7 +64,7 @@
       "rot_y": 180.0
     },
     "bandit": {
-      "model": "res://assets3d/models/imported/character_3.fbx",
+      "model": "res://assets3d/models/ultimate-monsters/Ninja.gltf",
       "scale": 1.0,
       "fit_height": 1.9,
       "y_offset": 0.0,
@@ -101,7 +101,7 @@
       "rot_y": 180.0
     },
     "soldier": {
-      "model": "res://assets3d/models/imported/character_2.fbx",
+      "model": "res://assets3d/models/ultimate-monsters/Tribal.gltf",
       "scale": 1.0,
       "fit_height": 2.0,
       "y_offset": 0.0,
@@ -145,7 +145,7 @@
       "rot_y": 180.0
     },
     "knight": {
-      "model": "res://assets3d/models/imported/character_1.fbx",
+      "model": "res://assets3d/models/ultimate-monsters/Orc_Skull.gltf",
       "scale": 1.0,
       "fit_height": 2.2,
       "y_offset": 0.0,
@@ -686,6 +686,7 @@
     "character.fbx": "80MB",
     "evil.zip": "436MB — 압축만으로도 프로젝트보다 크다",
     "*.rar": "이 환경에 압축 해제 도구가 없다 (직접 풀어서 Downloads 에 두면 설치된다)",
-    "evil/evil.OBJ": "712MB 단일 OBJ — 프로젝트 전체보다 크다. Blender 로 폴리곤을 줄여야 쓸 수 있다"
+    "evil/evil.OBJ": "712MB 단일 OBJ — 프로젝트 전체보다 크다. Blender 로 폴리곤을 줄여야 쓸 수 있다",
+    "character_1~3.fbx": "뼈대는 있으나 애니메이션이 0개 — T포즈로 미끄러져 다닌다. 애니메이션을 입히면 쓸 수 있다"
   }
 }

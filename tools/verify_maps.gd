@@ -238,6 +238,27 @@ func _check_applied() -> void:
 	else:
 		probs.append("무기 %d/%d" % [wm, wt])
 
+	# 4b) T포즈 방지 — 뼈대가 있는데 애니메이션이 없는 모델을 쓰고 있지 않은가
+	var tpose := []
+	for t in VfxPool.models().get("enemies", {}):
+		if String(t) == "_default":
+			continue
+		var mp3 := String(VfxPool.models()["enemies"][t].get("model", ""))
+		if mp3 == "":
+			continue
+		var n3 := VfxPool.load_model_node(mp3)
+		if n3 == null:
+			continue
+		var has_skel := _has_skeleton(n3, 0)
+		var has_anim := VfxPool.find_anim(n3) != null
+		n3.queue_free()
+		if has_skel and not has_anim:
+			tpose.append("%s (%s)" % [t, mp3.get_file()])
+	if tpose.is_empty():
+		print("MAP|  ✔ T포즈 위험 없음 — 뼈대만 있고 애니 없는 모델 0")
+	else:
+		probs.append("T포즈 위험: %s" % str(tpose))
+
 	# 4) 애니메이션 이름 매칭 — 접두사가 붙어도 잡아내는가
 	var anim_ok := 0
 	var anim_t := 0
@@ -277,3 +298,15 @@ func _check_applied() -> void:
 	else:
 		bad += 1
 		print("MAP|  ✘ 미연결: %s" % str(probs))
+
+## 뼈대(Skeleton3D)가 들어 있는가.
+## 뼈대가 있는데 애니메이션이 없으면 T포즈 그대로 미끄러져 다닌다.
+func _has_skeleton(n: Node, depth: int) -> bool:
+	if depth > 8 or n == null:
+		return false
+	if n is Skeleton3D:
+		return true
+	for c in n.get_children():
+		if _has_skeleton(c, depth + 1):
+			return true
+	return false

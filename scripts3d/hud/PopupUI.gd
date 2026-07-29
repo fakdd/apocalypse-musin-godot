@@ -69,9 +69,7 @@ func build_tutorial() -> void:
 	hud.tutorial_panel.add_child(bg)
 
 	var lbl := Label.new()
-	lbl.text = "1일차 — 폐허 탐험\n\n[낮] 폐허에서 빛나는 유물(F~SSS급)을 회수하고 생존자를 구하세요. 가까이 가서 E.\n중앙 안전지대의 마도 제단에서 F 키로 마석 40을 써 특성을 다시 뽑을 수 있습니다.\n\n[밤] 차원의 균열에서 괴수가 쏟아집니다. 밤은 여러 웨이브로 나뉘고 사이에 정비 시간이 있습니다.\n좌클릭 검기(3타 콤보) · Space 점프 · Shift 신법 · Q 만천화우 · E 기공파 · F 반로환동\n\n※ 바닥에 붉은 예고선이 보이면 돌진입니다 — Shift로 피하세요.\n※ 정비 시간: N 다음 웨이브 즉시 시작 / K 밤 넘기기(방주 HP 소모)\n※ Tab 스탯창 · I 인벤토리(합성·강화)
-※ [P] 키로 동행 펫 교체 — 펫이 떨어진 아이템을 자동으로 주워옵니다.
-   펫은 보스를 잡을 때마다 새 종류가 해금됩니다 (현재 보유한 것들 사이에서 순환).\n\n밤을 버텨낼 때마다 균열이 하나 봉인됩니다. 5개를 모두 봉인하면 최후의 군주가 강림합니다.\n\n[ 이동/공격 아무 키나 눌러 시작 ]"
+	lbl.text = _intro_text()
 	lbl.add_theme_font_size_override("font_size", 18)
 	lbl.position = Vector2(180, 120)
 	lbl.size = Vector2(920, 480)
@@ -232,3 +230,27 @@ func handle_popup_input() -> bool:
 func _on_level_up(lv: int) -> void:
 	CombatFeel.impact("level_up")
 	owner_hud.show_banner("\u2726 레벨 %d" % lv)
+
+## 챕터별 안내 문구 (data/menu.json 의 intro).
+##
+## 예전에는 "1일차 — 폐허 탐험" 한 덩어리가 하드코딩돼 있어,
+## 다음 지역으로 넘어가도 같은 설명이 떴다. 조작은 공통, 제목과 한 줄만 바뀐다.
+func _intro_text() -> String:
+	var m = owner_hud.get("menu_ui")
+	var defs: Dictionary = m.defs() if m != null else {}
+	var intro: Dictionary = defs.get("intro", {})
+	var ch := str(GameManager.chapter)
+	var c: Dictionary = intro.get("chapters", {}).get(ch, {})
+	var title := String(c.get("title", ChapterConfig.name_of(GameManager.chapter)))
+	var line := String(c.get("line", ""))
+	var common := String(intro.get("common", ""))
+	if common == "":
+		return "%s
+
+%s
+
+[ 아무 키나 눌러 시작 ]" % [title, line]
+	return "%s
+%s
+
+%s" % [title, line, common]
