@@ -59,9 +59,12 @@ func _input(e: InputEvent) -> void:
 				GameManager.add_exp(GameManager.exp_to_next())
 			_say("레벨 %d" % GameManager.player_level)
 		KEY_3:
+			# acquire_item 은 더 좋으면 곧바로 장착한다 — 9번 연속이면
+			# 무기 모델을 9번 갈아 끼우고 토스트도 9번 뜬다. 인벤토리에만 넣는다.
 			for r in range(0, 9):
-				PlayerStats.acquire_item(LootManager.generate_item(r))
-			_say("아이템 9개 지급")
+				PlayerStats.inventory.append(LootManager.generate_item(r))
+			PlayerStats.inventory_changed.emit()
+			_say("아이템 9개 지급 (I 로 확인)")
 		KEY_4:
 			var keep := CraftManager.essence
 			CraftManager.essence = PetManager.gacha_cost() * 10

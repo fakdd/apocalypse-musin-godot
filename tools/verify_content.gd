@@ -651,6 +651,7 @@ func _run_projectile_tests() -> void:
 	await _t_polish()
 	await _t_equip_perf()
 	await _t_intro()
+	await _t_signal_safety()
 
 	host.queue_free()
 	if _pt_bad > 0:
@@ -1536,3 +1537,50 @@ func _t_intro() -> void:
 		print("CT|  ✔ 안내에 옛 조작 설명 없음")
 	else:
 		print("CT|  ✘ 옛 설명 남음: %s" % str(stale)); _pt_bad += 1
+
+## [시그널 안전] 오토로드 시그널 콜백이 해제된 HUD 를 붙잡고 있지 않은가
+##
+## PopupUI 가 람다로 지역변수 hud 를 캡처하고 있어, 씬을 다시 읽은 뒤
+## 아이템을 장착하면 "Nonexistent function 'show_toast' in base 'Nil'" 로 죽었다.
+func _t_signal_safety() -> void:
+	var w = get_tree().current_scene
+	var pu = w.hud.popup_ui if w and w.get("hud") != null else null
+	if pu == null:
+		print("CT|  ✘ PopupUI 없음"); _pt_bad += 1
+		return
+
+	# 1) 람다 대신 이름 있는 메서드로 연결됐는가
+	var named: bool = pu.has_method("_on_item_toast") and pu.has_method("_on_equip_toast") 		and pu.has_method("_safe_toast")
+	# 2) HUD 가 사라진 상황을 흉내 내도 죽지 않는가
+	var keep_hud = pu.owner_hud
+	pu.owner_hud = null
+	var probe := ItemData.new()
+	probe.rarity = 3
+	probe.slot = "weapon"
+	pu._on_item_toast(probe)          ## 여기서 죽으면 아래 줄이 실행되지 않는다
+	pu._on_equip_toast(probe, "weapon")
+	pu._on_item_toast(null)
+	pu.owner_hud = keep_hud
+	var survived := true
+
+	# 3) 실제 시그널로도 확인 (아이템을 장착해 본다)
+	PlayerStats.reset()
+	var it := ItemData.new()
+	it.rarity = 5
+	it.slot = "weapon"
+	it.skin = "blade_steel"
+	PlayerStats.acquire_item(it)
+	PlayerStats.reset()
+
+	if named and survived:
+		print("CT|  ✔ 시그널 콜백 안전 — HUD 가 없어도 죽지 않는다")
+	else:
+		print("CT|  ✘ 시그널 콜백 (이름연결 %s)" % str(named)); _pt_bad += 1
+
+	# 4) 치트 Ctrl+3 이 장착을 유발하지 않는가 (토스트 9연발 방지)
+	var src := FileAccess.get_file_as_string("res://tools/debug_console.gd")
+	# 주석에도 이름이 나오므로 실제 호출("acquire_item(")만 본다
+	if src.find("PlayerStats.acquire_item(") < 0:
+		print("CT|  ✔ Ctrl+3 은 인벤토리에만 넣는다 (장착 연쇄 없음)")
+	else:
+		print("CT|  ✘ Ctrl+3 이 아직 acquire_item 을 부른다"); _pt_bad += 1

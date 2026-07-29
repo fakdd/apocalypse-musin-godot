@@ -35,9 +35,12 @@ func build_toast() -> void:
 	hud.toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud.add_child(hud.toast)
 
-	LootManager.item_collected.connect(func(it): hud.show_toast("%s 획득" % it.get_display_name(), it.get_color()))
+	# 오토로드 시그널에 붙는 콜백은 지역변수 hud 를 붙잡으면 안 된다.
+	# 씬이 다시 로드되면 그 hud 는 이미 해제돼 Nil 이 되고,
+	# 아이템을 장착하는 순간 "Nonexistent function 'show_toast' in base 'Nil'" 로 죽는다.
+	LootManager.item_collected.connect(_on_item_toast)
 	GameManager.level_up.connect(_on_level_up)
-	PlayerStats.item_equipped.connect(func(it, _s): hud.show_toast("%s 장착!" % it.get_display_name(), it.get_color()))
+	PlayerStats.item_equipped.connect(_on_equip_toast)
 
 func show_banner(text: String) -> void:
 	var hud := owner_hud
@@ -254,3 +257,20 @@ func _intro_text() -> String:
 %s
 
 %s" % [title, line, common]
+
+## 오토로드 시그널 콜백 — HUD 를 매번 다시 확인한다 (붙잡아 두지 않는다)
+func _safe_toast(text: String, col: Color) -> void:
+	if owner_hud == null or not is_instance_valid(owner_hud):
+		return
+	if owner_hud.has_method("show_toast"):
+		owner_hud.show_toast(text, col)
+
+func _on_item_toast(it) -> void:
+	if it == null:
+		return
+	_safe_toast("%s 획득" % it.get_display_name(), it.get_color())
+
+func _on_equip_toast(it, _slot) -> void:
+	if it == null:
+		return
+	_safe_toast("%s 장착!" % it.get_display_name(), it.get_color())
